@@ -103,4 +103,4 @@ the plugin. For example, you can store the savefiles in the user's `.config` dir
 
 ## License
 
-Bracket is licensed under [MIT](https://choosealicense.com/licenses/mit/), see [LICENSE](./LICENSE).
+Licensed under [MIT](https://choosealicense.com/licenses/mit/), see [LICENSE](../../LICENSE).

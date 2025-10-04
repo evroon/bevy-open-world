@@ -15,20 +15,25 @@ publish = false
 [workspace]
 members = ["crates/*"]
 
+[features]
+dev = ["bevy/dynamic_linking"]
+
 [workspace.dependencies]
-bevy = { version = "0.17.2", default-features = false, features = [
-    "bevy_window",
-    "bevy_log",
-    "bevy_camera",
-    "bevy_light",
-    "bevy_pbr",
-] }
+bevy = { version = "0.17.2", features=["file_watcher", "jpeg"]}
 bevy_panorbit_camera = "0.28.0"
+bevy_egui = "0.37.0"
+wayland-sys = { version="0.31.7", features = ["dlopen"] }
 
 [dependencies]
 bevy = { workspace = true }
+wayland-sys = { workspace = true }
 
 [dev-dependencies]
 bevy = { workspace = true }
 bevy_panorbit_camera = { workspace = true }
+bevy_egui = { workspace = true }
+wayland-sys = { workspace = true }
+
 bevy-where-was-i = { path = "crates/bevy-where-was-i" }
+bevy-fly-camera = { path = "crates/bevy-fly-camera" }
+bevy-volumetric-clouds = { path = "crates/bevy-volumetric-clouds" }

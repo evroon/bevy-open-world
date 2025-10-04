@@ -1,9 +1,9 @@
 [package]
-name = "bevy-where-was-i"
+name = "bevy-volumetric-clouds"
 description = "A plugin for Bevy that saves and restores your camera position"
 repository = "https://github.com/evroon/bevy-where-was-i"
 readme = "README.md"
-version = "0.3.0"
+version = "0.1.0"
 publish = true
 authors = ["evroon"]
 edition = "2024"
@@ -13,6 +13,7 @@ categories = ["game-development"]
 
 [dependencies]
 bevy = {workspace = true}
+bevy_egui = {workspace = true}
 
 [dev-dependencies]
 bevy = {workspace = true}
