@@ -28,13 +28,14 @@ struct Config {
     detail_scale: f32,
     sun_dir: vec4f,
     sun_color: vec4f,
-    camera_ro: vec4f,
+    camera_translation: vec4f,
     camera_fl: f32,
     debug: f32,
     time: f32,
     reprojection_strength: f32,
     render_resolution: vec2f,
     camera: mat3x3f,
+    wind_displacement: vec3f,
 };
 
 @group(0) @binding(0) var<uniform> config: Config;
@@ -310,6 +311,10 @@ fn main_image(frag_coord: vec2f, camera: mat3x3f, old_cam: mat4x4f, ray_dir: vec
     return mix(col, original_color, config.reprojection_strength);
 }
 
+fn move_clouds_with_wind(time: f32) -> vec3f {
+    return config.camera_translation.xyz - config.wind_displacement * INV_SCENE_SCALE;
+}
+
 @compute @workgroup_size(8, 8, 1)
 fn init(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
     let index = vec2f(f32(invocation_id.x), f32(invocation_id.y));
@@ -318,16 +323,16 @@ fn init(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
     let worley_coord = vec2f(0.5) + vec2f(index.x, inverted_y_coord);
 
     let z = floor(worley_coord.x / WORLEY_RESOLUTION_F32) + 8.0 * floor(worley_coord.y / WORLEY_RESOLUTION_F32);
-    let uv = (worley_coord.xy % (WORLEY_RESOLUTION_F32)) ;
-    let coord = vec3f(uv, z) / WORLEY_RESOLUTION_F32;
+    let xy = vec2f(index.x, inverted_y_coord) % WORLEY_RESOLUTION_F32;
+    let xyz = vec3f(xy, z);
 
-    let worley_col = render_clouds_worley(coord);
+    let worley_col = render_clouds_worley(xyz / WORLEY_RESOLUTION_F32);
     let atlas_col = render_clouds_atlas(vec2f(index.x, inverted_y_coord));
 
     storageBarrier();
 
     textureStore(clouds_atlas_texture, invocation_id.xy, atlas_col);
-    textureStore(clouds_worley_texture, vec3u(u32(uv.x), u32(uv.y), u32(z)), worley_col);
+    textureStore(clouds_worley_texture, vec3u(u32(xyz.x), u32(xyz.y), u32(xyz.z)), worley_col);
 }
 
 @compute @workgroup_size(8, 8, 1)
@@ -340,7 +345,7 @@ fn update(@builtin(global_invocation_id) invocation_id: vec3<u32>, @builtin(num_
 
     let camera = config.camera;
 
-    var ray_origin = common::get_ro(config.time, config.camera_ro.xyz);
+    var ray_origin = move_clouds_with_wind(config.time);
     var ray_dir = common::get_ray(camera, frag_coord, config.render_resolution.xy, config.camera_fl);
     var col = main_image(frag_coord, camera, old_cam, ray_dir, ray_origin);
 

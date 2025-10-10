@@ -31,7 +31,7 @@ impl Default for KeyBindings {
             move_right: KeyCode::KeyD,
             move_ascend: KeyCode::Space,
             move_descend: KeyCode::ShiftLeft,
-            toggle_grab_cursor: KeyCode::Escape,
+            toggle_grab_cursor: KeyCode::Space,
         }
     }
 }

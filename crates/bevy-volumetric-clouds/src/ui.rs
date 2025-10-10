@@ -82,6 +82,14 @@ pub fn clouds_ui(config: &mut CloudsConfig, ui: &mut Ui) {
             .text("reprojection_strength"),
     );
     ui.end_row();
+    ui.add(egui::Label::new("wind_velocity"));
+    ui.end_row();
+    ui.add(egui::Slider::new(&mut config.wind_velocity.x, -100.0..=100.0).text("x"));
+    ui.end_row();
+    ui.add(egui::Slider::new(&mut config.wind_velocity.y, -100.0..=100.0).text("y"));
+    ui.end_row();
+    ui.add(egui::Slider::new(&mut config.wind_velocity.z, -100.0..=100.0).text("z"));
+    ui.end_row();
 
     color_picker("ambient_color_top", &mut config.ambient_color_top, ui);
     color_picker("ambient_color_bottom", &mut config.ambient_color_bottom, ui);

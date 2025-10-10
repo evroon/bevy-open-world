@@ -49,7 +49,7 @@ pub struct CloudsConfig {
     pub detail_scale: f32,
     pub sun_dir: Vec4,
     pub sun_color: Vec4,
-    pub camera_ro: Vec4,
+    pub camera_translation: Vec4,
     pub camera_fl: f32,
     pub debug: f32,
     pub time: f32,
@@ -57,6 +57,8 @@ pub struct CloudsConfig {
     pub ui_visible: bool,
     pub render_resolution: Vec2,
     pub camera: Mat3,
+    pub wind_velocity: Vec3,
+    pub wind_displacement: Vec3,
 }
 
 impl Default for CloudsConfig {
@@ -82,11 +84,11 @@ impl Default for CloudsConfig {
             ambient_color_top: Vec4::new(149.0, 167.0, 200.0, 0.0) * (1.5 / 225.),
             ambient_color_bottom: Vec4::new(39.0, 67.0, 87.0, 0.0) * (1.5 / 225.),
             min_transmittance: 0.1,
-            base_scale: 1.51,
-            detail_scale: 20.0,
+            base_scale: 1.5,
+            detail_scale: 42.0,
             sun_dir: Vec4::new(sun_dir.x, sun_dir.y, sun_dir.z, 0.0),
             sun_color: Vec4::new(1.0, 0.9, 0.85, 1.0) * 1.4,
-            camera_ro: Vec4::new(3980.0, 730.0, -2650.0, 0.0) * inv_scene_scale,
+            camera_translation: Vec4::new(3980.0, 730.0, -2650.0, 0.0) * inv_scene_scale,
             camera_fl: 2.0,
             debug: 1.0,
             time: 0.0,
@@ -94,6 +96,8 @@ impl Default for CloudsConfig {
             ui_visible: true,
             render_resolution: Vec2::new(1920.0, 1080.0),
             camera: Mat3::IDENTITY,
+            wind_velocity: Vec3::new(-11.0, 0.0, 23.0),
+            wind_displacement: Vec3::ZERO,
         }
     }
 }
@@ -138,10 +142,11 @@ pub(crate) fn prepare_uniforms_bind_group(
     buffer.sun_dir = clouds_config.sun_dir;
     buffer.sun_color = clouds_config.sun_color;
     buffer.camera_fl = clouds_config.camera_fl;
-    buffer.camera_ro = clouds_config.camera_ro;
+    buffer.camera_translation = clouds_config.camera_translation;
     buffer.time = time.elapsed_secs_wrapped();
     buffer.reprojection_strength = clouds_config.reprojection_strength;
     buffer.camera = clouds_config.camera;
+    buffer.wind_displacement += time.delta_secs() * clouds_config.wind_velocity;
 
     clouds_uniform_buffer
         .buffer
