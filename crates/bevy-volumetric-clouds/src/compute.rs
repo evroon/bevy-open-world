@@ -66,7 +66,7 @@ impl Default for CloudsConfig {
         Self {
             march_steps: 12,
             self_shadow_steps: 6,
-            earth_radius: 1_500_000.0, // (6371000.)
+            earth_radius: 1_500_000.0,
             bottom: 1350.,
             top: 2350.,
             coverage: 0.52,
