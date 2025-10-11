@@ -6,18 +6,19 @@ use bevy_egui::{
 
 use super::compute::CloudsConfig;
 
+#[expect(dead_code)]
 fn color_picker(title: &str, color: &mut Vec4, ui: &mut Ui) {
     let mut col = Color32::from_rgb(
-        (color[0] * 256.0) as u8,
-        (color[1] * 256.0) as u8,
-        (color[2] * 256.0) as u8,
+        (color[0] * 255.0) as u8,
+        (color[1] * 255.0) as u8,
+        (color[2] * 255.0) as u8,
     );
     ui.add(egui::Label::new(title));
     ui.end_row();
     if egui::color_picker::color_picker_color32(ui, &mut col, egui::color_picker::Alpha::Opaque) {
-        color[0] = col[0] as f32 / 256.0;
-        color[1] = col[1] as f32 / 256.0;
-        color[2] = col[2] as f32 / 256.0;
+        color[0] = col[0] as f32 / 255.0;
+        color[1] = col[1] as f32 / 255.0;
+        color[2] = col[2] as f32 / 255.0;
     }
     ui.end_row();
 }
@@ -63,29 +64,39 @@ pub fn clouds_ui(config: &mut CloudsConfig, ui: &mut Ui) {
             .text("backward_scattering_g"),
     );
     ui.end_row();
-    ui.add(egui::Slider::new(&mut config.scattering_lerp, 0.01..=100.0).text("scattering_lerp"));
+    ui.add(egui::Slider::new(&mut config.scattering_lerp, 0.01..=100.0).text("Scattering lerp"));
     ui.end_row();
     ui.add(
-        egui::Slider::new(&mut config.min_transmittance, 0.01..=100.0).text("min_transmittance"),
+        egui::Slider::new(&mut config.min_transmittance, 0.01..=100.0).text("Min transmittance"),
     );
     ui.end_row();
-    ui.add(egui::Slider::new(&mut config.base_scale, 0.1..=100.0).text("base_scale"));
+    ui.add(egui::Slider::new(&mut config.base_scale, 0.1..=100.0).text("Base scale"));
     ui.end_row();
-    ui.add(egui::Slider::new(&mut config.detail_scale, 1.0..=100.0).text("detail_scale"));
+    ui.add(egui::Slider::new(&mut config.detail_scale, 1.0..=100.0).text("Detail scale"));
     ui.end_row();
     ui.add(egui::Slider::new(&mut config.camera_fl, 1.0..=10.0).text("camera_fl"));
-    ui.end_row();
-    ui.add(egui::Slider::new(&mut config.debug, 0.0001..=100.0).text("debug"));
+    // ui.end_row();
+    // ui.add(egui::Slider::new(&mut config.debug, 0.0001..=100.0).text("debug"));
     ui.end_row();
     ui.add(
         egui::Slider::new(&mut config.reprojection_strength, 0.0..=1.0)
             .text("reprojection_strength"),
     );
     ui.end_row();
+    ui.add(egui::Label::new("wind_velocity"));
+    ui.end_row();
+    ui.add(egui::Slider::new(&mut config.wind_velocity.x, -100.0..=100.0).text("x"));
+    ui.end_row();
+    ui.add(egui::Slider::new(&mut config.wind_velocity.y, -100.0..=100.0).text("y"));
+    ui.end_row();
+    ui.add(egui::Slider::new(&mut config.wind_velocity.z, -100.0..=100.0).text("z"));
+    ui.end_row();
 
-    color_picker("ambient_color_top", &mut config.ambient_color_top, ui);
-    color_picker("ambient_color_bottom", &mut config.ambient_color_bottom, ui);
-    color_picker("sun_color", &mut config.sun_color, ui);
+    // These colors are HDR and have values higher than 255 which are clamped to 255 by the ui picker
+    // TODO: find a way to let the UI not clamp them.
+    // color_picker("ambient_color_top", &mut config.ambient_color_top, ui);
+    // color_picker("ambient_color_bottom", &mut config.ambient_color_bottom, ui);
+    // color_picker("sun_color", &mut config.sun_color, ui);
 
     if ui.button("Reset to defaults").clicked() {
         *config = CloudsConfig::default();
@@ -102,8 +113,8 @@ pub fn ui_system(
     }
 
     if clouds_config.ui_visible {
-        egui::Window::new("Clouds")
-            .current_pos(Pos2 { x: 10., y: 320. })
+        egui::Window::new("Clouds configuration")
+            .current_pos(Pos2 { x: 10.0, y: 320.0 })
             .show(contexts.ctx_mut().unwrap(), |ui| {
                 egui::Grid::new("3dworld_grid")
                     .num_columns(2)
