@@ -5,12 +5,28 @@ use bevy_fly_camera::system::{FlyCam, FlyCameraPlugin};
 use bevy_volumetric_clouds::{CloudsPlugin, compute::CloudsConfig};
 use bevy_where_was_i::{WhereWasI, WhereWasIPlugin};
 
+fn close_on_esc(
+    mut commands: Commands,
+    focused_windows: Query<(Entity, &Window)>,
+    input: Res<ButtonInput<KeyCode>>,
+) {
+    for (window, focus) in focused_windows.iter() {
+        if !focus.focused {
+            continue;
+        }
+
+        if input.just_pressed(KeyCode::Escape) {
+            commands.entity(window).despawn();
+        }
+    }
+}
+
 fn main() {
     App::new()
         .add_plugins((
             DefaultPlugins.set(WindowPlugin {
                 primary_window: Some(Window {
-                    title: "Celestial".to_string(),
+                    title: "Bevy Volumetric Clouds".to_string(),
                     resolution: (1920, 1080).into(),
                     canvas: Some("#bevy".to_owned()),
                     prevent_default_event_handling: false,
@@ -27,6 +43,7 @@ fn main() {
         .add_plugins(EguiPlugin::default())
         .insert_resource(CloudsConfig::default())
         .add_systems(Startup, setup)
+        .add_systems(Update, close_on_esc)
         .run();
 }
 
@@ -50,7 +67,7 @@ fn setup(
 
     // Spawn ground plane
     commands.spawn((
-        Mesh3d(meshes.add(Plane3d::new(Vec3::Y, Vec2::splat(10000.0)))),
+        Mesh3d(meshes.add(Plane3d::new(Vec3::Y, Vec2::splat(1e9)))),
         MeshMaterial3d(std_materials.add(Color::srgb_u8(124, 144, 255))),
         Transform::from_xyz(0.0, 0.5, 0.0),
     ));

@@ -37,7 +37,8 @@ pub struct CloudsUniform {
     pub time: f32,
     pub reprojection_strength: f32,
     pub render_resolution: Vec2,
-    pub camera: Mat3,
+    pub inverse_camera_view: Mat3,
+    pub inverse_camera_projection: Mat3,
     pub wind_displacement: Vec3,
 }
 
@@ -72,7 +73,8 @@ impl Default for CloudsUniform {
             time: 0.0,
             reprojection_strength: 0.95,
             render_resolution: Vec2::new(1920.0, 1080.0),
-            camera: Mat3::IDENTITY,
+            inverse_camera_view: Mat3::IDENTITY,
+            inverse_camera_projection: Mat3::IDENTITY,
             wind_displacement: Vec3::new(-11.0, 0.0, 23.0),
         }
     }
