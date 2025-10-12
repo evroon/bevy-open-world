@@ -57,20 +57,20 @@ pub struct CloudsConfig {
     pub ui_visible: bool,
     pub render_resolution: Vec2,
     pub camera: Mat3,
+    pub wind_velocity: Vec3,
 }
 
 impl Default for CloudsConfig {
     fn default() -> Self {
-        let inv_scene_scale = 0.1;
         let sun_dir = Vec3::new(-0.7, 0.5, 0.75).normalize();
         Self {
             march_steps: 12,
             self_shadow_steps: 6,
-            earth_radius: 1_500_000.0, // (6371000.)
-            bottom: 1350.,
-            top: 2350.,
-            coverage: 0.52,
-            detail_strength: 0.225,
+            earth_radius: 6_371_000.0,
+            bottom: 1250.0,
+            top: 2400.0,
+            coverage: 0.5,
+            detail_strength: 0.27,
             base_edge_softness: 0.1,
             bottom_softness: 0.25,
             density: 0.03,
@@ -82,11 +82,11 @@ impl Default for CloudsConfig {
             ambient_color_top: Vec4::new(149.0, 167.0, 200.0, 0.0) * (1.5 / 225.),
             ambient_color_bottom: Vec4::new(39.0, 67.0, 87.0, 0.0) * (1.5 / 225.),
             min_transmittance: 0.1,
-            base_scale: 1.51,
-            detail_scale: 20.0,
+            base_scale: 1.5,
+            detail_scale: 42.0,
             sun_dir: Vec4::new(sun_dir.x, sun_dir.y, sun_dir.z, 0.0),
             sun_color: Vec4::new(1.0, 0.9, 0.85, 1.0) * 1.4,
-            camera_ro: Vec4::new(3980.0, 730.0, -2650.0, 0.0) * inv_scene_scale,
+            camera_ro: Vec4::new(3980.0, 730.0, -2650.0, 0.0),
             camera_fl: 2.0,
             debug: 1.0,
             time: 0.0,
@@ -94,6 +94,7 @@ impl Default for CloudsConfig {
             ui_visible: true,
             render_resolution: Vec2::new(1920.0, 1080.0),
             camera: Mat3::IDENTITY,
+            wind_velocity: Vec3::new(-1.1, 0.0, 2.3),
         }
     }
 }
