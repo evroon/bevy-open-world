@@ -32,8 +32,8 @@ struct Config {
     time: f32,
     reprojection_strength: f32,
     render_resolution: vec2f,
-    inverse_camera_view: mat3x3f,
-    inverse_camera_projection: mat3x3f,
+    inverse_camera_view: mat4x4f,
+    inverse_camera_projection: mat4x4f,
     wind_displacement: vec3f,
 };
 
@@ -263,7 +263,7 @@ fn render_clouds_worley(coord: vec3f) -> vec4f {
     return vec4f(c);
 }
 
-fn main_image(frag_coord: vec2f, camera: mat3x3f, old_cam: mat4x4f, ray_dir: vec3f, ray_origin: vec3f) -> vec4f {
+fn main_image(frag_coord: vec2f, camera: mat4x4f, old_cam: mat4x4f, ray_dir: vec3f, ray_origin: vec3f) -> vec4f {
     if (frag_coord.y < 1.5) {
         if abs(frag_coord.x - 1.5) < 0.5 { return vec4f(camera[0][0], camera[0][1], camera[0][2], 1.0); }
         if abs(frag_coord.x - 0.5) < 0.5 { return vec4f(config.render_resolution.xy, 0.0, 0.0); }
@@ -310,13 +310,23 @@ fn main_image(frag_coord: vec2f, camera: mat3x3f, old_cam: mat4x4f, ray_dir: vec
     return mix(col, original_color, config.reprojection_strength);
 }
 
-fn move_clouds_with_wind(time: f32) -> vec3f {
+fn get_ray_origin(time: f32) -> vec3f {
     return config.camera_translation.xyz - config.wind_displacement;
 }
 
-fn get_ray(camera: mat3x3f, frag_coord: vec2f, resolution: vec2f, camera_fl: f32) -> vec3f {
-    let p = -(2.0 * frag_coord - resolution) / resolution.y;
-    return camera * normalize(vec3f(p, camera_fl));
+fn get_ray_direction(frag_coord: vec2f) -> vec3f {
+    // inverse_camera_projection is also called view_from_clip
+    // inverse_camera_view is also called world_from_view
+    let rect_relative = frag_coord / config.render_resolution;
+
+    // Flip the Y co-ordinate from the top to the bottom to enter NDC.
+    let ndc_xy = (rect_relative * 2.0 - vec2f(1.0, 1.0)) * vec2f(1.0, -1.0);
+
+    let ray_clip = vec4f(ndc_xy.xy, -1.0, 1.0);
+    let ray_eye = config.inverse_camera_projection * ray_clip;
+    let ray_world = config.inverse_camera_view * vec4f(ray_eye.xy, -1.0, 0.0);
+
+    return ray_world.xyz;
 }
 
 @compute @workgroup_size(8, 8, 1)
@@ -349,8 +359,8 @@ fn update(@builtin(global_invocation_id) invocation_id: vec3<u32>, @builtin(num_
 
     let camera = config.inverse_camera_view;
 
-    var ray_origin = move_clouds_with_wind(config.time);
-    var ray_dir = get_ray(camera, frag_coord, config.render_resolution.xy, config.camera_fl);
+    var ray_origin = get_ray_origin(config.time);
+    var ray_dir = get_ray_direction(frag_coord);
     var col = main_image(frag_coord, camera, old_cam, ray_dir, ray_origin);
 
     storageBarrier();
