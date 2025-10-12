@@ -1,6 +1,5 @@
 #define_import_path bevy_open_world::common
 
-
 const UI0 = u32(1597334673);
 const UI1 = u32(3812015801);
 const UI3 = vec3u(UI0, UI1, u32(2798796415));
@@ -16,19 +15,6 @@ fn linearstep0(e: f32, v: f32) -> f32 {
 
 fn remap(v: f32, s: f32, e: f32) -> f32 {
     return (v - s) / (e - s);
-}
-
-fn get_ro(time: f32, config_ro: vec3f) -> vec3f {
-    var ro = config_ro;
-
-    ro.x -= time * 1.1;
-    ro.z -= time * 2.0;
-    return ro;
-}
-
-fn get_ray(camera: mat3x3f, frag_coord: vec2f, resolution: vec2f, camera_fl: f32) -> vec3f {
-    let p = -(2.0 * frag_coord - resolution) / resolution.y;
-    return camera * normalize(vec3f(p, camera_fl));
 }
 
 // Temporal reprojection is used to reduce noise.
@@ -53,11 +39,11 @@ fn load_camera(texture: texture_storage_2d<rgba32float, read_write>) -> mat4x4f 
     );
 }
 
-fn reproject_pos(camera: mat3x3f, pos: vec3f, resolution: vec2f, old_cam: mat4x4f, camera_fl: f32, camera_translation: vec3f) -> vec2f {
+fn reproject_pos(camera: mat3x3f, pos: vec3f, resolution: vec2f, old_cam: mat4x4f, camera_fl: f32, camera_ro: vec3f) -> vec2f {
     let old_cam_reconstructed = mat4x4f(
-        vec4f(camera[0], -dot(camera[0], camera_translation)),
-        vec4f(camera[1], -dot(camera[1], camera_translation)),
-        vec4f(camera[2], -dot(camera[2], camera_translation)),
+        vec4f(camera[0], -dot(camera[0], camera_ro)),
+        vec4f(camera[1], -dot(camera[1], camera_ro)),
+        vec4f(camera[2], -dot(camera[2], camera_ro)),
         vec4f(0.0, 0.0, 0.0, 1.0),
     );
     let wpos = vec4f(pos, 1.0);
