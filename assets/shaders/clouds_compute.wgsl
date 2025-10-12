@@ -3,6 +3,9 @@
 const SCENE_SCALE = 10.0;
 const INV_SCENE_SCALE = 0.1;
 
+const WORLEY_RESOLUTION = 32;
+const WORLEY_RESOLUTION_F32 = 32.0;
+
 struct Config {
     march_steps: u32,
     self_shadow_steps: u32,
@@ -39,7 +42,7 @@ struct Config {
 
 @group(1) @binding(0) var clouds_render_texture: texture_storage_2d<rgba32float, read_write>;
 @group(1) @binding(1) var clouds_atlas_texture: texture_storage_2d<rgba32float, read_write>;
-@group(1) @binding(2) var clouds_worley_texture: texture_storage_2d<rgba32float, read_write>;
+@group(1) @binding(2) var clouds_worley_texture: texture_storage_3d<rgba32float, read_write>;
 @group(1) @binding(3) var sky_texture: texture_storage_2d<rgba32float, read_write>;
 
 
@@ -73,16 +76,12 @@ fn cloud_map_detail(position: vec3f) -> f32 {
     let p = abs(position) * (0.0016 * config.base_scale * config.detail_scale);
 
     // TODO: add bilinear filtering
-    var yi = p.y % 32.0;
-    var offset_a = vec2i(i32(yi % 8.0), i32(floor(yi / 8.0) % 4.0)) * 34 + 1;
-    let coord_a = ((p.xz % 32.0) + vec2f(offset_a.xy) + 1.0);
-    let a = textureLoad(clouds_worley_texture, abs(vec2u(u32(coord_a.x) , u32(coord_a.y)))).r;
+    var p1 = p % 32.0;
+    let a = textureLoad(clouds_worley_texture, vec3u(u32(p1.x), u32(p1.y), u32(p1.z))).r;
 
     // TODO: add bilinear filtering
-    yi = (p.y + 1.0) % 32.0;
-    var offset_b = vec2i((i32(yi % 8.0)), i32(floor(yi / 8.0) % 4.0)) * 34 + 1;
-    let coord_b = ((p.xz % 32.0) + vec2f(offset_b.xy) + 1.);
-    let b = textureLoad(clouds_worley_texture, abs(vec2u(u32(coord_b.x) , u32(coord_b.y)))).r;
+    let p2 = (p + 1.0) % 32.0;
+    let b = textureLoad(clouds_worley_texture, vec3u(u32(p2.x), u32(p2.y), u32(p2.z))).r;
 
     return mix(a, b, fract(p.y));
 }
@@ -256,11 +255,7 @@ fn render_clouds_atlas(frag_coord: vec2f) -> vec4f {
     );
 }
 
-fn render_clouds_worley(frag_coord: vec2f) -> vec4f {
-    let z = floor(frag_coord.x / 34.0) + 8.0 * floor(frag_coord.y / 34.0);
-    let uv = (frag_coord.xy % 34.0) - 1.0;
-    let coord = vec3f(uv, z) / 32.0;
-
+fn render_clouds_worley(coord: vec3f) -> vec4f {
     let r = common::tilable_voronoi(coord, 16, 3.0);
     let g = common::tilable_voronoi(coord, 4, 8.0);
     let b = common::tilable_voronoi(coord, 4, 16.0);
@@ -322,13 +317,19 @@ fn init(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
     let index = vec2f(f32(invocation_id.x), f32(invocation_id.y));
     let inverted_y_coord = config.render_resolution.y - index.y;
 
+    let worley_coord = vec2f(0.5) + vec2f(index.x, inverted_y_coord);
+
+    let z = floor(worley_coord.x / WORLEY_RESOLUTION_F32) + 8.0 * floor(worley_coord.y / WORLEY_RESOLUTION_F32);
+    let xy = vec2f(index.x, inverted_y_coord) % WORLEY_RESOLUTION_F32;
+    let xyz = vec3f(xy, z);
+
+    let worley_col = render_clouds_worley(xyz / WORLEY_RESOLUTION_F32);
     let atlas_col = render_clouds_atlas(vec2f(index.x, inverted_y_coord));
-    let worley_col = render_clouds_worley(vec2f(0.5) + vec2f(index.x, inverted_y_coord));
 
     storageBarrier();
 
     textureStore(clouds_atlas_texture, invocation_id.xy, atlas_col);
-    textureStore(clouds_worley_texture, invocation_id.xy, worley_col);
+    textureStore(clouds_worley_texture, vec3u(u32(xyz.x), u32(xyz.y), u32(xyz.z)), worley_col);
 }
 
 @compute @workgroup_size(8, 8, 1)
