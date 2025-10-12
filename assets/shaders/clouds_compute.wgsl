@@ -239,7 +239,7 @@ fn render_clouds_atlas(frag_coord: vec2f) -> vec4f {
     return vec4f(
         mix(
             1.0,
-            common::tilable_fbm(coord, 7, 4),
+            common::tilable_perlin_fbm(coord, 7, 4),
             mfbm
         ) * mix(
             1.0,
