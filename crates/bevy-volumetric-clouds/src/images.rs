@@ -39,11 +39,11 @@ pub fn build_images(
 
     let mut cloud_worley_image = Image::new_fill(
         Extent3d {
-            width: IMAGE_SIZE,
-            height: IMAGE_SIZE,
-            depth_or_array_layers: 1,
+            width: 32,
+            height: 32,
+            depth_or_array_layers: 32,
         },
-        TextureDimension::D2,
+        TextureDimension::D3,
         &[0; 4 * 4 * 2],
         TextureFormat::Rgba32Float,
         RenderAssetUsages::RENDER_WORLD,

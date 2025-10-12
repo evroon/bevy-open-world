@@ -89,7 +89,7 @@ pub struct CloudsImage {
     #[storage_texture(1, image_format = Rgba32Float, access = ReadWrite)]
     pub cloud_atlas_image: Handle<Image>,
 
-    #[storage_texture(2, image_format = Rgba32Float, access = ReadWrite, dimension = "2d")]
+    #[storage_texture(2, image_format = Rgba32Float, access = ReadWrite, dimension = "3d")]
     pub cloud_worley_image: Handle<Image>,
 
     #[storage_texture(3, image_format = Rgba32Float, access = ReadWrite)]
