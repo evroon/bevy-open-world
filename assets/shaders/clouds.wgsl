@@ -16,7 +16,7 @@
 @group(1) @binding(102) var clouds_atlas_texture: texture_2d<f32>;
 @group(1) @binding(103) var clouds_atlas_sampler: sampler;
 
-@group(1) @binding(104) var clouds_worley_texture: texture_3d<f32>;
+@group(1) @binding(104) var clouds_worley_texture: texture_2d<f32>;
 @group(1) @binding(105) var clouds_worley_sampler: sampler;
 
 @group(3) @binding(106) var sky_texture: texture_2d<f32>;

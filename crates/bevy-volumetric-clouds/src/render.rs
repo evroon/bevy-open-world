@@ -14,7 +14,7 @@ pub struct CloudsMaterial {
     #[sampler(103, visibility(vertex, fragment))]
     pub cloud_atlas_image: Handle<Image>,
 
-    #[texture(104, visibility(vertex, fragment), dimension = "3d")]
+    #[texture(104, visibility(vertex, fragment), dimension = "2d")]
     #[sampler(105, visibility(vertex, fragment))]
     pub cloud_worley_image: Handle<Image>,
 

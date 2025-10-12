@@ -1,7 +1,7 @@
 #import bevy_open_world::common
 
-const WORLEY_RESOLUTION = 32;
-const WORLEY_RESOLUTION_F32 = f32(WORLEY_RESOLUTION);
+const SCENE_SCALE = 10.0;
+const INV_SCENE_SCALE = 0.1;
 
 struct Config {
     march_steps: u32,
@@ -26,27 +26,32 @@ struct Config {
     detail_scale: f32,
     sun_dir: vec4f,
     sun_color: vec4f,
-    camera_translation: vec4f,
+    camera_ro: vec4f,
     camera_fl: f32,
     debug: f32,
     time: f32,
     reprojection_strength: f32,
     render_resolution: vec2f,
-    inverse_camera_view: mat3x3f,
-    inverse_camera_projection: mat3x3f,
-    wind_displacement: vec3f,
+    camera: mat3x3f,
 };
 
 @group(0) @binding(0) var<uniform> config: Config;
 
 @group(1) @binding(0) var clouds_render_texture: texture_storage_2d<rgba32float, read_write>;
 @group(1) @binding(1) var clouds_atlas_texture: texture_storage_2d<rgba32float, read_write>;
-@group(1) @binding(2) var clouds_worley_texture: texture_storage_3d<rgba32float, read_write>;
+@group(1) @binding(2) var clouds_worley_texture: texture_storage_2d<rgba32float, read_write>;
 @group(1) @binding(3) var sky_texture: texture_storage_2d<rgba32float, read_write>;
 
-struct RaymarchResult {
-    dist: f32,
-    color: vec4f,
+
+fn henyey_greenstein(ray_dot_sun: f32, g: f32) -> f32 {
+    let g_squared = g * g;
+    return (1.0 - g_squared) / pow(1.0 + g_squared - 2.0 * g * ray_dot_sun, 1.5);
+}
+
+fn intersect_cloud_sphere(ray_dir: vec3f, r: f32) -> f32 {
+    let b = config.earth_radius * ray_dir.y;
+    let d = b * b + r * r + 2.0 * config.earth_radius * r;
+    return sqrt(d) - b;
 }
 
 fn cloud_map_base(p: vec3f, normalized_height: f32) -> f32 {
@@ -64,15 +69,20 @@ fn cloud_map_base(p: vec3f, normalized_height: f32) -> f32 {
 }
 
 fn cloud_map_detail(position: vec3f) -> f32 {
+    // TODO: 3d lookup in 2d texture
     let p = abs(position) * (0.0016 * config.base_scale * config.detail_scale);
 
     // TODO: add bilinear filtering
-    var p1 = p % 32.0;
-    let a = textureLoad(clouds_worley_texture, vec3u(u32(p1.x), u32(p1.y), u32(p1.z))).r;
+    var yi = p.y % 32.0;
+    var offset_a = vec2i(i32(yi % 8.0), i32(floor(yi / 8.0) % 4.0)) * 34 + 1;
+    let coord_a = ((p.xz % 32.0) + vec2f(offset_a.xy) + 1.0);
+    let a = textureLoad(clouds_worley_texture, abs(vec2u(u32(coord_a.x) , u32(coord_a.y)))).r;
 
     // TODO: add bilinear filtering
-    let p2 = (p + 1.0) % 32.0;
-    let b = textureLoad(clouds_worley_texture, vec3u(u32(p2.x), u32(p2.y), u32(p2.z))).r;
+    yi = (p.y + 1.0) % 32.0;
+    var offset_b = vec2i((i32(yi % 8.0)), i32(floor(yi / 8.0) % 4.0)) * 34 + 1;
+    let coord_b = ((p.xz % 32.0) + vec2f(offset_b.xy) + 1.);
+    let b = textureLoad(clouds_worley_texture, abs(vec2u(u32(coord_b.x) , u32(coord_b.y)))).r;
 
     return mix(a, b, fract(p.y));
 }
@@ -104,46 +114,39 @@ fn cloud_map(pos: vec3f, normalized_height: f32) -> f32 {
 }
 
 fn volumetric_shadow(origin: vec3f, ray_dot_sun: f32) -> f32{
-    var ray_step_size = config.shadow_march_step_size;
-    var distance_along_ray = ray_step_size * 0.5;
+    var dd = config.shadow_march_step_size;
+    var d = dd * 0.5;
     var shadow = 1.0;
     let clouds_height = config.top - config.bottom;
 
     for (var s: u32 = 0; s < config.self_shadow_steps; s++) {
-        let pos = origin + config.sun_dir.xyz * distance_along_ray;
+        let pos = origin + config.sun_dir.xyz * d;
         let normalized_height = (length(pos) - (config.earth_radius + config.bottom)) / clouds_height;
 
         if (normalized_height > 1.0) { return shadow; };
 
         let density = cloud_map(pos, normalized_height);
-        shadow *= exp(-density * ray_step_size);
+        shadow *= exp(-density * dd);
 
-        ray_step_size *= config.shadow_march_step_multiply;
-        distance_along_ray += ray_step_size;
+        dd *= config.shadow_march_step_multiply;
+        d += dd;
     }
-
     return shadow;
 }
 
-fn henyey_greenstein(ray_dot_sun: f32, g: f32) -> f32 {
-    let g_squared = g * g;
-    return (1.0 - g_squared) / pow(1.0 + g_squared - 2.0 * g * ray_dot_sun, 1.5);
+struct RenderCloudsResult {
+    dist: f32,
+    color: vec4f,
 }
 
-fn intersect_earth_sphere(ray_dir: vec3f, radius: f32) -> f32 {
-    let bottom = config.earth_radius * ray_dir.y;
-    let d = bottom * bottom + radius * radius + 2.0 * config.earth_radius * radius;
-    return sqrt(d) - bottom;
-}
-
-fn raymarch(_ray_origin: vec3f, ray_dir: vec3f, _dist: f32) -> RaymarchResult {
+fn raymarch(_ray_origin: vec3f, ray_dir: vec3f, _dist: f32) -> RenderCloudsResult {
     var dist = _dist;
 
     if (ray_dir.y < 0.0) {
-        return RaymarchResult(dist, vec4f(0.0, 0.0, 0.0, 10.0));
+        return RenderCloudsResult(dist, vec4f(0.0, 0.0, 0.0, 10.0));
     }
 
-    let ro_xz = _ray_origin.xz;
+    let ro_xz = _ray_origin.xz * vec2(SCENE_SCALE, SCENE_SCALE);
 
     let ray_origin = vec3f(
         ro_xz.x,
@@ -151,11 +154,11 @@ fn raymarch(_ray_origin: vec3f, ray_dir: vec3f, _dist: f32) -> RaymarchResult {
         ro_xz.y
     );
 
-    let start = intersect_earth_sphere(ray_dir, config.bottom);
-    var end = intersect_earth_sphere(ray_dir, config.top);
+    let start = intersect_cloud_sphere(ray_dir, config.bottom);
+    var end = intersect_cloud_sphere(ray_dir, config.top);
 
     if (start > dist) {
-        return RaymarchResult(dist, vec4f(0.0, 0.0, 0.0, 10.0));
+        return RenderCloudsResult(dist, vec4f(0.0, 0.0, 0.0, 10.0));
     }
 
     end = min(end, dist);
@@ -208,7 +211,7 @@ fn raymarch(_ray_origin: vec3f, ray_dir: vec3f, _dist: f32) -> RaymarchResult {
         dir_length += step_distance;
     }
 
-    return RaymarchResult(dist, vec4f(scattered_light, transmittance));
+    return RenderCloudsResult(dist, vec4f(scattered_light, transmittance));
 }
 
 // Fast skycolor function by Íñigo Quílez
@@ -237,7 +240,7 @@ fn render_clouds_atlas(frag_coord: vec2f) -> vec4f {
     return vec4f(
         mix(
             1.0,
-            common::tilable_perlin_fbm(coord, 7, 4),
+            common::tilable_fbm(coord, 7, 4),
             mfbm
         ) * mix(
             1.0,
@@ -253,7 +256,11 @@ fn render_clouds_atlas(frag_coord: vec2f) -> vec4f {
     );
 }
 
-fn render_clouds_worley(coord: vec3f) -> vec4f {
+fn render_clouds_worley(frag_coord: vec2f) -> vec4f {
+    let z = floor(frag_coord.x / 34.0) + 8.0 * floor(frag_coord.y / 34.0);
+    let uv = (frag_coord.xy % 34.0) - 1.0;
+    let coord = vec3f(uv, z) / 32.0;
+
     let r = common::tilable_voronoi(coord, 16, 3.0);
     let g = common::tilable_voronoi(coord, 4, 8.0);
     let b = common::tilable_voronoi(coord, 4, 16.0);
@@ -310,33 +317,18 @@ fn main_image(frag_coord: vec2f, camera: mat3x3f, old_cam: mat4x4f, ray_dir: vec
     return mix(col, original_color, config.reprojection_strength);
 }
 
-fn move_clouds_with_wind(time: f32) -> vec3f {
-    return config.camera_translation.xyz - config.wind_displacement;
-}
-
-fn get_ray(camera: mat3x3f, frag_coord: vec2f, resolution: vec2f, camera_fl: f32) -> vec3f {
-    let p = -(2.0 * frag_coord - resolution) / resolution.y;
-    return camera * normalize(vec3f(p, camera_fl));
-}
-
 @compute @workgroup_size(8, 8, 1)
 fn init(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
     let index = vec2f(f32(invocation_id.x), f32(invocation_id.y));
     let inverted_y_coord = config.render_resolution.y - index.y;
 
-    let worley_coord = vec2f(0.5) + vec2f(index.x, inverted_y_coord);
-
-    let z = floor(worley_coord.x / WORLEY_RESOLUTION_F32) + 8.0 * floor(worley_coord.y / WORLEY_RESOLUTION_F32);
-    let xy = vec2f(index.x, inverted_y_coord) % WORLEY_RESOLUTION_F32;
-    let xyz = vec3f(xy, z);
-
-    let worley_col = render_clouds_worley(xyz / WORLEY_RESOLUTION_F32);
     let atlas_col = render_clouds_atlas(vec2f(index.x, inverted_y_coord));
+    let worley_col = render_clouds_worley(vec2f(0.5) + vec2f(index.x, inverted_y_coord));
 
     storageBarrier();
 
     textureStore(clouds_atlas_texture, invocation_id.xy, atlas_col);
-    textureStore(clouds_worley_texture, vec3u(u32(xyz.x), u32(xyz.y), u32(xyz.z)), worley_col);
+    textureStore(clouds_worley_texture, invocation_id.xy, worley_col);
 }
 
 @compute @workgroup_size(8, 8, 1)
@@ -347,10 +339,10 @@ fn update(@builtin(global_invocation_id) invocation_id: vec3<u32>, @builtin(num_
     let old_cam = common::load_camera(clouds_render_texture);
     var frag_coord = vec2f(index.x + 0.5, config.render_resolution.y - 0.5 - index.y);
 
-    let camera = -config.inverse_camera_view;
+    let camera = config.camera;
 
-    var ray_origin = move_clouds_with_wind(config.time);
-    var ray_dir = get_ray(camera, frag_coord, config.render_resolution.xy, config.camera_fl);
+    var ray_origin = common::get_ro(config.time, config.camera_ro.xyz);
+    var ray_dir = common::get_ray(camera, frag_coord, config.render_resolution.xy, config.camera_fl);
     var col = main_image(frag_coord, camera, old_cam, ray_dir, ray_origin);
 
     storageBarrier();

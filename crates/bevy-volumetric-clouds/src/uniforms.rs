@@ -31,15 +31,13 @@ pub struct CloudsUniform {
     pub detail_scale: f32,
     pub sun_dir: Vec4,
     pub sun_color: Vec4,
-    pub camera_translation: Vec4,
+    pub camera_ro: Vec4,
     pub camera_fl: f32,
     pub debug: f32,
     pub time: f32,
     pub reprojection_strength: f32,
     pub render_resolution: Vec2,
-    pub inverse_camera_view: Mat3,
-    pub inverse_camera_projection: Mat3,
-    pub wind_displacement: Vec3,
+    pub camera: Mat3,
 }
 
 impl Default for CloudsUniform {
@@ -67,15 +65,13 @@ impl Default for CloudsUniform {
             detail_scale: 0.0,
             sun_dir: Vec4::ZERO,
             sun_color: Vec4::ZERO,
-            camera_translation: Vec4::ZERO,
+            camera_ro: Vec4::ZERO,
             camera_fl: 0.0,
             debug: 0.0,
             time: 0.0,
             reprojection_strength: 0.95,
             render_resolution: Vec2::new(1920.0, 1080.0),
-            inverse_camera_view: Mat3::IDENTITY,
-            inverse_camera_projection: Mat3::IDENTITY,
-            wind_displacement: Vec3::new(-11.0, 0.0, 23.0),
+            camera: Mat3::IDENTITY,
         }
     }
 }
@@ -93,7 +89,7 @@ pub struct CloudsImage {
     #[storage_texture(1, image_format = Rgba32Float, access = ReadWrite)]
     pub cloud_atlas_image: Handle<Image>,
 
-    #[storage_texture(2, image_format = Rgba32Float, access = ReadWrite, dimension = "3d")]
+    #[storage_texture(2, image_format = Rgba32Float, access = ReadWrite, dimension = "2d")]
     pub cloud_worley_image: Handle<Image>,
 
     #[storage_texture(3, image_format = Rgba32Float, access = ReadWrite)]
