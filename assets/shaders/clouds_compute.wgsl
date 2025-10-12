@@ -26,13 +26,15 @@ struct Config {
     detail_scale: f32,
     sun_dir: vec4f,
     sun_color: vec4f,
-    camera_ro: vec4f,
+    camera_translation: vec4f,
     camera_fl: f32,
     debug: f32,
     time: f32,
     reprojection_strength: f32,
     render_resolution: vec2f,
-    camera: mat3x3f,
+    inverse_camera_view: mat3x3f,
+    inverse_camera_projection: mat3x3f,
+    wind_displacement: vec3f,
 };
 
 @group(0) @binding(0) var<uniform> config: Config;
@@ -309,7 +311,7 @@ fn main_image(frag_coord: vec2f, camera: mat3x3f, old_cam: mat4x4f, ray_dir: vec
 }
 
 fn move_clouds_with_wind(time: f32) -> vec3f {
-    return config.camera_ro.xyz;
+    return config.camera_translation.xyz - config.wind_displacement;
 }
 
 fn get_ray(camera: mat3x3f, frag_coord: vec2f, resolution: vec2f, camera_fl: f32) -> vec3f {
@@ -345,7 +347,7 @@ fn update(@builtin(global_invocation_id) invocation_id: vec3<u32>, @builtin(num_
     let old_cam = common::load_camera(clouds_render_texture);
     var frag_coord = vec2f(index.x + 0.5, config.render_resolution.y - 0.5 - index.y);
 
-    let camera = config.camera;
+    let camera = -config.inverse_camera_view;
 
     var ray_origin = move_clouds_with_wind(config.time);
     var ray_dir = get_ray(camera, frag_coord, config.render_resolution.xy, config.camera_fl);
