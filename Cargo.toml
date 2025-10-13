@@ -21,7 +21,7 @@ dev = ["bevy/dynamic_linking"]
 [workspace.dependencies]
 bevy = { version = "0.17.2", features=["file_watcher", "jpeg"]}
 bevy_panorbit_camera = "0.28.0"
-bevy_egui = "0.37.0"
+bevy_egui = "0.37.1"
 wayland-sys = { version="0.31.7", features = ["dlopen"] }
 
 [dependencies]
