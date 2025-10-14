@@ -27,7 +27,6 @@ struct Config {
     sun_dir: vec4f,
     sun_color: vec4f,
     camera_translation: vec4f,
-    camera_fl: f32,
     debug: f32,
     time: f32,
     reprojection_strength: f32,
@@ -298,7 +297,6 @@ fn main_image(frag_coord: vec2f, camera: mat4x4f, old_cam: mat4x4f, ray_dir: vec
         ray_origin + ray_dir * dist,
         config.render_resolution.xy,
         old_cam,
-        config.camera_fl,
         ray_origin
     ) * config.render_resolution;
 

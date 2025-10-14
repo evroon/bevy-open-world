@@ -43,7 +43,7 @@ fn load_camera(texture: texture_storage_2d<rgba32float, read_write>) -> mat4x4f 
     );
 }
 
-fn reproject_pos(camera: mat4x4f, pos: vec3f, resolution: vec2f, old_cam: mat4x4f, camera_fl: f32, camera_translation: vec3f) -> vec2f {
+fn reproject_pos(camera: mat4x4f, pos: vec3f, resolution: vec2f, old_cam: mat4x4f, camera_translation: vec3f) -> vec2f {
     let camera_col_0 = vec3f(camera[0][0], camera[0][1], camera[0][2]);
     let camera_col_1 = vec3f(camera[1][0], camera[1][1], camera[1][2]);
     let camera_col_2 = vec3f(camera[2][0], camera[2][1], camera[2][2]);
@@ -56,7 +56,7 @@ fn reproject_pos(camera: mat4x4f, pos: vec3f, resolution: vec2f, old_cam: mat4x4
     );
     let wpos = vec4f(pos, 1.0);
     let cpos = wpos * old_cam_reconstructed;
-    let npos = camera_fl * -cpos.xy / cpos.z;
+    let npos = -cpos.xy / cpos.z;
     return 0.5 + 0.5 * npos * vec2f(resolution.y / resolution.x, 1.0);
 }
 
