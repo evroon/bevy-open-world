@@ -347,7 +347,7 @@ fn update(@builtin(global_invocation_id) invocation_id: vec3<u32>, @builtin(num_
     let old_cam = common::load_camera(clouds_render_texture);
     var frag_coord = vec2f(index.x + 0.5, config.render_resolution.y - 0.5 - index.y);
 
-    let camera = -config.inverse_camera_view;
+    let camera = config.inverse_camera_view;
 
     var ray_origin = move_clouds_with_wind(config.time);
     var ray_dir = get_ray(camera, frag_coord, config.render_resolution.xy, config.camera_fl);

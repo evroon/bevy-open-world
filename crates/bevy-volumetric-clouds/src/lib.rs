@@ -78,7 +78,7 @@ fn update_camera_in_config(
     let (camera, projection) = *cam_query;
 
     let view_mat = camera.to_matrix();
-    config.inverse_camera_view = Mat3::from_cols(
+    config.inverse_camera_view = -Mat3::from_cols(
         view_mat.col(0).xyz(),
         view_mat.col(1).xyz(),
         view_mat.col(2).xyz(),
