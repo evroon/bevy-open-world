@@ -92,7 +92,7 @@ impl Default for CloudsConfig {
             camera_fl: 2.0,
             debug: 1.0,
             time: 0.0,
-            reprojection_strength: 0.95,
+            reprojection_strength: 0.0,
             ui_visible: true,
             render_resolution: Vec2::new(1920.0, 1080.0),
             inverse_camera_view: Mat4::IDENTITY,

@@ -311,7 +311,7 @@ fn main_image(frag_coord: vec2f, camera: mat4x4f, old_cam: mat4x4f, ray_dir: vec
 }
 
 fn get_ray_origin(time: f32) -> vec3f {
-    return config.camera_translation.xyz - config.wind_displacement;
+    return config.camera_translation.xyz;// - config.wind_displacement;
 }
 
 fn get_ray_direction(frag_coord: vec2f) -> vec3f {
@@ -357,11 +357,9 @@ fn update(@builtin(global_invocation_id) invocation_id: vec3<u32>, @builtin(num_
     let old_cam = common::load_camera(clouds_render_texture);
     var frag_coord = vec2f(index.x + 0.5, config.render_resolution.y - 0.5 - index.y);
 
-    let camera = config.inverse_camera_view;
-
     var ray_origin = get_ray_origin(config.time);
-    var ray_dir = get_ray_direction(frag_coord);
-    var col = main_image(frag_coord, camera, old_cam, ray_dir, ray_origin);
+    var ray_dir = get_ray_direction(vec2f(index.x + 0.5, 0.5 + index.y));
+    var col = main_image(frag_coord, config.inverse_camera_view, old_cam, ray_dir, ray_origin);
 
     storageBarrier();
 
