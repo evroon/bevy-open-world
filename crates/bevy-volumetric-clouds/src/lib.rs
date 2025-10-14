@@ -8,6 +8,7 @@ mod ui;
 pub mod uniforms;
 use bevy::{
     asset::{Handle, uuid_handle},
+    camera::CameraProjection,
     prelude::*,
 };
 
@@ -71,13 +72,28 @@ fn clouds_setup(
 }
 
 fn update_camera_in_config(
-    camera: Single<&GlobalTransform, With<Camera>>,
+    cam_query: Single<(&GlobalTransform, &Projection), With<Camera>>,
     mut config: ResMut<CloudsConfig>,
 ) {
-    let inv_mat = camera.to_matrix();
-    config.camera = -Mat3::from_cols(
-        inv_mat.col(0).xyz(),
-        inv_mat.col(1).xyz(),
-        inv_mat.col(2).xyz(),
+    let (camera, projection) = *cam_query;
+
+    let view_mat = camera.to_matrix();
+    config.inverse_camera_view = -Mat3::from_cols(
+        view_mat.col(0).xyz(),
+        view_mat.col(1).xyz(),
+        view_mat.col(2).xyz(),
     );
+
+    let proj_mat = match projection {
+        Projection::Perspective(perspective) => perspective.get_clip_from_view(),
+        _ => {
+            panic!("Only perspective camera projections are supported currently")
+        }
+    };
+    config.inverse_camera_projection = Mat3::from_cols(
+        proj_mat.col(0).xyz(),
+        proj_mat.col(1).xyz(),
+        proj_mat.col(2).xyz(),
+    )
+    .inverse();
 }
