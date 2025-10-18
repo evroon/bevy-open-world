@@ -324,7 +324,7 @@ fn get_ray_direction(frag_coord: vec2f) -> vec3f {
     let ray_eye = config.inverse_camera_projection * ray_clip;
     let ray_world = config.inverse_camera_view * vec4f(ray_eye.xy, -1.0, 0.0);
 
-    return ray_world.xyz;
+    return normalize(ray_world.xyz);
 }
 
 @compute @workgroup_size(8, 8, 1)
