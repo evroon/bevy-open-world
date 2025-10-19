@@ -94,7 +94,7 @@ impl Default for CloudsConfig {
             camera_translation: Vec4::new(3980.0, 730.0, -2650.0, 0.0),
             debug: 1.0,
             time: 0.0,
-            reprojection_strength: 0.95,
+            reprojection_strength: 0.90,
             ui_visible: true,
             render_resolution: Vec2::new(1920.0, 1080.0),
             wind_velocity: Vec3::new(-1.1, 0.0, 2.3),
