@@ -292,18 +292,10 @@ fn main_image(frag_coord: vec2f, camera: mat4x4f, old_cam: mat4x4f, ray_dir: vec
         return col;
     }
 
-    let reprojected_pos = common::reproject_pos(
-        camera,
-        ray_origin + ray_dir * dist,
-        config.render_resolution.xy,
-        old_cam,
-        ray_origin
-    ) * config.render_resolution;
-
     let original_color = textureLoad(
         clouds_render_texture,
-        vec2u(u32(reprojected_pos.x),
-        u32(config.render_resolution.y - 1.0) - u32(reprojected_pos.y))
+        vec2u(u32(frag_coord.x),
+        u32(config.render_resolution.y - 1.0) - u32(frag_coord.y))
     );
     return mix(col, original_color, config.reprojection_strength);
 }
