@@ -32,13 +32,12 @@ pub struct CloudsUniform {
     pub sun_dir: Vec4,
     pub sun_color: Vec4,
     pub camera_translation: Vec4,
-    pub camera_fl: f32,
     pub debug: f32,
     pub time: f32,
     pub reprojection_strength: f32,
     pub render_resolution: Vec2,
-    pub inverse_camera_view: Mat3,
-    pub inverse_camera_projection: Mat3,
+    pub inverse_camera_view: Mat4,
+    pub inverse_camera_projection: Mat4,
     pub wind_displacement: Vec3,
 }
 
@@ -68,13 +67,12 @@ impl Default for CloudsUniform {
             sun_dir: Vec4::ZERO,
             sun_color: Vec4::ZERO,
             camera_translation: Vec4::ZERO,
-            camera_fl: 0.0,
             debug: 0.0,
             time: 0.0,
             reprojection_strength: 0.95,
             render_resolution: Vec2::new(1920.0, 1080.0),
-            inverse_camera_view: Mat3::IDENTITY,
-            inverse_camera_projection: Mat3::IDENTITY,
+            inverse_camera_view: Mat4::IDENTITY,
+            inverse_camera_projection: Mat4::IDENTITY,
             wind_displacement: Vec3::new(-11.0, 0.0, 23.0),
         }
     }

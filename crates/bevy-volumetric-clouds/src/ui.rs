@@ -73,8 +73,6 @@ pub fn clouds_ui(config: &mut CloudsConfig, ui: &mut Ui) {
     ui.add(egui::Slider::new(&mut config.base_scale, 0.1..=100.0).text("Base scale"));
     ui.end_row();
     ui.add(egui::Slider::new(&mut config.detail_scale, 1.0..=100.0).text("Detail scale"));
-    ui.end_row();
-    ui.add(egui::Slider::new(&mut config.camera_fl, 1.0..=10.0).text("camera_fl"));
     // ui.end_row();
     // ui.add(egui::Slider::new(&mut config.debug, 0.0001..=100.0).text("debug"));
     ui.end_row();
