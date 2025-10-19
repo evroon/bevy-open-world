@@ -26,6 +26,12 @@ use super::{
 const WORKGROUP_SIZE: u32 = 8;
 
 #[derive(Resource, Clone, Copy)]
+pub struct CameraMatrices {
+    pub inverse_camera_view: Mat4,
+    pub inverse_camera_projection: Mat4,
+}
+
+#[derive(Resource, Clone, Copy)]
 pub struct CloudsConfig {
     pub march_steps: u32,
     pub self_shadow_steps: u32,
@@ -55,8 +61,6 @@ pub struct CloudsConfig {
     pub reprojection_strength: f32,
     pub ui_visible: bool,
     pub render_resolution: Vec2,
-    pub inverse_camera_view: Mat4,
-    pub inverse_camera_projection: Mat4,
     pub wind_velocity: Vec3,
     pub wind_displacement: Vec3,
 }
@@ -80,8 +84,8 @@ impl Default for CloudsConfig {
             forward_scattering_g: 0.8,
             backward_scattering_g: -0.2,
             scattering_lerp: 0.5,
-            ambient_color_top: Vec4::new(149.0, 167.0, 200.0, 0.0) * (1.5 / 225.),
-            ambient_color_bottom: Vec4::new(39.0, 67.0, 87.0, 0.0) * (1.5 / 225.),
+            ambient_color_top: Vec4::new(149.0, 167.0, 200.0, 0.0) * (1.5 / 225.0),
+            ambient_color_bottom: Vec4::new(39.0, 67.0, 87.0, 0.0) * (1.5 / 225.0),
             min_transmittance: 0.1,
             base_scale: 1.5,
             detail_scale: 42.0,
@@ -90,11 +94,9 @@ impl Default for CloudsConfig {
             camera_translation: Vec4::new(3980.0, 730.0, -2650.0, 0.0),
             debug: 1.0,
             time: 0.0,
-            reprojection_strength: 0.95,
+            reprojection_strength: 0.90,
             ui_visible: true,
             render_resolution: Vec2::new(1920.0, 1080.0),
-            inverse_camera_view: Mat4::IDENTITY,
-            inverse_camera_projection: Mat4::IDENTITY,
             wind_velocity: Vec3::new(-1.1, 0.0, 2.3),
             wind_displacement: Vec3::ZERO,
         }
@@ -107,11 +109,13 @@ pub struct CloudsUniformBindGroup(BindGroup);
 #[derive(Resource)]
 pub struct CloudsImageBindGroup(BindGroup);
 
+#[expect(clippy::too_many_arguments)]
 pub(crate) fn prepare_uniforms_bind_group(
     mut commands: Commands,
     pipeline: Res<CloudsPipeline>,
     render_queue: Res<RenderQueue>,
     mut clouds_uniform_buffer: ResMut<CloudsUniformBuffer>,
+    camera: ResMut<CameraMatrices>,
     clouds_config: Res<CloudsConfig>,
     render_device: Res<RenderDevice>,
     time: Res<Time>,
@@ -143,8 +147,8 @@ pub(crate) fn prepare_uniforms_bind_group(
     buffer.camera_translation = clouds_config.camera_translation;
     buffer.time = time.elapsed_secs_wrapped();
     buffer.reprojection_strength = clouds_config.reprojection_strength;
-    buffer.inverse_camera_view = clouds_config.inverse_camera_view;
-    buffer.inverse_camera_projection = clouds_config.inverse_camera_projection;
+    buffer.inverse_camera_view = camera.inverse_camera_view;
+    buffer.inverse_camera_projection = camera.inverse_camera_projection;
     buffer.wind_displacement += time.delta_secs() * clouds_config.wind_velocity;
 
     clouds_uniform_buffer
@@ -357,7 +361,10 @@ impl Plugin for CloudsComputePlugin {
         render_graph.add_node(CloudsLabel, CloudsNode::default());
         render_graph.add_node_edge(CloudsLabel, bevy::render::graph::CameraDriverLabel);
 
-        render_app.add_systems(ExtractSchedule, (extract_clouds_config, extract_time));
+        render_app.add_systems(
+            ExtractSchedule,
+            (extract_clouds_config, extract_time, extract_camera_matrices),
+        );
     }
 
     fn finish(&self, app: &mut App) {
@@ -373,4 +380,8 @@ fn extract_clouds_config(mut commands: Commands, config: Extract<Res<CloudsConfi
 
 fn extract_time(mut commands: Commands, time: Extract<Res<Time>>) {
     commands.insert_resource(**time);
+}
+
+fn extract_camera_matrices(mut commands: Commands, camera: Extract<Res<CameraMatrices>>) {
+    commands.insert_resource(**camera);
 }
