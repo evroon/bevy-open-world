@@ -12,7 +12,7 @@ use bevy::{
 };
 
 use crate::{
-    compute::CloudsConfig,
+    compute::CameraMatrices,
     images::build_images,
     render::CloudsMaterial,
     shader_utils::ShaderCommonPlugin,
@@ -37,7 +37,7 @@ impl Plugin for CloudsPlugin {
             MaterialPlugin::<CloudsMaterial>::default(),
         ))
         .add_systems(Startup, (clouds_setup, setup_daylight))
-        .add_systems(Update, (update_skybox_transform, update_camera_in_config))
+        .add_systems(Update, (update_skybox_transform, update_camera_matrices))
         .add_systems(EguiPrimaryContextPass, ui_system);
     }
 }
@@ -68,11 +68,15 @@ fn clouds_setup(
         cloud_worley_image,
         sky_image,
     });
+    commands.insert_resource(CameraMatrices {
+        inverse_camera_projection: Mat4::IDENTITY,
+        inverse_camera_view: Mat4::IDENTITY,
+    });
 }
 
-fn update_camera_in_config(
+fn update_camera_matrices(
     cam_query: Single<(&GlobalTransform, &Camera)>,
-    mut config: ResMut<CloudsConfig>,
+    mut config: ResMut<CameraMatrices>,
 ) {
     let (camera_transform, camera) = *cam_query;
     config.inverse_camera_view = camera_transform.to_matrix();

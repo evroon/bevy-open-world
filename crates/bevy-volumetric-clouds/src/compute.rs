@@ -26,6 +26,12 @@ use super::{
 const WORKGROUP_SIZE: u32 = 8;
 
 #[derive(Resource, Clone, Copy)]
+pub struct CameraMatrices {
+    pub inverse_camera_view: Mat4,
+    pub inverse_camera_projection: Mat4,
+}
+
+#[derive(Resource, Clone, Copy)]
 pub struct CloudsConfig {
     pub march_steps: u32,
     pub self_shadow_steps: u32,
@@ -107,16 +113,19 @@ pub struct CloudsUniformBindGroup(BindGroup);
 #[derive(Resource)]
 pub struct CloudsImageBindGroup(BindGroup);
 
+#[expect(clippy::too_many_arguments)]
 pub(crate) fn prepare_uniforms_bind_group(
     mut commands: Commands,
     pipeline: Res<CloudsPipeline>,
     render_queue: Res<RenderQueue>,
     mut clouds_uniform_buffer: ResMut<CloudsUniformBuffer>,
+    camera: ResMut<CameraMatrices>,
     clouds_config: Res<CloudsConfig>,
     render_device: Res<RenderDevice>,
     time: Res<Time>,
 ) {
     let buffer = clouds_uniform_buffer.buffer.get_mut();
+    // let (camera_transform, camera) = *cam_query;
 
     buffer.march_steps = clouds_config.march_steps;
     buffer.self_shadow_steps = clouds_config.self_shadow_steps;
@@ -143,8 +152,8 @@ pub(crate) fn prepare_uniforms_bind_group(
     buffer.camera_translation = clouds_config.camera_translation;
     buffer.time = time.elapsed_secs_wrapped();
     buffer.reprojection_strength = clouds_config.reprojection_strength;
-    buffer.inverse_camera_view = clouds_config.inverse_camera_view;
-    buffer.inverse_camera_projection = clouds_config.inverse_camera_projection;
+    buffer.inverse_camera_view = camera.inverse_camera_view;
+    buffer.inverse_camera_projection = camera.inverse_camera_projection;
     buffer.wind_displacement += time.delta_secs() * clouds_config.wind_velocity;
 
     clouds_uniform_buffer
@@ -357,7 +366,10 @@ impl Plugin for CloudsComputePlugin {
         render_graph.add_node(CloudsLabel, CloudsNode::default());
         render_graph.add_node_edge(CloudsLabel, bevy::render::graph::CameraDriverLabel);
 
-        render_app.add_systems(ExtractSchedule, (extract_clouds_config, extract_time));
+        render_app.add_systems(
+            ExtractSchedule,
+            (extract_clouds_config, extract_time, extract_camera_matrices),
+        );
     }
 
     fn finish(&self, app: &mut App) {
@@ -373,4 +385,8 @@ fn extract_clouds_config(mut commands: Commands, config: Extract<Res<CloudsConfi
 
 fn extract_time(mut commands: Commands, time: Extract<Res<Time>>) {
     commands.insert_resource(**time);
+}
+
+fn extract_camera_matrices(mut commands: Commands, camera: Extract<Res<CameraMatrices>>) {
+    commands.insert_resource(**camera);
 }
