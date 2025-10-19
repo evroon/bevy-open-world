@@ -18,44 +18,27 @@ fn remap(v: f32, s: f32, e: f32) -> f32 {
 }
 
 // Temporal reprojection is used to reduce noise.
-// The temporal repojection code is based on code from the shader
-// Rain Forest (by Íñigo Quílez):
-//
-// https://www.shadertoy.com/view/4ttSWf
 fn save_camera(camera: mat4x4f, frag_coord: vec2f, ray_origin: vec3f) -> vec4f {
-    let camera_col_0 = vec3f(camera[0][0], camera[0][1], camera[0][2]);
-    let camera_col_1 = vec3f(camera[1][0], camera[1][1], camera[1][2]);
-    let camera_col_2 = vec3f(camera[2][0], camera[2][1], camera[2][2]);
-
-    if abs(frag_coord.x - 4.5) < 0.5 { return vec4f(camera_col_2, -dot(camera_col_2, ray_origin)); }
-    if abs(frag_coord.x - 3.5) < 0.5 { return vec4f(camera_col_1, -dot(camera_col_1, ray_origin)); }
-    if abs(frag_coord.x - 2.5) < 0.5 { return vec4f(camera_col_0, -dot(camera_col_0, ray_origin)); }
+    if frag_coord.x < 2.0 { return camera[0]; }
+    if frag_coord.x < 3.0 { return camera[1]; }
+    if frag_coord.x < 4.0 { return camera[2]; }
+    if frag_coord.x < 5.0 { return camera[3]; }
 
     return vec4f(0.0);
 }
 
 fn load_camera(texture: texture_storage_2d<rgba32float, read_write>) -> mat4x4f {
     return mat4x4f(
+        textureLoad(texture, vec2u(1, 0)),
         textureLoad(texture, vec2u(2, 0)),
         textureLoad(texture, vec2u(3, 0)),
         textureLoad(texture, vec2u(4, 0)),
-        vec4f(0.0, 0.0, 0.0, 1.0)
     );
 }
 
-fn reproject_pos(camera: mat4x4f, pos: vec3f, resolution: vec2f, old_cam: mat4x4f, camera_translation: vec3f) -> vec2f {
-    let camera_col_0 = vec3f(camera[0][0], camera[0][1], camera[0][2]);
-    let camera_col_1 = vec3f(camera[1][0], camera[1][1], camera[1][2]);
-    let camera_col_2 = vec3f(camera[2][0], camera[2][1], camera[2][2]);
-
-    let old_cam_reconstructed = mat4x4f(
-        vec4f(camera_col_0, -dot(camera_col_0, camera_translation)),
-        vec4f(camera_col_1, -dot(camera_col_1, camera_translation)),
-        vec4f(camera_col_2, -dot(camera_col_2, camera_translation)),
-        vec4f(0.0, 0.0, 0.0, 1.0),
-    );
+fn reproject_pos(pos: vec3f, resolution: vec2f, old_cam: mat4x4f, camera_translation: vec3f) -> vec2f {
     let wpos = vec4f(pos, 1.0);
-    let cpos = wpos * old_cam_reconstructed;
+    let cpos = wpos * old_cam;
     let npos = -cpos.xy / cpos.z;
     return 0.5 + 0.5 * npos * vec2f(resolution.y / resolution.x, 1.0);
 }

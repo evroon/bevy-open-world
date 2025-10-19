@@ -263,9 +263,8 @@ fn render_clouds_worley(coord: vec3f) -> vec4f {
 }
 
 fn main_image(frag_coord: vec2f, camera: mat4x4f, old_cam: mat4x4f, ray_dir: vec3f, ray_origin: vec3f) -> vec4f {
-    if (frag_coord.y < 1.5) {
-        if abs(frag_coord.x - 1.5) < 0.5 { return vec4f(camera[0][0], camera[0][1], camera[0][2], 1.0); }
-        if abs(frag_coord.x - 0.5) < 0.5 { return vec4f(config.render_resolution.xy, 0.0, 0.0); }
+    if (frag_coord.y < 1.0) {
+        if frag_coord.x < 1.0 { return vec4f(config.render_resolution.xy, 0.0, 0.0); }
         return common::save_camera(camera, frag_coord, ray_origin);
     }
 
@@ -286,7 +285,7 @@ fn main_image(frag_coord: vec2f, camera: mat4x4f, old_cam: mat4x4f, ray_dir: vec
     }
 
     let old_cam_col = textureLoad(clouds_render_texture, vec2u(1, u32(config.render_resolution.y) - 1));
-    let new_cam_col = vec4f(camera[0][0], camera[0][1], camera[0][2], 0.0);
+    let new_cam_col = camera[0];
 
     if abs(old_cam_col[0] - new_cam_col[0]) > 0.0001 {
         return col;
