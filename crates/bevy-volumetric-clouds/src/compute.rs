@@ -61,8 +61,6 @@ pub struct CloudsConfig {
     pub reprojection_strength: f32,
     pub ui_visible: bool,
     pub render_resolution: Vec2,
-    pub inverse_camera_view: Mat4,
-    pub inverse_camera_projection: Mat4,
     pub wind_velocity: Vec3,
     pub wind_displacement: Vec3,
 }
@@ -99,8 +97,6 @@ impl Default for CloudsConfig {
             reprojection_strength: 0.95,
             ui_visible: true,
             render_resolution: Vec2::new(1920.0, 1080.0),
-            inverse_camera_view: Mat4::IDENTITY,
-            inverse_camera_projection: Mat4::IDENTITY,
             wind_velocity: Vec3::new(-1.1, 0.0, 2.3),
             wind_displacement: Vec3::ZERO,
         }
