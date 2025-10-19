@@ -121,7 +121,6 @@ pub(crate) fn prepare_uniforms_bind_group(
     time: Res<Time>,
 ) {
     let buffer = clouds_uniform_buffer.buffer.get_mut();
-    // let (camera_transform, camera) = *cam_query;
 
     buffer.march_steps = clouds_config.march_steps;
     buffer.self_shadow_steps = clouds_config.self_shadow_steps;
