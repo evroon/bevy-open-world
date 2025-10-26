@@ -69,6 +69,7 @@ fn clouds_setup(
         sky_image,
     });
     commands.insert_resource(CameraMatrices {
+        translation: Vec3::ZERO,
         inverse_camera_projection: Mat4::IDENTITY,
         inverse_camera_view: Mat4::IDENTITY,
     });
@@ -79,6 +80,7 @@ fn update_camera_matrices(
     mut config: ResMut<CameraMatrices>,
 ) {
     let (camera_transform, camera) = *cam_query;
+    config.translation = camera_transform.translation();
     config.inverse_camera_view = camera_transform.to_matrix();
     config.inverse_camera_projection = camera.computed.clip_from_view.inverse();
 }

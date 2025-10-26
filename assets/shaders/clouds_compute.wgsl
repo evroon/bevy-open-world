@@ -26,7 +26,7 @@ struct Config {
     detail_scale: f32,
     sun_dir: vec4f,
     sun_color: vec4f,
-    camera_translation: vec4f,
+    camera_translation: vec3f,
     debug: f32,
     time: f32,
     reprojection_strength: f32,
@@ -300,7 +300,7 @@ fn main_image(frag_coord: vec2f, camera: mat4x4f, old_cam: mat4x4f, ray_dir: vec
 }
 
 fn get_ray_origin(time: f32) -> vec3f {
-    return config.camera_translation.xyz - config.wind_displacement;
+    return config.camera_translation - config.wind_displacement;
 }
 
 fn get_ray_direction(frag_coord: vec2f) -> vec3f {

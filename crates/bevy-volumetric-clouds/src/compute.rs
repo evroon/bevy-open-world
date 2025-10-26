@@ -27,6 +27,7 @@ const WORKGROUP_SIZE: u32 = 8;
 
 #[derive(Resource, Clone, Copy)]
 pub struct CameraMatrices {
+    pub translation: Vec3,
     pub inverse_camera_view: Mat4,
     pub inverse_camera_projection: Mat4,
 }
@@ -55,7 +56,7 @@ pub struct CloudsConfig {
     pub detail_scale: f32,
     pub sun_dir: Vec4,
     pub sun_color: Vec4,
-    pub camera_translation: Vec4,
+    pub camera_translation: Vec3,
     pub debug: f32,
     pub time: f32,
     pub reprojection_strength: f32,
@@ -91,7 +92,7 @@ impl Default for CloudsConfig {
             detail_scale: 42.0,
             sun_dir: Vec4::new(sun_dir.x, sun_dir.y, sun_dir.z, 0.0),
             sun_color: Vec4::new(1.0, 0.9, 0.85, 1.0) * 1.4,
-            camera_translation: Vec4::new(3980.0, 730.0, -2650.0, 0.0),
+            camera_translation: Vec3::new(3980.0, 730.0, -2650.0),
             debug: 1.0,
             time: 0.0,
             reprojection_strength: 0.90,
@@ -144,7 +145,7 @@ pub(crate) fn prepare_uniforms_bind_group(
     buffer.detail_scale = clouds_config.detail_scale;
     buffer.sun_dir = clouds_config.sun_dir;
     buffer.sun_color = clouds_config.sun_color;
-    buffer.camera_translation = clouds_config.camera_translation;
+    buffer.camera_translation = camera.translation;
     buffer.time = time.elapsed_secs_wrapped();
     buffer.reprojection_strength = clouds_config.reprojection_strength;
     buffer.inverse_camera_view = camera.inverse_camera_view;
