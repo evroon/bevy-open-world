@@ -378,11 +378,22 @@ version = "0.1.0"
 dependencies = [
  "bevy 0.17.2",
  "bevy-fly-camera",
+ "bevy-planet",
  "bevy-volumetric-clouds",
  "bevy-where-was-i",
  "bevy_egui",
  "bevy_panorbit_camera",
+ "big_space",
+ "turborand",
  "wayland-sys",
+]
+
+[[package]]
+name = "bevy-planet"
+version = "0.1.0"
+dependencies = [
+ "bevy 0.17.2",
+ "big_space",
 ]
 
 [[package]]
@@ -2289,6 +2300,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "big_space"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "be65a23de201097c5528ffd28e3dc3398e9a1f0f51afbdb07ee69790fe5e4d9c"
+dependencies = [
+ "bevy_app 0.17.2",
+ "bevy_camera",
+ "bevy_color 0.17.2",
+ "bevy_ecs 0.17.2",
+ "bevy_image 0.17.2",
+ "bevy_input 0.17.2",
+ "bevy_log 0.17.2",
+ "bevy_math 0.17.2",
+ "bevy_platform 0.17.2",
+ "bevy_reflect 0.17.2",
+ "bevy_tasks 0.17.2",
+ "bevy_time 0.17.2",
+ "bevy_transform 0.17.2",
+ "bevy_utils 0.17.2",
+ "smallvec",
+]
+
+[[package]]
 name = "bindgen"
 version = "0.70.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3814,6 +3848,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e05c02b5e89bff3b946cedeca278abc628fe811e604f027c45a8aa3cf793d0eb"
 dependencies = [
  "libc",
+]
+
+[[package]]
+name = "instant"
+version = "0.1.13"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e0242819d153cba4b4b05a5a8f2a7e9bbf97b6055b2a002b395c96b5ff3c0222"
+dependencies = [
+ "cfg-if",
 ]
 
 [[package]]
@@ -5933,6 +5976,16 @@ name = "ttf-parser"
 version = "0.25.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d2df906b07856748fa3f6e0ad0cbaa047052d4a7dd609e231c4f72cee8c36f31"
+
+[[package]]
+name = "turborand"
+version = "0.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ffa9ae3c65785079fa553e8aea4ae4b12579b5c5029b4133b54ea3afb2e3e9fa"
+dependencies = [
+ "getrandom 0.2.16",
+ "instant",
+]
 
 [[package]]
 name = "twox-hash"
