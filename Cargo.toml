@@ -23,7 +23,7 @@ bevy = { version = "0.17.2", features=["file_watcher", "jpeg", "bevy_mesh"]}
 bevy_panorbit_camera = "0.28.0"
 bevy_egui = "0.37.1"
 wayland-sys = { version="0.31.7", features = ["dlopen"] }
-big_space = "0.11.0"
+big_space = {version="0.11.0", features=["debug"]}
 
 [dependencies]
 bevy = { workspace = true }

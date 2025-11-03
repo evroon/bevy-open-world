@@ -43,10 +43,11 @@ fn vertex(vertex: Vertex) -> VertexOutput {
 
     let world_pos_length = length(out.world_position.xyz);
     let dir = out.world_position / world_pos_length;
-    out.world_position = dir * planet_material.planet_radius;
+    // out.world_position = dir * planet_material.planet_radius;
 
     out.position = position_world_to_clip(out.world_position.xyz);
     out.world_normal = dir.xyz;
+    // out.world_normal = vertex.world_normal;
     out.uv = vertex.tex_coords;
     return out;
 }

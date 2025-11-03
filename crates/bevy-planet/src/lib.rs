@@ -5,11 +5,7 @@ pub mod system;
 
 use bevy::{pbr::ExtendedMaterial, prelude::*};
 
-use crate::{
-    material::PlanetMaterial,
-    mesh::build_mesh_cache,
-    system::{build_planets, update_quadtree},
-};
+use crate::{material::PlanetMaterial, mesh::build_mesh_cache, system::update_quadtree};
 
 pub const CELL_COUNT: bevy::prelude::UVec2 = UVec2::splat(4);
 pub const CELL_COUNT_F32: bevy::prelude::Vec2 = Vec2::new(CELL_COUNT.x as f32, CELL_COUNT.y as f32);
@@ -25,7 +21,7 @@ impl Plugin for PlanetsPlugin {
         app.add_plugins(MaterialPlugin::<
             ExtendedMaterial<StandardMaterial, PlanetMaterial>,
         >::default())
-            .add_systems(Startup, (build_mesh_cache, build_planets))
+            .add_systems(Startup, build_mesh_cache)
             .add_systems(Update, update_quadtree);
     }
 }

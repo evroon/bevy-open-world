@@ -58,7 +58,7 @@ pub struct MovementSettings {
 
 impl Default for MovementSettings {
     fn default() -> Self {
-        Self { speed: 12_000. }
+        Self { speed: 0.12 }
     }
 }
 
@@ -241,7 +241,7 @@ fn cursor_grab(
 pub struct FlyCameraPlugin;
 impl Plugin for FlyCameraPlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<PlanetMovementSettings>()
+        app.init_resource::<MovementSettings>()
             .init_resource::<RotationSettings>()
             .init_resource::<KeyBindings>()
             .add_systems(

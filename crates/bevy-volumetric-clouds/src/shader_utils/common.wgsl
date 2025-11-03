@@ -45,7 +45,7 @@ fn reproject_pos(pos: vec3f, resolution: vec2f, old_cam: mat4x4f, camera_transla
 
 // Noise functions
 //
-// Hash without Sine by DaveHoskins
+// Hash without Sine by Dave Hoskins
 //
 // https://www.shadertoy.com/view/4djSRW
 fn hash13(_p3: vec3f) -> f32 {
@@ -110,7 +110,7 @@ fn hash33(p: vec3f) -> vec3f
 
 // Gradient noise by iq (modified to be tileable)
 // Alternative to hash_based_noise
-// Source: https://www.shadertoy.com/view/3dVXDc
+// Source: https://www.shadertoy.com/view/3dVXDc @piyushslayer
 fn gradient_noise(x: vec3f, freq: f32) -> f32{
     // grid
     let p = floor(x);

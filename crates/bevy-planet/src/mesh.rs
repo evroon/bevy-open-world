@@ -105,7 +105,6 @@ pub fn rect_to_transform(rect: Rect) -> Transform {
 
 pub fn spawn_mesh(
     commands: &mut Commands,
-    root_entity: &Entity,
     mesh_cache: &Res<MeshCache>,
     rect: Rect,
     root_grid: &(Entity, &Grid),
@@ -113,17 +112,16 @@ pub fn spawn_mesh(
     let (root_grid_id, root_grid) = root_grid;
     let transform = rect_to_transform(rect);
 
-    let (object_cell, _) = root_grid.translation_to_grid(transform.translation);
+    let (object_cell, object_pos) = root_grid.translation_to_grid(transform.translation);
     let entity = commands.spawn((
         object_cell,
         mesh_cache.mesh_3d.clone(),
-        transform,
+        Transform::from_translation(object_pos),
         mesh_cache.material.clone(),
         NoFrustumCulling,
     ));
 
     let eid = entity.id();
-    commands.entity(*root_entity).add_child(eid);
     commands.entity(*root_grid_id).add_child(eid);
     eid
 }

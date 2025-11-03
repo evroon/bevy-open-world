@@ -4,12 +4,13 @@ use bevy::prelude::*;
 use bevy_egui::EguiPlugin;
 use bevy_fly_camera::system::{FlyCam, FlyCameraPlugin};
 use bevy_planet::PlanetsPlugin;
-use bevy_planet::system::UniverseGrid;
+use bevy_planet::system::{UniverseGrid, build_planet};
 use bevy_volumetric_clouds::skybox::system::{setup_daylight, update_skybox_transform};
 use bevy_where_was_i::{WhereWasI, WhereWasIPlugin};
 
 use big_space::plugin::BigSpaceValidationPlugin;
 use big_space::prelude::*;
+
 fn main() {
     App::new()
         .insert_resource(ClearColor(Color::linear_rgb(0.4, 0.4, 0.4)))
@@ -36,7 +37,7 @@ fn main() {
         .add_plugins(EguiPlugin::default())
         .add_plugins(PlanetsPlugin)
         .add_plugins((FlyCameraPlugin, WhereWasIPlugin::default()))
-        .add_systems(Startup, (setup_daylight, setup_camera))
+        .add_systems(Startup, (setup_daylight, build_universe))
         .add_systems(Update, update_skybox_transform)
         .add_plugins((
             FrameTimeDiagnosticsPlugin::default(),
@@ -45,10 +46,10 @@ fn main() {
         .run();
 }
 
-fn setup_camera(mut commands: Commands) {
-    commands.spawn_big_space_default(|root_grid| {
-        root_grid.insert((UniverseGrid(),));
-        root_grid.spawn_spatial((
+fn build_universe(mut commands: Commands) {
+    commands.spawn_big_space(Grid::new(1.0e-5f32, 1.0e-6f32), |universe_grid| {
+        universe_grid.insert((UniverseGrid(),));
+        universe_grid.spawn_spatial((
             Projection::Perspective(PerspectiveProjection {
                 fov: core::f32::consts::PI / 4.0,
                 near: 10e-6,
@@ -59,8 +60,9 @@ fn setup_camera(mut commands: Commands) {
             Camera { ..default() },
             FlyCam,
             FloatingOrigin,
-            WhereWasI::from_name("planet_example"),
-            Transform::from_xyz(500.0, 500.0, 500.0).looking_at(Vec3::ZERO, Vec3::Y),
+            // WhereWasI::from_name("planet_example"),
+            Transform::from_xyz(1.908292, 00.001, 1.066515).looking_at(Vec3::ZERO, Vec3::Y),
         ));
+        build_planet(universe_grid, 10.0);
     });
 }
