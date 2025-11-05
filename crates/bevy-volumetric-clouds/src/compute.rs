@@ -34,26 +34,38 @@ pub struct CameraMatrices {
 
 #[derive(Resource, Clone, Copy)]
 pub struct CloudsConfig {
-    pub march_steps: u32,
-    pub self_shadow_steps: u32,
-    pub earth_radius: f32,
-    pub bottom: f32,
-    pub top: f32,
-    pub coverage: f32,
-    pub detail_strength: f32,
-    pub base_edge_softness: f32,
-    pub bottom_softness: f32,
-    pub density: f32,
-    pub shadow_march_step_size: f32,
-    pub shadow_march_step_multiply: f32,
+    pub planet_radius: f32,
+    pub planet_position: Vec3,
+    pub atmosphere_radius: f32,
+    pub atmosphere_rayleigh_beta: Vec3,
+    pub atmosphere_mie_beta: Vec3,
+    pub atmosphere_ambient_beta: Vec3,
+    pub atmosphere_absorption_beta: Vec3,
+    pub atmosphere_height_rayleigh: f32,
+    pub atmosphere_height_mie: f32,
+    pub atmosphere_height_absorption: f32,
+    pub atmosphere_absorption_falloff: f32,
+    pub atmosphere_march_steps: u32,
+    pub atmosphere_light_march_steps: u32,
+    pub clouds_march_steps: u32,
+    pub clouds_self_shadow_steps: u32,
+    pub clouds_bottom: f32,
+    pub clouds_top: f32,
+    pub clouds_coverage: f32,
+    pub clouds_detail_strength: f32,
+    pub clouds_base_edge_softness: f32,
+    pub clouds_bottom_softness: f32,
+    pub clouds_density: f32,
+    pub clouds_shadow_march_step_size: f32,
+    pub clouds_shadow_march_step_multiply: f32,
+    pub clouds_base_scale: f32,
+    pub clouds_details_scale: f32,
+    pub clouds_min_transmittance: f32,
     pub forward_scattering_g: f32,
     pub backward_scattering_g: f32,
     pub scattering_lerp: f32,
     pub ambient_color_top: Vec4,
     pub ambient_color_bottom: Vec4,
-    pub min_transmittance: f32,
-    pub base_scale: f32,
-    pub detail_scale: f32,
     pub sun_dir: Vec4,
     pub sun_color: Vec4,
     pub camera_translation: Vec3,
@@ -70,26 +82,38 @@ impl Default for CloudsConfig {
     fn default() -> Self {
         let sun_dir = Vec3::new(-0.7, 0.5, 0.75).normalize();
         Self {
-            march_steps: 12,
-            self_shadow_steps: 6,
-            earth_radius: 6_371_000.0,
-            bottom: 1250.0,
-            top: 2400.0,
-            coverage: 0.5,
-            detail_strength: 0.27,
-            base_edge_softness: 0.1,
-            bottom_softness: 0.25,
-            density: 0.03,
-            shadow_march_step_size: 10.0,
-            shadow_march_step_multiply: 1.3,
+            atmosphere_radius: 6471e3,
+            atmosphere_rayleigh_beta: Vec3::new(5.5e-6, 13.0e-6, 22.4e-6),
+            atmosphere_mie_beta: Vec3::splat(21e-6),
+            atmosphere_ambient_beta: Vec3::ZERO,
+            atmosphere_absorption_beta: Vec3::new(2.04e-5, 4.97e-5, 1.95e-6),
+            atmosphere_absorption_falloff: 4e3,
+            atmosphere_height_rayleigh: 8e3,
+            atmosphere_height_mie: 1.2e3,
+            atmosphere_height_absorption: 3e4,
+            atmosphere_march_steps: 32,
+            atmosphere_light_march_steps: 8,
+            planet_position: Vec3::ZERO,
+            planet_radius: 6_371_000.0,
+            clouds_march_steps: 12,
+            clouds_self_shadow_steps: 6,
+            clouds_bottom: 1250.0,
+            clouds_top: 2400.0,
+            clouds_coverage: 0.5,
+            clouds_detail_strength: 0.27,
+            clouds_base_edge_softness: 0.1,
+            clouds_bottom_softness: 0.25,
+            clouds_density: 0.03,
+            clouds_shadow_march_step_size: 10.0,
+            clouds_shadow_march_step_multiply: 1.3,
             forward_scattering_g: 0.8,
             backward_scattering_g: -0.2,
             scattering_lerp: 0.5,
             ambient_color_top: Vec4::new(149.0, 167.0, 200.0, 0.0) * (1.5 / 225.0),
             ambient_color_bottom: Vec4::new(39.0, 67.0, 87.0, 0.0) * (1.5 / 225.0),
-            min_transmittance: 0.1,
-            base_scale: 1.5,
-            detail_scale: 42.0,
+            clouds_min_transmittance: 0.1,
+            clouds_base_scale: 1.5,
+            clouds_details_scale: 42.0,
             sun_dir: Vec4::new(sun_dir.x, sun_dir.y, sun_dir.z, 0.0),
             sun_color: Vec4::new(1.0, 0.9, 0.85, 1.0) * 1.4,
             camera_translation: Vec3::new(3980.0, 730.0, -2650.0),
@@ -123,26 +147,26 @@ pub(crate) fn prepare_uniforms_bind_group(
 ) {
     let buffer = clouds_uniform_buffer.buffer.get_mut();
 
-    buffer.march_steps = clouds_config.march_steps;
-    buffer.self_shadow_steps = clouds_config.self_shadow_steps;
-    buffer.earth_radius = clouds_config.earth_radius;
-    buffer.bottom = clouds_config.bottom;
-    buffer.top = clouds_config.top;
-    buffer.coverage = clouds_config.coverage;
-    buffer.detail_strength = clouds_config.detail_strength;
-    buffer.base_edge_softness = clouds_config.base_edge_softness;
-    buffer.bottom_softness = clouds_config.bottom_softness;
-    buffer.density = clouds_config.density;
-    buffer.shadow_march_step_size = clouds_config.shadow_march_step_size;
-    buffer.shadow_march_step_multiply = clouds_config.shadow_march_step_multiply;
+    buffer.clouds_march_steps = clouds_config.clouds_march_steps;
+    buffer.clouds_self_shadow_steps = clouds_config.clouds_self_shadow_steps;
+    buffer.planet_radius = clouds_config.planet_radius;
+    buffer.clouds_bottom = clouds_config.clouds_bottom;
+    buffer.clouds_top = clouds_config.clouds_top;
+    buffer.clouds_coverage = clouds_config.clouds_coverage;
+    buffer.clouds_detail_strength = clouds_config.clouds_detail_strength;
+    buffer.clouds_base_edge_softness = clouds_config.clouds_base_edge_softness;
+    buffer.clouds_bottom_softness = clouds_config.clouds_bottom_softness;
+    buffer.clouds_density = clouds_config.clouds_density;
+    buffer.clouds_shadow_march_step_size = clouds_config.clouds_shadow_march_step_size;
+    buffer.clouds_shadow_march_step_multiply = clouds_config.clouds_shadow_march_step_multiply;
     buffer.forward_scattering_g = clouds_config.forward_scattering_g;
     buffer.backward_scattering_g = clouds_config.backward_scattering_g;
     buffer.scattering_lerp = clouds_config.scattering_lerp;
     buffer.ambient_color_top = clouds_config.ambient_color_top;
     buffer.ambient_color_bottom = clouds_config.ambient_color_bottom;
-    buffer.min_transmittance = clouds_config.min_transmittance;
-    buffer.base_scale = clouds_config.base_scale;
-    buffer.detail_scale = clouds_config.detail_scale;
+    buffer.clouds_min_transmittance = clouds_config.clouds_min_transmittance;
+    buffer.clouds_base_scale = clouds_config.clouds_base_scale;
+    buffer.clouds_details_scale = clouds_config.clouds_details_scale;
     buffer.sun_dir = clouds_config.sun_dir;
     buffer.sun_color = clouds_config.sun_color;
     buffer.camera_translation = camera.translation;

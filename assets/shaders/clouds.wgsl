@@ -29,5 +29,5 @@ fn fragment(mesh: VertexOutput) -> @location(0) vec4<f32> {
     let clouds = textureSampleLevel(clouds_render_texture, clouds_render_sampler, vec2(viewport_uv), 0.0);
     let sky = textureSampleLevel(sky_texture, sky_sampler, vec2(viewport_uv), 0.0);
 
-    return vec4(clouds.rgb + sky.rgb * clouds.a, 1.0);
+    return vec4(clouds.rgb + abs(sky.rgb) * clouds.a, 1.0);
 }

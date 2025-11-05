@@ -3,27 +3,49 @@
 const WORLEY_RESOLUTION = 32;
 const WORLEY_RESOLUTION_F32 = 32.0;
 
+#import bevy_sprite::{
+    mesh2d_view_bindings::view,
+    mesh2d_view_bindings::globals,
+    mesh2d_functions::{get_world_from_local, mesh2d_position_local_to_clip},
+}
+#import bevy_sprite::mesh2d_vertex_output::VertexOutput
+
+// Atmosphere is based on https://www.shadertoy.com/view/wlBXWK
+
+
 struct Config {
-    march_steps: u32,
-    self_shadow_steps: u32,
-    earth_radius: f32,
-    bottom: f32,
-    top: f32,
-    coverage: f32,
-    detail_strength: f32,
-    base_edge_softness: f32,
-    bottom_softness: f32,
-    density: f32,
-    shadow_march_step_size: f32,
-    shadow_march_step_multiply: f32,
+    planet_radius: f32,
+    planet_position: vec3f,
+    atmosphere_radius: f32,
+    atmosphere_rayleigh_beta: vec3f,
+    atmosphere_mie_beta: vec3f,
+    atmosphere_ambient_beta: vec3f,
+    atmosphere_absorption_beta: vec3f,
+    atmosphere_height_rayleigh: f32,
+    atmosphere_height_mie: f32,
+    atmosphere_height_absorption: f32,
+    atmosphere_absorption_falloff: f32,
+    atmosphere_march_steps: u32,
+    atmosphere_light_march_steps: u32,
+    clouds_march_steps: u32,
+    clouds_self_shadow_steps: u32,
+    clouds_bottom: f32,
+    clouds_top: f32,
+    clouds_coverage: f32,
+    clouds_detail_strength: f32,
+    clouds_base_edge_softness: f32,
+    clouds_bottom_softness: f32,
+    clouds_density: f32,
+    clouds_shadow_march_step_size: f32,
+    clouds_shadow_march_step_multiply: f32,
+    clouds_base_scale: f32,
+    clouds_details_scale: f32,
+    clouds_min_transmittance: f32,
     forward_scattering_g: f32,
     backward_scattering_g: f32,
     scattering_lerp: f32,
     ambient_color_top: vec4f,
     ambient_color_bottom: vec4f,
-    min_transmittance: f32,
-    base_scale: f32,
-    detail_scale: f32,
     sun_dir: vec4f,
     sun_color: vec4f,
     camera_translation: vec3f,
@@ -48,19 +70,316 @@ struct RaymarchResult {
     color: vec4f,
 }
 
+
+fn calculate_scattering(
+    _start: vec3<f32>,
+    dir: vec3<f32>,
+    max_dist: f32,
+    scene_color: vec3<f32>,
+    light_dir: vec3<f32>,
+    light_intensity: vec3<f32>,
+    planet_position: vec3<f32>,
+    planet_radius: f32,
+    atmo_radius: f32,
+    beta_ray: vec3<f32>,
+    beta_mie: vec3<f32>,
+    beta_absorption: vec3<f32>,
+    beta_ambient: vec3<f32>,
+    g: f32,
+    height_ray: f32,
+    height_mie: f32,
+    height_absorption: f32,
+    absorption_falloff: f32,
+    steps_i: u32,
+    steps_l: u32,
+) -> vec3<f32> {
+    let start = _start - planet_position;
+    var a = dot(dir, dir);
+    var b = 2.0 * dot(dir, start);
+    var c = dot(start, start) - (atmo_radius * atmo_radius);
+    var d = (b * b)- 4.0 * a * c;
+
+    // stop early if there is no intersect
+    if (d < 0.0) { return scene_color; }
+
+    // calculate the ray length
+    var ray_length = vec2(
+        max((-b - sqrt(d)) / (2.0 * a), 0.0),
+        min((-b + sqrt(d)) / (2.0 * a), max_dist)
+    );
+
+    // if the ray did not hit the atmosphere, return a black color
+    if (ray_length.x > ray_length.y) { return scene_color; }
+
+    // prevent the mie glow from appearing if there's an object in front of the camera
+    let allow_mie = max_dist > ray_length.y;
+    // make sure the ray is no longer than allowed
+    ray_length.y = min(ray_length.y, max_dist);
+    ray_length.x = max(ray_length.x, 0.0);
+    // get the step size of the ray
+    let step_size_i = (ray_length.y - ray_length.x) / f32(steps_i);
+
+    // next, set how far we are along the ray, so we can calculate the position of the sample
+    // if the camera is outside the atmosphere, the ray should start at the edge of the atmosphere
+    // if it's inside, it should start at the position of the camera
+    // the min statement makes sure of that
+    var ray_pos_i = ray_length.x + step_size_i * 0.5;
+
+    // these are the values we use to gather all the scattered light
+    var total_ray = vec3(0.0); // for rayleigh
+    var total_mie = vec3(0.0); // for mie
+
+    // initialize the optical depth. This is used to calculate how much air was in the ray
+    var opt_i = vec3(0.0);
+
+    // also init the scale height, avoids some vec2's later on
+    let scale_height = vec2(height_ray, height_mie);
+
+    // Calculate the Rayleigh and Mie phases.
+    // This is the color that will be scattered for this ray
+    // mu, mumu and gg are used quite a lot in the calculation, so to speed it up, precalculate them
+    let mu = dot(dir, light_dir);
+    let mumu = mu * mu;
+    let gg = g * g;
+    let phase_ray = 3.0 / (50.2654824574 /* (16 * pi) */) * (1.0 + mumu);
+    var phase_mie = 0.0;
+    if allow_mie {
+        phase_mie = 3.0
+            / (25.1327412287 /* (8 * pi) */)
+            * ((1.0 - gg) * (mumu + 1.0))
+            / (
+                pow(1.0 + gg - 2.0 * mu * g, 1.5)
+                * (2.0 + gg)
+            );
+        }
+
+    // now we need to sample the 'primary' ray. this ray gathers the light that gets scattered onto it
+    for (var i: u32 = 0; i < steps_i; i++) {
+        // calculate where we are along this ray
+        let pos_i = start + dir * ray_pos_i;
+
+        // and how high we are above the surface
+        let height_i = length(pos_i) - planet_radius;
+
+        // now calculate the density of the particles (both for rayleigh and mie)
+        var density = vec3(exp(-height_i / scale_height), 0.0);
+
+        // and the absorption density. this is for ozone, which scales together with the rayleigh,
+        // but absorbs the most at a specific height, so use the sech function for a nice curve falloff for this height
+        // clamp it to avoid it going out of bounds. This prevents weird black spheres on the night side
+        let denom = (height_absorption - height_i) / absorption_falloff;
+        density.z = (1.0 / (denom * denom + 1.0)) * density.x;
+
+        // multiply it by the step size here
+        // we are going to use the density later on as well
+        density *= step_size_i;
+
+        // Add these densities to the optical depth, so that we know how many particles are on this ray.
+        opt_i += density;
+
+        // Calculate the step size of the light ray.
+        // again with a ray sphere intersect
+        // a, b, c and d are already defined
+        a = dot(light_dir, light_dir);
+        b = 2.0 * dot(light_dir, pos_i);
+        c = dot(pos_i, pos_i) - (atmo_radius * atmo_radius);
+        d = (b * b) - 4.0 * a * c;
+
+        // no early stopping, this one should always be inside the atmosphere
+        // calculate the ray length
+        let step_size_l = (-b + sqrt(d)) / (2.0 * a * f32(steps_l));
+
+        // and the position along this ray
+        // this time we are sure the ray is in the atmosphere, so set it to 0
+        var ray_pos_l = step_size_l * 0.5;
+
+        // and the optical depth of this ray
+        var opt_l = vec3(0.0);
+
+        // now sample the light ray
+        // this is similar to what we did before
+        for (var l: u32 = 0; l < steps_l; l++) {
+
+            // calculate where we are along this ray
+            let pos_l = pos_i + light_dir * ray_pos_l;
+
+            // the heigth of the position
+            let height_l = length(pos_l) - planet_radius;
+
+            // calculate the particle density, and add it
+            // this is a bit verbose
+            // first, set the density for ray and mie
+            var density_l = vec3(exp(-height_l / scale_height), 0.0);
+
+            // then, the absorption
+            let denom = (height_absorption - height_l) / absorption_falloff;
+            density_l.z = (1.0 / (denom * denom + 1.0)) * density_l.x;
+
+            // multiply the density by the step size
+            density_l *= step_size_l;
+
+            // and add it to the total optical depth
+            opt_l += density_l;
+
+            // and increment where we are along the light ray.
+            ray_pos_l += step_size_l;
+
+        }
+
+        // Now we need to calculate the attenuation
+        // this is essentially how much light reaches the current sample point due to scattering
+        let attn = exp(-beta_ray * (opt_i.x + opt_l.x) - beta_mie * (opt_i.y + opt_l.y) - beta_absorption * (opt_i.z + opt_l.z));
+
+        // accumulate the scattered light (how much will be scattered towards the camera)
+        total_ray += density.x * attn;
+        total_mie += density.y * attn;
+
+        // and increment the position on this ray
+        ray_pos_i += step_size_i;
+
+    }
+
+    // calculate how much light can pass through the atmosphere
+    let opacity = exp(-(beta_mie * opt_i.y + beta_ray * opt_i.x + beta_absorption * opt_i.z));
+
+	// calculate and return the final color
+    return (
+        	phase_ray * beta_ray * total_ray // rayleigh color
+       		+ phase_mie * beta_mie * total_mie // mie
+            + opt_i.x * beta_ambient // and ambient
+    ) * light_intensity + scene_color * opacity; // now make sure the background is rendered correctly
+
+
+}
+
+
+/*
+A ray-sphere intersect
+This was previously used in the atmosphere as well, but it's only used for the planet intersect now, since the atmosphere has this
+ray sphere intersect built in
+*/
+fn ray_sphere_intersect(start: vec3<f32>, dir: vec3<f32>, radius: f32) -> vec2<f32> {
+	let a: f32 = dot(dir, dir);
+	let b: f32 = 2. * dot(dir, start);
+	let c: f32 = dot(start, start) - radius * radius;
+	let d: f32 = b * b - 4. * a * c;
+	if (d < 0.) {	return vec2<f32>(100000., -100000.);
+ }
+	return vec2<f32>((-b - sqrt(d)) / (2. * a), (-b + sqrt(d)) / (2. * a));
+}
+
+/*
+To make the planet we're rendering look nicer, we implemented a skylight function here
+
+Essentially it just takes a sample of the atmosphere in the direction of the surface normal
+*/
+fn skylight(sample_pos: vec3f, _surface_normal: vec3f, light_dir: vec3f, background_col: vec3f) -> vec3f {
+
+    // slightly bend the surface normal towards the light direction
+    let surface_normal = normalize(mix(_surface_normal, light_dir, 0.6));
+
+    // and sample the atmosphere
+    return calculate_scattering(
+    	sample_pos,						// the position of the camera
+        surface_normal, 				// the camera vector (ray direction of this pixel)
+        3.0 * config.atmosphere_radius, 			// max dist, since nothing will stop the ray here, just use some arbitrary value
+        background_col,					// scene color, just the background color here
+        light_dir,						// light direction
+        vec3(40.0),						// light intensity, 40 looks nice
+        config.planet_position,			// position of the planet
+        config.planet_radius,           // radius of the planet in meters
+        config.atmosphere_radius,       // radius of the atmosphere in meters
+        config.atmosphere_rayleigh_beta,// Rayleigh scattering coefficient
+        config.atmosphere_mie_beta,     // Mie scattering coefficient
+        config.atmosphere_absorption_beta,// Absorbtion coefficient
+        config.atmosphere_ambient_beta,	// ambient scattering, turned off for now. This causes the air to glow a bit when no light reaches it
+        config.forward_scattering_g,                          	// Mie preferred scattering direction
+        config.atmosphere_height_rayleigh,   // Rayleigh scale height
+        config.atmosphere_height_mie,   // Mie scale height
+        config.atmosphere_height_absorption,// the height at which the most absorption happens
+        config.atmosphere_absorption_falloff,// how fast the absorption falls off from the absorption height
+        config.atmosphere_light_march_steps, 	// steps in the ray direction
+        config.atmosphere_light_march_steps 	// steps in the light direction
+    );
+}
+
+
+/*
+The following function returns the scene color and depth
+(the color of the pixel without the atmosphere, and the distance to the surface that is visible on that pixel)
+
+in this case, the function renders a green sphere on the place where the planet should be
+color is in .xyz, distance in .w
+
+I won't explain too much about how this works, since that's not the aim of this shader
+*/
+fn render_scene(pos: vec3f, dir: vec3f, light_dir: vec3f) -> vec4f {
+    // the color to use, w is the scene depth
+    var color = vec4(0.0, 0.0, 0.0, 1e12);
+
+    // add a sun, if the angle between the ray direction and the light direction is small enough, color the pixels white
+    if dot(dir, light_dir) > 0.9998 {
+        color = vec4(vec3(3.0), color.w);
+    }
+
+    // get where the ray intersects the planet
+    let planet_intersect = ray_sphere_intersect(pos - config.planet_position, dir, config.planet_radius);
+
+    // if the ray hit the planet, set the max distance to that ray
+    if (0.0 < planet_intersect.y) {
+    	color.w = max(planet_intersect.x, 0.0);
+
+        // sample position, where the pixel is
+        let sample_pos = pos + (dir * planet_intersect.x) - config.planet_position;
+
+        // and the surface normal
+        let surface_normal = normalize(sample_pos);
+
+        // get the color of the sphere
+        color = vec4(0.0, 0.25, 0.05, color.w);
+
+        // get wether this point is shadowed, + how much light scatters towards the camera according to the lommel-seelinger law
+        let N = surface_normal;
+        let V = -dir;
+        let L = light_dir;
+        let dotNV = max(1e-6, dot(N, V));
+        let dotNL = max(1e-6, dot(N, L));
+        let shadow = dotNL / (dotNL + dotNV);
+
+        // apply the shadow
+        color = vec4(color.xyz * shadow, color.w);
+
+        // apply skylight
+        color = vec4(color.xyz + clamp(skylight(sample_pos, surface_normal, light_dir, vec3(0.0)) * vec3(0.0, 0.25, 0.05), vec3(0.0), vec3(1.0)), color.w);
+    }
+
+	return color;
+}
+
+/*
+next, we need a way to do something with the scattering function
+
+to do something with it we need the camera vector (which is the ray direction) of the current pixel
+this function calculates it
+*/
+fn get_camera_vector(resolution: vec2f, coord: vec2f) -> vec3f {
+	var uv    = coord.xy - 0.5;
+    return normalize(vec3(uv.x * resolution.x / resolution.y, -uv.y, -1.0));
+}
+
 fn henyey_greenstein(ray_dot_sun: f32, g: f32) -> f32 {
     let g_squared = g * g;
     return (1.0 - g_squared) / pow(1.0 + g_squared - 2.0 * g * ray_dot_sun, 1.5);
 }
 
 fn intersect_earth_sphere(ray_dir: vec3f, radius: f32) -> f32 {
-    let bottom = config.earth_radius * ray_dir.y;
-    let d = bottom * bottom + radius * radius + 2.0 * config.earth_radius * radius;
+    let bottom = config.planet_radius * ray_dir.y;
+    let d = bottom * bottom + radius * radius + 2.0 * config.planet_radius * radius;
     return sqrt(d) - bottom;
 }
 
 fn cloud_map_base(p: vec3f, normalized_height: f32) -> f32 {
-	let uv = abs(p * (0.00005 * config.base_scale) * config.render_resolution.xyy);
+	let uv = abs(p * (0.00005 * config.clouds_base_scale) * config.render_resolution.xyy);
     let cloud = textureLoad(
         clouds_atlas_texture,
          vec2u(
@@ -74,7 +393,7 @@ fn cloud_map_base(p: vec3f, normalized_height: f32) -> f32 {
 }
 
 fn cloud_map_detail(position: vec3f) -> f32 {
-    let p = abs(position) * (0.0016 * config.base_scale * config.detail_scale);
+    let p = abs(position) * (0.0016 * config.clouds_base_scale * config.clouds_details_scale);
 
     // TODO: add bilinear filtering
     var p1 = p % 32.0;
@@ -104,31 +423,31 @@ fn cloud_map(pos: vec3f, normalized_height: f32) -> f32 {
 
     // Erode with detail
     if detail_strength > 0.0 {
-		m -= cloud_map_detail(ps) * detail_strength * config.detail_strength;
+		m -= cloud_map_detail(ps) * detail_strength * config.clouds_detail_strength;
     }
 
-	m = smoothstep(0.0, config.base_edge_softness, m + config.coverage - 1.0);
-    m *= common::linearstep0(config.bottom_softness, normalized_height);
+	m = smoothstep(0.0, config.clouds_base_edge_softness, m + config.clouds_coverage - 1.0);
+    m *= common::linearstep0(config.clouds_bottom_softness, normalized_height);
 
-    return clamp(m * config.density * (1.0 + max((ps.x - 7000.0) * 0.005, 0.0)), 0.0, 1.0);
+    return clamp(m * config.clouds_density * (1.0 + max((ps.x - 7000.0) * 0.005, 0.0)), 0.0, 1.0);
 }
 
 fn volumetric_shadow(origin: vec3f, ray_dot_sun: f32) -> f32{
-    var ray_step_size = config.shadow_march_step_size;
+    var ray_step_size = config.clouds_shadow_march_step_size;
     var distance_along_ray = ray_step_size * 0.5;
     var shadow = 1.0;
-    let clouds_height = config.top - config.bottom;
+    let clouds_height = config.clouds_top - config.clouds_bottom;
 
-    for (var s: u32 = 0; s < config.self_shadow_steps; s++) {
+    for (var s: u32 = 0; s < config.clouds_self_shadow_steps; s++) {
         let pos = origin + config.sun_dir.xyz * distance_along_ray;
-        let normalized_height = (length(pos) - (config.earth_radius + config.bottom)) / clouds_height;
+        let normalized_height = (length(pos) - (config.planet_radius + config.clouds_bottom)) / clouds_height;
 
         if (normalized_height > 1.0) { return shadow; };
 
         let density = cloud_map(pos, normalized_height);
         shadow *= exp(-density * ray_step_size);
 
-        ray_step_size *= config.shadow_march_step_multiply;
+        ray_step_size *= config.clouds_shadow_march_step_multiply;
         distance_along_ray += ray_step_size;
     }
 
@@ -146,12 +465,12 @@ fn raymarch(_ray_origin: vec3f, ray_dir: vec3f, _dist: f32) -> RaymarchResult {
 
     let ray_origin = vec3f(
         ro_xz.x,
-        sqrt(config.earth_radius * config.earth_radius - dot(ro_xz, ro_xz)),
+        sqrt(config.planet_radius * config.planet_radius - dot(ro_xz, ro_xz)),
         ro_xz.y
     );
 
-    let start = intersect_earth_sphere(ray_dir, config.bottom);
-    var end = intersect_earth_sphere(ray_dir, config.top);
+    let start = intersect_earth_sphere(ray_dir, config.clouds_bottom);
+    var end = intersect_earth_sphere(ray_dir, config.clouds_top);
 
     if (start > dist) {
         return RaymarchResult(dist, vec4f(0.0, 0.0, 0.0, 10.0));
@@ -161,7 +480,7 @@ fn raymarch(_ray_origin: vec3f, ray_dir: vec3f, _dist: f32) -> RaymarchResult {
 
     let ray_dot_sun = dot(ray_dir, -config.sun_dir.xyz);
 
-    let step_distance = (end - start) / f32(config.march_steps);
+    let step_distance = (end - start) / f32(config.clouds_march_steps);
     let hashed_offset = common::hash13(ray_dir + fract(config.time));
     var dir_length = start - step_distance * hashed_offset;
 
@@ -175,14 +494,14 @@ fn raymarch(_ray_origin: vec3f, ray_dir: vec3f, _dist: f32) -> RaymarchResult {
     var transmittance = 1.0;
     var scattered_light = vec3f(0.0, 0.0, 0.0);
 
-    dist = config.earth_radius;
-    let clouds_height = config.top - config.bottom;
+    dist = config.planet_radius;
+    let clouds_height = config.clouds_top - config.clouds_bottom;
 
-    for (var s: u32 = 0; s < config.march_steps; s++) {
+    for (var s: u32 = 0; s < config.clouds_march_steps; s++) {
         let p = ray_origin + dir_length * ray_dir;
 
         let normalized_height = clamp(
-            (length(p) - (config.earth_radius + config.bottom)) / clouds_height,
+            (length(p) - (config.planet_radius + config.clouds_bottom)) / clouds_height,
             0.0,
             1.0
         );
@@ -202,7 +521,7 @@ fn raymarch(_ray_origin: vec3f, ray_dir: vec3f, _dist: f32) -> RaymarchResult {
             transmittance *= delta_transmittance;
         }
 
-        if transmittance <= config.min_transmittance { break; }
+        if transmittance <= config.clouds_min_transmittance { break; }
 
         dir_length += step_distance;
     }
@@ -350,8 +669,43 @@ fn update(@builtin(global_invocation_id) invocation_id: vec3<u32>, @builtin(num_
     var ray_dir = get_ray_direction(vec2f(index.x + 0.5, 0.5 + index.y));
     var col = main_image(frag_coord, config.inverse_camera_view, old_cam, ray_dir, ray_origin);
 
+    // Atmosphere
+    // let camera_vector = get_camera_vector(iResolution, fragCoord);
+    // ray_origin = vec3(0.0, config.atmosphere_radius + (-cos(config.time / 2.0) * (config.atmosphere_radius - config.planet_radius - 1.0)), 0.0);
+    ray_origin = vec3(0.0, config.planet_radius, 0.0);
+
+    var light_dir = normalize(vec3(1.0, 0.05, 0.0));
+
+    // get the scene color and depth, color is in xyz, depth in w
+    // replace this with something better if you are using this shader for something else
+    let scene = render_scene(ray_origin, ray_dir, light_dir);
+
+    var sky_col = calculate_scattering(
+    	ray_origin,				              // the position of the camera
+        ray_dir, 					          // the camera vector (ray direction of this pixel)
+        scene.w, 						      // max dist, essentially the scene depth
+        scene.xyz,						      // scene color, the color of the current pixel being rendered
+        light_dir,						      // light direction
+        vec3(40.0),						      // light intensity, 40 looks nice
+        config.planet_position,				  // position of the planet
+        config.planet_radius,                 // radius of the planet in meters
+        config.atmosphere_radius,             // radius of the atmosphere in meters
+        config.atmosphere_rayleigh_beta,	  // Rayleigh scattering coefficient
+        config.atmosphere_mie_beta,           // Mie scattering coefficient
+        config.atmosphere_absorption_beta,    // Absorbtion coefficient
+        config.atmosphere_ambient_beta,		  // ambient scattering, turned off for now. This causes the air to glow a bit when no light reaches it
+        config.forward_scattering_g,          // Mie preferred scattering direction
+        config.atmosphere_height_rayleigh,    // Rayleigh scale height
+        config.atmosphere_height_mie,         // Mie scale height
+        config.atmosphere_height_absorption,  // the height at which the most absorption happens
+        config.atmosphere_absorption_falloff, // how fast the absorption falls off from the absorption height
+        config.atmosphere_march_steps, 		  // steps in the ray direction
+        config.atmosphere_light_march_steps   // steps in the light direction
+    );
+
     storageBarrier();
 
     textureStore(clouds_render_texture, invocation_id.xy, col);
-    textureStore(sky_texture, invocation_id.xy, vec4f(get_sky_color(ray_dir), 1.0));
+    // textureStore(sky_texture, invocation_id.xy, vec4f(get_sky_color(ray_dir), 1.0));
+    textureStore(sky_texture, invocation_id.xy, vec4(1.0 - exp(-sky_col), 1.0));
 }

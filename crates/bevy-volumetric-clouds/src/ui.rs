@@ -24,33 +24,42 @@ fn color_picker(title: &str, color: &mut Vec4, ui: &mut Ui) {
 }
 
 pub fn clouds_ui(config: &mut CloudsConfig, ui: &mut Ui) {
-    ui.add(egui::Slider::new(&mut config.march_steps, 1..=100).text("March steps"));
-    ui.end_row();
-    ui.add(egui::Slider::new(&mut config.self_shadow_steps, 1..=50).text("Self shadow steps"));
-    ui.end_row();
-    ui.add(egui::Slider::new(&mut config.earth_radius, 5e4..=1e7).text("Earth radius"));
-    ui.end_row();
-    ui.add(egui::Slider::new(&mut config.bottom, 1.0..=5e3).text("Bottom"));
-    ui.end_row();
-    ui.add(egui::Slider::new(&mut config.top, 1.0..=5e3).text("Top"));
-    ui.end_row();
-    ui.add(egui::Slider::new(&mut config.coverage, 0.0..=1.0).text("coverage"));
-    ui.end_row();
-    ui.add(egui::Slider::new(&mut config.detail_strength, 0.0..=1.0).text("detail_strength"));
-    ui.end_row();
-    ui.add(egui::Slider::new(&mut config.base_edge_softness, 0.0..=1.0).text("base_edge_softness"));
-    ui.end_row();
-    ui.add(egui::Slider::new(&mut config.bottom_softness, 0.01..=10.0).text("bottom_softness"));
-    ui.end_row();
-    ui.add(egui::Slider::new(&mut config.density, 0.001..=1.0).text("density"));
+    ui.add(egui::Slider::new(&mut config.clouds_march_steps, 1..=100).text("March steps"));
     ui.end_row();
     ui.add(
-        egui::Slider::new(&mut config.shadow_march_step_size, 1.0..=100.0)
+        egui::Slider::new(&mut config.clouds_self_shadow_steps, 1..=50).text("Self shadow steps"),
+    );
+    ui.end_row();
+    ui.add(egui::Slider::new(&mut config.planet_radius, 5e4..=1e7).text("Earth radius"));
+    ui.end_row();
+    ui.add(egui::Slider::new(&mut config.clouds_bottom, 1.0..=5e3).text("Bottom"));
+    ui.end_row();
+    ui.add(egui::Slider::new(&mut config.clouds_top, 1.0..=5e3).text("Top"));
+    ui.end_row();
+    ui.add(egui::Slider::new(&mut config.clouds_coverage, 0.0..=1.0).text("coverage"));
+    ui.end_row();
+    ui.add(
+        egui::Slider::new(&mut config.clouds_detail_strength, 0.0..=1.0).text("detail_strength"),
+    );
+    ui.end_row();
+    ui.add(
+        egui::Slider::new(&mut config.clouds_base_edge_softness, 0.0..=1.0)
+            .text("base_edge_softness"),
+    );
+    ui.end_row();
+    ui.add(
+        egui::Slider::new(&mut config.clouds_bottom_softness, 0.01..=10.0).text("bottom_softness"),
+    );
+    ui.end_row();
+    ui.add(egui::Slider::new(&mut config.clouds_density, 0.001..=1.0).text("density"));
+    ui.end_row();
+    ui.add(
+        egui::Slider::new(&mut config.clouds_shadow_march_step_size, 1.0..=100.0)
             .text("shadow_march_step_size"),
     );
     ui.end_row();
     ui.add(
-        egui::Slider::new(&mut config.shadow_march_step_multiply, 0.1..=10.0)
+        egui::Slider::new(&mut config.clouds_shadow_march_step_multiply, 0.1..=10.0)
             .text("shadow_march_step_multiply"),
     );
     ui.end_row();
@@ -67,12 +76,13 @@ pub fn clouds_ui(config: &mut CloudsConfig, ui: &mut Ui) {
     ui.add(egui::Slider::new(&mut config.scattering_lerp, 0.01..=100.0).text("Scattering lerp"));
     ui.end_row();
     ui.add(
-        egui::Slider::new(&mut config.min_transmittance, 0.01..=100.0).text("Min transmittance"),
+        egui::Slider::new(&mut config.clouds_min_transmittance, 0.01..=100.0)
+            .text("Min transmittance"),
     );
     ui.end_row();
-    ui.add(egui::Slider::new(&mut config.base_scale, 0.1..=100.0).text("Base scale"));
+    ui.add(egui::Slider::new(&mut config.clouds_base_scale, 0.1..=100.0).text("Base scale"));
     ui.end_row();
-    ui.add(egui::Slider::new(&mut config.detail_scale, 1.0..=100.0).text("Detail scale"));
+    ui.add(egui::Slider::new(&mut config.clouds_details_scale, 1.0..=100.0).text("Detail scale"));
     // ui.end_row();
     // ui.add(egui::Slider::new(&mut config.debug, 0.0001..=100.0).text("debug"));
     ui.end_row();
