@@ -1,9 +1,9 @@
 use std::collections::VecDeque;
 
-use bevy::prelude::*;
-use big_space::grid::Grid;
+use bevy::{camera::visibility::NoFrustumCulling, prelude::*};
+use big_space::{grid::Grid, prelude::CellCoord};
 
-use super::mesh::{MeshCache, rect_to_transform, spawn_mesh};
+use super::mesh::{MeshCache, rect_to_transform};
 
 #[derive(Component, Debug, Default)]
 pub struct MeshPool(pub VecDeque<Entity>);
@@ -59,6 +59,30 @@ fn should_subdivide(object_rect: Rect, camera_position: Vec3, k: f32) -> bool {
     d < k * object_rect.width()
 }
 
+pub fn spawn_mesh(
+    commands: &mut Commands,
+    mesh_cache: &Res<MeshCache>,
+    rect: Rect,
+    root_grid: &(Entity, &Grid),
+) -> Entity {
+    let (root_grid_id, root_grid) = root_grid;
+    let transform = rect_to_transform(rect);
+
+    let (object_cell, object_pos) = root_grid.translation_to_grid(transform.translation);
+
+    let entity = commands.spawn((
+        object_cell,
+        mesh_cache.mesh_3d.clone(),
+        Transform::from_translation(object_pos).with_scale(transform.scale),
+        mesh_cache.material.clone(),
+        NoFrustumCulling,
+    ));
+
+    let eid = entity.id();
+    commands.entity(*root_grid_id).add_child(eid);
+    eid
+}
+
 impl MeshPool {
     pub fn new() -> Self {
         Self(VecDeque::new())
@@ -72,15 +96,21 @@ impl MeshPool {
         root_grid: &(Entity, &Grid),
     ) -> Entity {
         if let Some(el) = self.0.pop_front() {
-            // let mut root_entity = commands.get_entity(root_grid.0).unwrap();
-            // root_entity.add_child(el);
+            let mut root_entity = commands.get_entity(root_grid.0).unwrap();
+            root_entity.add_child(el);
+            let transform = rect_to_transform(rect);
+
+            let (object_cell, object_pos) = root_grid.1.translation_to_grid(transform.translation);
 
             if let Ok(mut entity) = commands.get_entity(el) {
                 entity.remove::<Visibility>();
                 entity.insert(Visibility::Visible);
 
                 entity.remove::<Transform>();
-                entity.insert(rect_to_transform(rect));
+                entity.insert(Transform::from_translation(object_pos).with_scale(transform.scale));
+
+                entity.remove::<CellCoord>();
+                entity.insert(object_cell);
             }
             return el;
         }
@@ -153,10 +183,10 @@ impl QuadTreeNode {
         let (root_entity, _) = root_grid;
         if let Some(entity_id) = self.entity {
             mesh_pool.despawn_mesh(commands, entity_id);
-            // commands
-            //     .get_entity(*root_entity)
-            //     .unwrap()
-            //     .remove_children(&[entity_id]);
+            commands
+                .get_entity(*root_entity)
+                .unwrap()
+                .remove_children(&[entity_id]);
             self.entity = None;
         }
 

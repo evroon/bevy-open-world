@@ -1,6 +1,6 @@
 use std::f32::consts::PI;
 
-use bevy::prelude::*;
+use bevy::{light::light_consts::lux::FULL_DAYLIGHT, prelude::*};
 
 #[derive(Component)]
 pub struct SkyboxPlane {
@@ -160,7 +160,7 @@ pub fn setup_daylight(mut commands: Commands) {
     commands.spawn((
         Transform::from_xyz(1.0, 1.0, 0.0).looking_at(Vec3::ZERO, Vec3::Y),
         DirectionalLight {
-            illuminance: 8000.0,
+            illuminance: FULL_DAYLIGHT,
             // shadows_enabled: true,
             ..default()
         },

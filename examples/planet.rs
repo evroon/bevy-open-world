@@ -5,8 +5,8 @@ use bevy_egui::EguiPlugin;
 use bevy_fly_camera::system::{FlyCam, FlyCameraPlugin};
 use bevy_planet::PlanetsPlugin;
 use bevy_planet::system::{UniverseGrid, build_planet};
-use bevy_volumetric_clouds::skybox::system::{setup_daylight, update_skybox_transform};
-use bevy_where_was_i::{WhereWasI, WhereWasIPlugin};
+use bevy_volumetric_clouds::skybox::system::update_skybox_transform;
+use bevy_where_was_i::WhereWasIPlugin;
 
 use big_space::plugin::BigSpaceValidationPlugin;
 use big_space::prelude::*;
@@ -37,7 +37,7 @@ fn main() {
         .add_plugins(EguiPlugin::default())
         .add_plugins(PlanetsPlugin)
         .add_plugins((FlyCameraPlugin, WhereWasIPlugin::default()))
-        .add_systems(Startup, (setup_daylight, build_universe))
+        .add_systems(Startup, build_universe)
         .add_systems(Update, update_skybox_transform)
         .add_plugins((
             FrameTimeDiagnosticsPlugin::default(),
@@ -47,7 +47,7 @@ fn main() {
 }
 
 fn build_universe(mut commands: Commands) {
-    commands.spawn_big_space(Grid::new(1.0e-5f32, 1.0e-6f32), |universe_grid| {
+    commands.spawn_big_space(Grid::new(1.0e-1f32, 0.0), |universe_grid| {
         universe_grid.insert((UniverseGrid(),));
         universe_grid.spawn_spatial((
             Projection::Perspective(PerspectiveProjection {
@@ -62,6 +62,10 @@ fn build_universe(mut commands: Commands) {
             FloatingOrigin,
             // WhereWasI::from_name("planet_example"),
             Transform::from_xyz(1.908292, 00.001, 1.066515).looking_at(Vec3::ZERO, Vec3::Y),
+        ));
+        universe_grid.spawn((
+            Transform::from_xyz(0.0, -100.0, 0.0).looking_at(Vec3::ZERO, Vec3::X),
+            DirectionalLight::default(),
         ));
         build_planet(universe_grid, 10.0);
     });

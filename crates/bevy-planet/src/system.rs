@@ -1,5 +1,8 @@
 use bevy::prelude::*;
-use big_space::{grid::Grid, prelude::GridCommands};
+use big_space::{
+    grid::Grid,
+    prelude::{CellCoord, GridCommands},
+};
 
 use super::{
     mesh::MeshCache,
@@ -32,17 +35,17 @@ pub fn build_planet(planet_grid: &mut GridCommands, radius: f32) {
     let (cell, pos) = planet_grid
         .grid()
         .translation_to_grid(Vec3::new(0.0, radius * 0.0, 0.0));
-    planet_grid.with_grid(Grid::new(1.0e-2f32, 1.0e-3f32), |quadtree_grid| {
-        quadtree_grid.insert((
-            QuadtreeGrid(),
-            cell,
-            Transform::from_translation(pos),
-            quadtree.clone(),
-            config.clone(),
-            Visibility::Inherited,
-            MeshPool::new(),
-        ));
-    });
+    // planet_grid.with_grid(Grid::new(1.0e-2f32, 0.0), |quadtree_grid| {
+    planet_grid.insert((
+        QuadtreeGrid(),
+        cell,
+        Transform::from_translation(pos),
+        quadtree.clone(),
+        config.clone(),
+        Visibility::Inherited,
+        MeshPool::new(),
+    ));
+    // });
     // // Y-
     // let (cell, pos) = planet_grid
     //     .grid()
@@ -122,7 +125,7 @@ pub fn build_planet(planet_grid: &mut GridCommands, radius: f32) {
 
 pub fn update_quadtree(
     mut commands: Commands,
-    camera: Single<&Transform, With<Camera>>,
+    camera: Single<(&Transform, &CellCoord), With<Camera>>,
     mut quadtrees: Query<(
         Entity,
         &mut QuadTree,
@@ -134,21 +137,21 @@ pub fn update_quadtree(
     )>,
     mesh_cache: Res<MeshCache>,
 ) {
-    let cam_trans = camera.translation;
-    let norm = f32::abs(cam_trans.x)
-        .max(f32::abs(cam_trans.y))
-        .max(f32::abs(cam_trans.z));
+    let (cam_trans, cam_cell_coord) = *camera;
+    // let norm = f32::abs(cam_trans.x)
+    //     .max(f32::abs(cam_trans.y))
+    //     .max(f32::abs(cam_trans.z));
 
-    let cam_trans_dist_from_planet = cam_trans.length();
+    // let cam_trans_dist_from_planet = cam_trans.length();
 
-    let cam_translation_deformed_space = Vec4::new(
-        camera.translation.x / norm * (cam_trans_dist_from_planet - 0.0),
-        camera.translation.y / norm * (cam_trans_dist_from_planet - 0.0),
-        camera.translation.z / norm * (cam_trans_dist_from_planet - 0.0),
-        1.0,
-    );
+    // let cam_translation_deformed_space = Vec4::new(
+    //     camera.translation.x / norm * (cam_trans_dist_from_planet - 0.0),
+    //     camera.translation.y / norm * (cam_trans_dist_from_planet - 0.0),
+    //     camera.translation.z / norm * (cam_trans_dist_from_planet - 0.0),
+    //     1.0,
+    // );
 
-    for (entity, mut quadtree, grid, config, transform, gt, mut mesh_pool) in quadtrees.iter_mut() {
+    for (entity, mut quadtree, grid, config, transform, _, mut mesh_pool) in quadtrees.iter_mut() {
         // println!("{:?}", transform.translation);
         quadtree.root.build_around_point(
             config,
@@ -156,7 +159,7 @@ pub fn update_quadtree(
             &mut commands,
             &mesh_cache,
             // (transform.to_matrix().inverse() * cam_translation_deformed_space).xyz(),
-            camera.translation - transform.translation,
+            grid.grid_position(cam_cell_coord, cam_trans) - transform.translation,
             &(entity, grid),
         );
     }

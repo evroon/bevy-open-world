@@ -1,13 +1,11 @@
 use bevy::{
     asset::RenderAssetUsages,
-    camera::visibility::NoFrustumCulling,
     color::palettes::css::PURPLE,
     mesh::Indices,
     pbr::{ExtendedMaterial, OpaqueRendererMethod},
     prelude::*,
     render::render_resource::PrimitiveTopology,
 };
-use big_space::grid::Grid;
 
 use super::{CELL_COUNT, CELL_SIZE, material::PlanetMaterial};
 
@@ -101,29 +99,6 @@ pub fn build_mesh_cache(
 pub fn rect_to_transform(rect: Rect) -> Transform {
     Transform::from_translation(Vec3::new(rect.center().x, 0.0, rect.center().y))
         .with_scale(Vec3::new(rect.width(), rect.width(), rect.height()))
-}
-
-pub fn spawn_mesh(
-    commands: &mut Commands,
-    mesh_cache: &Res<MeshCache>,
-    rect: Rect,
-    root_grid: &(Entity, &Grid),
-) -> Entity {
-    let (root_grid_id, root_grid) = root_grid;
-    let transform = rect_to_transform(rect);
-
-    let (object_cell, object_pos) = root_grid.translation_to_grid(transform.translation);
-    let entity = commands.spawn((
-        object_cell,
-        mesh_cache.mesh_3d.clone(),
-        Transform::from_translation(object_pos),
-        mesh_cache.material.clone(),
-        NoFrustumCulling,
-    ));
-
-    let eid = entity.id();
-    commands.entity(*root_grid_id).add_child(eid);
-    eid
 }
 
 #[cfg(test)]
