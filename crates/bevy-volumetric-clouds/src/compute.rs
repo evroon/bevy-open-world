@@ -1,7 +1,8 @@
-use std::borrow::Cow;
+use std::{borrow::Cow, f32::consts::PI};
 
 use bevy::{
     ecs::system::ResMut,
+    math::ops::{cos, sin},
     prelude::*,
     render::{
         Extract, Render, RenderApp, RenderSystems,
@@ -66,7 +67,7 @@ pub struct CloudsConfig {
     pub scattering_lerp: f32,
     pub ambient_color_top: Vec4,
     pub ambient_color_bottom: Vec4,
-    pub sun_dir: Vec4,
+    pub time_of_day: f32,
     pub sun_color: Vec4,
     pub camera_translation: Vec3,
     pub debug: f32,
@@ -80,7 +81,6 @@ pub struct CloudsConfig {
 
 impl Default for CloudsConfig {
     fn default() -> Self {
-        let sun_dir = Vec3::new(-0.7, 0.5, 0.75).normalize();
         Self {
             atmosphere_radius: 6471e3,
             atmosphere_rayleigh_beta: Vec3::new(5.5e-6, 13.0e-6, 22.4e-6),
@@ -99,7 +99,7 @@ impl Default for CloudsConfig {
             clouds_self_shadow_steps: 6,
             clouds_bottom: 1250.0,
             clouds_top: 2400.0,
-            clouds_coverage: 0.5,
+            clouds_coverage: 0.0,
             clouds_detail_strength: 0.27,
             clouds_base_edge_softness: 0.1,
             clouds_bottom_softness: 0.25,
@@ -114,7 +114,7 @@ impl Default for CloudsConfig {
             clouds_min_transmittance: 0.1,
             clouds_base_scale: 1.5,
             clouds_details_scale: 42.0,
-            sun_dir: Vec4::new(sun_dir.x, sun_dir.y, sun_dir.z, 0.0),
+            time_of_day: 6.0,
             sun_color: Vec4::new(1.0, 0.9, 0.85, 1.0) * 1.4,
             camera_translation: Vec3::new(3980.0, 730.0, -2650.0),
             debug: 1.0,
@@ -167,7 +167,12 @@ pub(crate) fn prepare_uniforms_bind_group(
     buffer.clouds_min_transmittance = clouds_config.clouds_min_transmittance;
     buffer.clouds_base_scale = clouds_config.clouds_base_scale;
     buffer.clouds_details_scale = clouds_config.clouds_details_scale;
-    buffer.sun_dir = clouds_config.sun_dir;
+    buffer.sun_dir = Vec4::new(
+        cos((clouds_config.time_of_day - 6.0) / 24.0 * 2.0 * PI),
+        sin((clouds_config.time_of_day - 6.0) / 24.0 * 2.0 * PI),
+        0.0,
+        0.0,
+    );
     buffer.sun_color = clouds_config.sun_color;
     buffer.camera_translation = camera.translation;
     buffer.time = time.elapsed_secs_wrapped();
