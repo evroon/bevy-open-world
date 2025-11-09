@@ -1,0 +1,19 @@
+[package]
+name = "bevy-planet"
+description = "A plugin for Bevy that renders planets"
+repository = "https://github.com/evroon/bevy-planet"
+readme = "README.md"
+version = "0.1.0"
+publish = true
+authors = ["evroon"]
+edition = "2024"
+license = "MIT"
+keywords = ["bevy", "serialization", "gamedev", "savegame", "plugin"]
+categories = ["game-development"]
+
+[dependencies]
+bevy = {workspace = true, features = ["bevy_mesh"]}
+big_space = {workspace = true, features=["debug"]}
+
+[dev-dependencies]
+bevy = {workspace = true}

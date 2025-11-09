@@ -19,10 +19,11 @@ members = ["crates/*"]
 dev = ["bevy/dynamic_linking"]
 
 [workspace.dependencies]
-bevy = { version = "0.17.2", features=["file_watcher", "jpeg"]}
+bevy = { version = "0.17.2", features=["file_watcher", "jpeg", "bevy_mesh"]}
 bevy_panorbit_camera = "0.28.0"
 bevy_egui = "0.37.1"
 wayland-sys = { version="0.31.7", features = ["dlopen"] }
+big_space = {version="0.11.0"}
 
 [dependencies]
 bevy = { workspace = true }
@@ -33,7 +34,10 @@ bevy = { workspace = true }
 bevy_panorbit_camera = { workspace = true }
 bevy_egui = { workspace = true }
 wayland-sys = { workspace = true }
+big_space = {version ="0.11.0", features=["camera"]}
+turborand = "0.10.1"
 
 bevy-where-was-i = { path = "crates/bevy-where-was-i" }
 bevy-fly-camera = { path = "crates/bevy-fly-camera" }
 bevy-volumetric-clouds = { path = "crates/bevy-volumetric-clouds" }
+bevy-planet = { path = "crates/bevy-planet" }

@@ -13,6 +13,8 @@ pub struct FlyCam;
 /// Key configuration
 #[derive(Resource)]
 pub struct KeyBindings {
+    pub speed_increase: KeyCode,
+    pub speed_decrease: KeyCode,
     pub move_forward: KeyCode,
     pub move_backward: KeyCode,
     pub move_left: KeyCode,
@@ -25,6 +27,8 @@ pub struct KeyBindings {
 impl Default for KeyBindings {
     fn default() -> Self {
         Self {
+            speed_increase: KeyCode::Digit2,
+            speed_decrease: KeyCode::Digit1,
             move_forward: KeyCode::KeyW,
             move_backward: KeyCode::KeyS,
             move_left: KeyCode::KeyA,
@@ -58,7 +62,7 @@ pub struct MovementSettings {
 
 impl Default for MovementSettings {
     fn default() -> Self {
-        Self { speed: 12_000. }
+        Self { speed: 0.12 }
     }
 }
 
@@ -231,9 +235,20 @@ fn cursor_grab(
     keys: Res<ButtonInput<KeyCode>>,
     key_bindings: Res<KeyBindings>,
     primary_cursor_options: Single<&mut CursorOptions, With<PrimaryWindow>>,
+    settings: Option<ResMut<MovementSettings>>,
 ) {
     if keys.just_pressed(key_bindings.toggle_grab_cursor) {
         toggle_grab_cursor(primary_cursor_options);
+    }
+
+    if let Some(mut settings) = settings {
+        if keys.just_pressed(key_bindings.speed_increase) {
+            println!("speed_increase");
+            settings.speed *= 2.0;
+        }
+        if keys.just_pressed(key_bindings.speed_decrease) {
+            settings.speed /= 2.0;
+        }
     }
 }
 
@@ -241,7 +256,7 @@ fn cursor_grab(
 pub struct FlyCameraPlugin;
 impl Plugin for FlyCameraPlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<PlanetMovementSettings>()
+        app.init_resource::<MovementSettings>()
             .init_resource::<RotationSettings>()
             .init_resource::<KeyBindings>()
             .add_systems(
