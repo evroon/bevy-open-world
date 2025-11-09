@@ -32,7 +32,7 @@ fn main() {
                 }),
             BigSpaceDefaultPlugins
                 .build()
-                .enable::<BigSpaceValidationPlugin>(),
+                .disable::<BigSpaceValidationPlugin>(),
         ))
         .add_plugins(EguiPlugin::default())
         .add_plugins(PlanetsPlugin)
@@ -47,7 +47,7 @@ fn main() {
 }
 
 fn build_universe(mut commands: Commands) {
-    commands.spawn_big_space(Grid::new(1.0e-1f32, 0.0), |universe_grid| {
+    commands.spawn_big_space(Grid::new(1.0e-2, 0.0), |universe_grid| {
         universe_grid.insert((UniverseGrid(),));
         universe_grid.spawn_spatial((
             Projection::Perspective(PerspectiveProjection {
@@ -63,10 +63,7 @@ fn build_universe(mut commands: Commands) {
             // WhereWasI::from_name("planet_example"),
             Transform::from_xyz(1.908292, 00.001, 1.066515).looking_at(Vec3::ZERO, Vec3::Y),
         ));
-        universe_grid.spawn((
-            Transform::from_xyz(0.0, -100.0, 0.0).looking_at(Vec3::ZERO, Vec3::X),
-            DirectionalLight::default(),
-        ));
+        universe_grid.spawn_spatial((DirectionalLight::default(),));
         build_planet(universe_grid, 10.0);
     });
 }

@@ -1,3 +1,5 @@
+use std::f32::consts::PI;
+
 use bevy::prelude::*;
 use big_space::{
     grid::Grid,
@@ -31,96 +33,99 @@ pub fn build_planet(planet_grid: &mut GridCommands, radius: f32) {
         root: QuadTreeNode::new(Vec2::ZERO, Vec2::splat(radius)),
     };
 
+    let grid = Grid::new(1.0e-2, 0.0);
+
     // Y+
     let (cell, pos) = planet_grid
         .grid()
-        .translation_to_grid(Vec3::new(0.0, radius * 0.0, 0.0));
-    // planet_grid.with_grid(Grid::new(1.0e-2f32, 0.0), |quadtree_grid| {
-    planet_grid.insert((
-        QuadtreeGrid(),
-        cell,
-        Transform::from_translation(pos),
-        quadtree.clone(),
-        config.clone(),
-        Visibility::Inherited,
-        MeshPool::new(),
-    ));
-    // });
-    // // Y-
-    // let (cell, pos) = planet_grid
-    //     .grid()
-    //     .translation_to_grid(Vec3::new(0.0, radius * 0.5, 0.0));
-    // planet_grid.with_grid_default(|quadtree_grid| {
-    //     quadtree_grid.insert((
-    //         QuadtreeGrid(),
-    //         cell,
-    //         Transform::from_rotation(Quat::from_rotation_x(PI)).with_translation(pos),
-    //         quadtree.clone(),
-    //         config.clone(),
-    //         Visibility::Inherited,
-    //         MeshPool::new(),
-    //     ));
-    // });
-    // // X+
-    // let (cell, pos) = planet_grid
-    //     .grid()
-    //     .translation_to_grid(Vec3::new(0.0, radius * 0.5, 0.0));
-    // planet_grid.with_grid_default(|quadtree_grid| {
-    //     quadtree_grid.insert((
-    //         QuadtreeGrid(),
-    //         cell,
-    //         Transform::from_rotation(Quat::from_rotation_z(-PI * 0.5)).with_translation(pos),
-    //         quadtree.clone(),
-    //         config.clone(),
-    //         Visibility::Inherited,
-    //         MeshPool::new(),
-    //     ));
-    // });
-    // // X-
-    // let (cell, pos) = planet_grid
-    //     .grid()
-    //     .translation_to_grid(Vec3::new(0.0, radius * 0.5, 0.0));
-    // planet_grid.with_grid_default(|quadtree_grid| {
-    //     quadtree_grid.insert((
-    //         QuadtreeGrid(),
-    //         cell,
-    //         Transform::from_rotation(Quat::from_rotation_z(PI * 0.5)).with_translation(pos),
-    //         quadtree.clone(),
-    //         config.clone(),
-    //         Visibility::Inherited,
-    //         MeshPool::new(),
-    //     ));
-    // });
-    // // Z+
-    // let (cell, pos) = planet_grid
-    //     .grid()
-    //     .translation_to_grid(Vec3::new(0.0, radius * 0.5, 0.0));
-    // planet_grid.with_grid_default(|quadtree_grid| {
-    //     quadtree_grid.insert((
-    //         QuadtreeGrid(),
-    //         cell,
-    //         Transform::from_rotation(Quat::from_rotation_x(PI * 0.5)).with_translation(pos),
-    //         quadtree.clone(),
-    //         config.clone(),
-    //         Visibility::Inherited,
-    //         MeshPool::new(),
-    //     ));
-    // });
-    // // Z-
-    // let (cell, pos) = planet_grid
-    //     .grid()
-    //     .translation_to_grid(Vec3::new(0.0, radius * 0.5, 0.0));
-    // planet_grid.with_grid_default(|quadtree_grid| {
-    //     quadtree_grid.insert((
-    //         QuadtreeGrid(),
-    //         cell,
-    //         Transform::from_rotation(Quat::from_rotation_x(-PI * 0.5)).with_translation(pos),
-    //         quadtree,
-    //         config,
-    //         Visibility::Inherited,
-    //         MeshPool::new(),
-    //     ));
-    // });
+        .translation_to_grid(Vec3::new(0.0, radius * 0.5, 0.0));
+    planet_grid.with_grid(grid.clone(), |quadtree_grid| {
+        quadtree_grid.insert((
+            QuadtreeGrid(),
+            cell,
+            Transform::from_translation(pos),
+            quadtree.clone(),
+            config.clone(),
+            Visibility::Inherited,
+            MeshPool::new(),
+        ));
+    });
+
+    // Y-
+    let (cell, pos) = planet_grid
+        .grid()
+        .translation_to_grid(Vec3::new(0.0, -radius * 0.5, 0.0));
+    planet_grid.with_grid(grid.clone(), |quadtree_grid| {
+        quadtree_grid.insert((
+            QuadtreeGrid(),
+            cell,
+            Transform::from_rotation(Quat::from_rotation_x(PI)).with_translation(pos),
+            quadtree.clone(),
+            config.clone(),
+            Visibility::Inherited,
+            MeshPool::new(),
+        ));
+    });
+    // X+
+    let (cell, pos) = planet_grid
+        .grid()
+        .translation_to_grid(Vec3::new(radius * 0.5, 0.0, 0.0));
+    planet_grid.with_grid(grid.clone(), |quadtree_grid| {
+        quadtree_grid.insert((
+            QuadtreeGrid(),
+            cell,
+            Transform::from_rotation(Quat::from_rotation_z(-PI * 0.5)).with_translation(pos),
+            quadtree.clone(),
+            config.clone(),
+            Visibility::Inherited,
+            MeshPool::new(),
+        ));
+    });
+    // X-
+    let (cell, pos) = planet_grid
+        .grid()
+        .translation_to_grid(Vec3::new(-radius * 0.5, 0.0, 0.0));
+    planet_grid.with_grid(grid.clone(), |quadtree_grid| {
+        quadtree_grid.insert((
+            QuadtreeGrid(),
+            cell,
+            Transform::from_rotation(Quat::from_rotation_z(PI * 0.5)).with_translation(pos),
+            quadtree.clone(),
+            config.clone(),
+            Visibility::Inherited,
+            MeshPool::new(),
+        ));
+    });
+    // Z+
+    let (cell, pos) = planet_grid
+        .grid()
+        .translation_to_grid(Vec3::new(0.0, 0.0, radius * 0.5));
+    planet_grid.with_grid(grid.clone(), |quadtree_grid| {
+        quadtree_grid.insert((
+            QuadtreeGrid(),
+            cell,
+            Transform::from_rotation(Quat::from_rotation_x(PI * 0.5)).with_translation(pos),
+            quadtree.clone(),
+            config.clone(),
+            Visibility::Inherited,
+            MeshPool::new(),
+        ));
+    });
+    // Z-
+    let (cell, pos) = planet_grid
+        .grid()
+        .translation_to_grid(Vec3::new(0.0, 0.0, -radius * 0.5));
+    planet_grid.with_grid(grid.clone(), |quadtree_grid| {
+        quadtree_grid.insert((
+            QuadtreeGrid(),
+            cell,
+            Transform::from_rotation(Quat::from_rotation_x(-PI * 0.5)).with_translation(pos),
+            quadtree,
+            config,
+            Visibility::Inherited,
+            MeshPool::new(),
+        ));
+    });
 }
 
 pub fn update_quadtree(
@@ -138,28 +143,17 @@ pub fn update_quadtree(
     mesh_cache: Res<MeshCache>,
 ) {
     let (cam_trans, cam_cell_coord) = *camera;
-    // let norm = f32::abs(cam_trans.x)
-    //     .max(f32::abs(cam_trans.y))
-    //     .max(f32::abs(cam_trans.z));
 
-    // let cam_trans_dist_from_planet = cam_trans.length();
-
-    // let cam_translation_deformed_space = Vec4::new(
-    //     camera.translation.x / norm * (cam_trans_dist_from_planet - 0.0),
-    //     camera.translation.y / norm * (cam_trans_dist_from_planet - 0.0),
-    //     camera.translation.z / norm * (cam_trans_dist_from_planet - 0.0),
-    //     1.0,
-    // );
-
-    for (entity, mut quadtree, grid, config, transform, _, mut mesh_pool) in quadtrees.iter_mut() {
-        // println!("{:?}", transform.translation);
+    for (entity, mut quadtree, grid, config, grid_transform, _, mut mesh_pool) in
+        quadtrees.iter_mut()
+    {
+        let grid_pos = grid.grid_position(cam_cell_coord, cam_trans).extend(1.0);
         quadtree.root.build_around_point(
             config,
             &mut mesh_pool,
             &mut commands,
             &mesh_cache,
-            // (transform.to_matrix().inverse() * cam_translation_deformed_space).xyz(),
-            grid.grid_position(cam_cell_coord, cam_trans) - transform.translation,
+            (grid_transform.to_matrix().inverse() * grid_pos).xyz(),
             &(entity, grid),
         );
     }
