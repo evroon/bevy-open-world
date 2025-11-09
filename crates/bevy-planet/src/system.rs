@@ -30,15 +30,15 @@ pub fn build_planet(planet_grid: &mut GridCommands, radius: f32) {
         size: radius,
     };
     let quadtree = QuadTree {
-        root: QuadTreeNode::new(Vec2::ZERO, Vec2::splat(radius)),
+        root: QuadTreeNode::new(Vec2::ZERO, Vec2::splat(radius * 2.0)),
     };
 
-    let grid = Grid::new(1.0e-2, 0.0);
+    let grid = Grid::new(1.0e-1, 0.0);
 
     // Y+
     let (cell, pos) = planet_grid
         .grid()
-        .translation_to_grid(Vec3::new(0.0, radius * 0.5, 0.0));
+        .translation_to_grid(Vec3::new(0.0, radius, 0.0));
     planet_grid.with_grid(grid.clone(), |quadtree_grid| {
         quadtree_grid.insert((
             QuadtreeGrid(),
@@ -54,7 +54,7 @@ pub fn build_planet(planet_grid: &mut GridCommands, radius: f32) {
     // Y-
     let (cell, pos) = planet_grid
         .grid()
-        .translation_to_grid(Vec3::new(0.0, -radius * 0.5, 0.0));
+        .translation_to_grid(Vec3::new(0.0, -radius, 0.0));
     planet_grid.with_grid(grid.clone(), |quadtree_grid| {
         quadtree_grid.insert((
             QuadtreeGrid(),
@@ -69,7 +69,7 @@ pub fn build_planet(planet_grid: &mut GridCommands, radius: f32) {
     // X+
     let (cell, pos) = planet_grid
         .grid()
-        .translation_to_grid(Vec3::new(radius * 0.5, 0.0, 0.0));
+        .translation_to_grid(Vec3::new(radius, 0.0, 0.0));
     planet_grid.with_grid(grid.clone(), |quadtree_grid| {
         quadtree_grid.insert((
             QuadtreeGrid(),
@@ -84,7 +84,7 @@ pub fn build_planet(planet_grid: &mut GridCommands, radius: f32) {
     // X-
     let (cell, pos) = planet_grid
         .grid()
-        .translation_to_grid(Vec3::new(-radius * 0.5, 0.0, 0.0));
+        .translation_to_grid(Vec3::new(-radius, 0.0, 0.0));
     planet_grid.with_grid(grid.clone(), |quadtree_grid| {
         quadtree_grid.insert((
             QuadtreeGrid(),
@@ -99,7 +99,7 @@ pub fn build_planet(planet_grid: &mut GridCommands, radius: f32) {
     // Z+
     let (cell, pos) = planet_grid
         .grid()
-        .translation_to_grid(Vec3::new(0.0, 0.0, radius * 0.5));
+        .translation_to_grid(Vec3::new(0.0, 0.0, radius));
     planet_grid.with_grid(grid.clone(), |quadtree_grid| {
         quadtree_grid.insert((
             QuadtreeGrid(),
@@ -114,7 +114,7 @@ pub fn build_planet(planet_grid: &mut GridCommands, radius: f32) {
     // Z-
     let (cell, pos) = planet_grid
         .grid()
-        .translation_to_grid(Vec3::new(0.0, 0.0, -radius * 0.5));
+        .translation_to_grid(Vec3::new(0.0, 0.0, -radius));
     planet_grid.with_grid(grid.clone(), |quadtree_grid| {
         quadtree_grid.insert((
             QuadtreeGrid(),
@@ -135,26 +135,38 @@ pub fn update_quadtree(
         Entity,
         &mut QuadTree,
         &Grid,
+        &CellCoord,
         &QuadTreeConfig,
         &Transform,
-        &GlobalTransform,
         &mut MeshPool,
     )>,
+    universe: Query<&Grid, With<UniverseGrid>>,
     mesh_cache: Res<MeshCache>,
 ) {
-    let (cam_trans, cam_cell_coord) = *camera;
+    if let Some(universe) = universe.iter().next() {
+        let (cam_trans, cam_cell_coord) = *camera;
 
-    for (entity, mut quadtree, grid, config, grid_transform, _, mut mesh_pool) in
-        quadtrees.iter_mut()
-    {
-        let grid_pos = grid.grid_position(cam_cell_coord, cam_trans).extend(1.0);
-        quadtree.root.build_around_point(
-            config,
-            &mut mesh_pool,
-            &mut commands,
-            &mesh_cache,
-            (grid_transform.to_matrix().inverse() * grid_pos).xyz(),
-            &(entity, grid),
-        );
+        for (entity, mut quadtree, grid, cell, config, grid_transform, mut mesh_pool) in
+            quadtrees.iter_mut()
+        {
+            let grid_pos = (grid.grid_position(cam_cell_coord, cam_trans)
+                - universe.grid_position(cell, grid_transform))
+            .extend(1.0);
+            // println!(
+            //     "{} {}",
+            //     (grid_transform.to_matrix().inverse() * grid_pos).xyz(),
+            //     universe.grid_position(cell, grid_transform)
+            // );
+            quadtree.root.build_around_point(
+                config,
+                &mut mesh_pool,
+                &mut commands,
+                &mesh_cache,
+                (grid_transform.to_matrix().inverse() * grid_pos).xyz(),
+                &(entity, grid),
+            );
+        }
+    } else {
+        error!("Could not find universe grid");
     }
 }

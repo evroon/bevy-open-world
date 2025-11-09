@@ -1,7 +1,7 @@
 use std::collections::VecDeque;
 
 use bevy::{camera::visibility::NoFrustumCulling, prelude::*};
-use big_space::{grid::Grid, prelude::CellCoord};
+use big_space::grid::Grid;
 
 use super::mesh::{MeshCache, rect_to_transform};
 
@@ -42,8 +42,6 @@ pub struct QuadTreeNode {
     pub south_west: Option<Box<QuadTreeNode>>,
 }
 
-pub const QUADTREE_SIZE: f32 = 40.0;
-
 /// subdivide based on non-euclidian max(dx, dy, dz) distance from camera
 ///
 /// https://proland.inrialpes.fr/doc/proland-4.0/core/html/index.html
@@ -54,7 +52,7 @@ fn should_subdivide(object_rect: Rect, camera_position: Vec3, k: f32) -> bool {
         f32::min(d_bottom_left.x, d_top_right.x),
         f32::min(d_bottom_left.y, d_top_right.y),
     );
-    let d = f32::max(d_horiz, camera_position.y);
+    let d = f32::max(d_horiz, camera_position.y.abs());
 
     d < k * object_rect.width()
 }
@@ -103,13 +101,8 @@ impl MeshPool {
             let (object_cell, object_pos) = root_grid.1.translation_to_grid(transform.translation);
 
             if let Ok(mut entity) = commands.get_entity(el) {
-                entity.remove::<Visibility>();
                 entity.insert(Visibility::Visible);
-
-                entity.remove::<Transform>();
                 entity.insert(Transform::from_translation(object_pos).with_scale(transform.scale));
-
-                entity.remove::<CellCoord>();
                 entity.insert(object_cell);
             }
             return el;
@@ -183,10 +176,10 @@ impl QuadTreeNode {
         let (root_entity, _) = root_grid;
         if let Some(entity_id) = self.entity {
             mesh_pool.despawn_mesh(commands, entity_id);
-            commands
-                .get_entity(*root_entity)
-                .unwrap()
-                .remove_children(&[entity_id]);
+            let mut ent = commands.get_entity(*root_entity).unwrap();
+            ent.remove_children(&[entity_id]);
+            ent.entry::<Transform>()
+                .and_modify(|mut t| t.translation = Vec3::ZERO);
             self.entity = None;
         }
 

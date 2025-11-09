@@ -47,7 +47,7 @@ fn main() {
 }
 
 fn build_universe(mut commands: Commands) {
-    commands.spawn_big_space(Grid::new(1.0e-2, 0.0), |universe_grid| {
+    commands.spawn_big_space(Grid::new(1.0e-1, 0.0), |universe_grid| {
         universe_grid.insert((UniverseGrid(),));
         universe_grid.spawn_spatial((
             Projection::Perspective(PerspectiveProjection {
