@@ -149,20 +149,16 @@ pub fn update_quadtree(
         for (entity, mut quadtree, grid, cell, config, grid_transform, mut mesh_pool) in
             quadtrees.iter_mut()
         {
-            let grid_pos = (grid.grid_position(cam_cell_coord, cam_trans)
-                - universe.grid_position(cell, grid_transform))
-            .extend(1.0);
-            // println!(
-            //     "{} {}",
-            //     (grid_transform.to_matrix().inverse() * grid_pos).xyz(),
-            //     universe.grid_position(cell, grid_transform)
-            // );
+            let cam_position_in_grid = grid.grid_position(cam_cell_coord, cam_trans);
+            let grid_position_in_universe = universe.grid_position(cell, grid_transform);
+            let cam_pos_relative = cam_position_in_grid - grid_position_in_universe;
+
             quadtree.root.build_around_point(
                 config,
                 &mut mesh_pool,
                 &mut commands,
                 &mesh_cache,
-                (grid_transform.to_matrix().inverse() * grid_pos).xyz(),
+                (grid_transform.to_matrix().inverse() * cam_pos_relative.extend(1.0)).xyz(),
                 &(entity, grid),
             );
         }
