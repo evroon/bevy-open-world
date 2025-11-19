@@ -90,9 +90,7 @@ pub fn build_mesh_cache(
             opaque_render_method: OpaqueRendererMethod::Auto,
             ..default()
         },
-        extension: TerrainMaterial {
-            terrain_radius: 20.,
-        },
+        extension: TerrainMaterial {},
     }));
 
     commands.insert_resource(MeshCache { mesh_3d, material });

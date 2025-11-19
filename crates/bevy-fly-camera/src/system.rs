@@ -72,7 +72,6 @@ pub struct TerrainMovementSettings {
     /// Sets radius of terrain surface, where terrain must be located at [`Vec3::ZERO`].
     /// Speed increases with power of 2 away from the terrain surface.
     pub speed_on_terrain_surface: f32,
-    pub terrain_radius: f32,
     pub terrain_position: Vec3,
 }
 
@@ -81,7 +80,6 @@ impl Default for TerrainMovementSettings {
     fn default() -> Self {
         Self {
             speed_on_terrain_surface: 0.001,
-            terrain_radius: 20.,
             terrain_position: Vec3::ZERO,
         }
     }
@@ -178,8 +176,7 @@ fn player_move_around_terrain(
 
             velocity = velocity.normalize_or_zero();
 
-            let height_above_surface = (transform.translation - settings.terrain_position).length()
-                - settings.terrain_radius;
+            let height_above_surface = (transform.translation - settings.terrain_position).length();
             let speed = settings.speed_on_terrain_surface + f32::abs(height_above_surface);
 
             transform.translation += velocity * time.delta_secs() * speed
