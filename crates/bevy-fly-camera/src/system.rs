@@ -68,21 +68,21 @@ impl Default for MovementSettings {
 
 /// Mouse sensitivity and movement speed
 #[derive(Resource)]
-pub struct PlanetMovementSettings {
-    /// Sets radius of planet surface, where planet must be located at [`Vec3::ZERO`].
-    /// Speed increases with power of 2 away from the planet surface.
-    pub speed_on_planet_surface: f32,
-    pub planet_radius: f32,
-    pub planet_position: Vec3,
+pub struct TerrainMovementSettings {
+    /// Sets radius of terrain surface, where terrain must be located at [`Vec3::ZERO`].
+    /// Speed increases with power of 2 away from the terrain surface.
+    pub speed_on_terrain_surface: f32,
+    pub terrain_radius: f32,
+    pub terrain_position: Vec3,
 }
 
-impl Default for PlanetMovementSettings {
-    /// Use earth at center of galaxy as default, with a speed of 10 m/s at planet surface.
+impl Default for TerrainMovementSettings {
+    /// Use earth at center of galaxy as default, with a speed of 10 m/s at terrain surface.
     fn default() -> Self {
         Self {
-            speed_on_planet_surface: 0.001,
-            planet_radius: 20.,
-            planet_position: Vec3::ZERO,
+            speed_on_terrain_surface: 0.001,
+            terrain_radius: 20.,
+            terrain_position: Vec3::ZERO,
         }
     }
 }
@@ -136,11 +136,11 @@ fn player_move(
 }
 
 /// Handles keyboard input and movement
-fn player_move_around_planet(
+fn player_move_around_terrain(
     keys: Res<ButtonInput<KeyCode>>,
     time: Res<Time>,
     primary_cursor_options: Single<&CursorOptions, With<PrimaryWindow>>,
-    settings: Option<Res<PlanetMovementSettings>>,
+    settings: Option<Res<TerrainMovementSettings>>,
     key_bindings: Res<KeyBindings>,
     mut query: Query<&mut Transform, With<FlyCam>>,
 ) {
@@ -178,9 +178,9 @@ fn player_move_around_planet(
 
             velocity = velocity.normalize_or_zero();
 
-            let height_above_surface = (transform.translation - settings.planet_position).length()
-                - settings.planet_radius;
-            let speed = settings.speed_on_planet_surface + f32::abs(height_above_surface);
+            let height_above_surface = (transform.translation - settings.terrain_position).length()
+                - settings.terrain_radius;
+            let speed = settings.speed_on_terrain_surface + f32::abs(height_above_surface);
 
             transform.translation += velocity * time.delta_secs() * speed
         }
@@ -265,7 +265,7 @@ impl Plugin for FlyCameraPlugin {
                     player_look,
                     cursor_grab,
                     player_move,
-                    player_move_around_planet,
+                    player_move_around_terrain,
                 ),
             );
     }

@@ -15,13 +15,13 @@ use super::{
 pub struct UniverseGrid();
 
 #[derive(Component)]
-pub struct PlanetGrid();
+pub struct TerrainGrid();
 
 #[derive(Component)]
 pub struct QuadtreeGrid();
 
-pub fn build_planet(planet_grid: &mut GridCommands, radius: f32) {
-    planet_grid.spawn_spatial(MeshPool::new());
+pub fn build_terrain(terrain_grid: &mut GridCommands, radius: f32) {
+    terrain_grid.spawn_spatial(MeshPool::new());
 
     let config = QuadTreeConfig {
         k: 1.1,
@@ -36,10 +36,10 @@ pub fn build_planet(planet_grid: &mut GridCommands, radius: f32) {
     let grid = Grid::new(1.0e-1, 0.0);
 
     // Y+
-    let (cell, pos) = planet_grid
+    let (cell, pos) = terrain_grid
         .grid()
         .translation_to_grid(Vec3::new(0.0, radius, 0.0));
-    planet_grid.with_grid(grid.clone(), |quadtree_grid| {
+    terrain_grid.with_grid(grid.clone(), |quadtree_grid| {
         quadtree_grid.insert((
             QuadtreeGrid(),
             cell,
@@ -52,10 +52,10 @@ pub fn build_planet(planet_grid: &mut GridCommands, radius: f32) {
     });
 
     // Y-
-    let (cell, pos) = planet_grid
+    let (cell, pos) = terrain_grid
         .grid()
         .translation_to_grid(Vec3::new(0.0, -radius, 0.0));
-    planet_grid.with_grid(grid.clone(), |quadtree_grid| {
+    terrain_grid.with_grid(grid.clone(), |quadtree_grid| {
         quadtree_grid.insert((
             QuadtreeGrid(),
             cell,
@@ -67,10 +67,10 @@ pub fn build_planet(planet_grid: &mut GridCommands, radius: f32) {
         ));
     });
     // X+
-    let (cell, pos) = planet_grid
+    let (cell, pos) = terrain_grid
         .grid()
         .translation_to_grid(Vec3::new(radius, 0.0, 0.0));
-    planet_grid.with_grid(grid.clone(), |quadtree_grid| {
+    terrain_grid.with_grid(grid.clone(), |quadtree_grid| {
         quadtree_grid.insert((
             QuadtreeGrid(),
             cell,
@@ -82,10 +82,10 @@ pub fn build_planet(planet_grid: &mut GridCommands, radius: f32) {
         ));
     });
     // X-
-    let (cell, pos) = planet_grid
+    let (cell, pos) = terrain_grid
         .grid()
         .translation_to_grid(Vec3::new(-radius, 0.0, 0.0));
-    planet_grid.with_grid(grid.clone(), |quadtree_grid| {
+    terrain_grid.with_grid(grid.clone(), |quadtree_grid| {
         quadtree_grid.insert((
             QuadtreeGrid(),
             cell,
@@ -97,10 +97,10 @@ pub fn build_planet(planet_grid: &mut GridCommands, radius: f32) {
         ));
     });
     // Z+
-    let (cell, pos) = planet_grid
+    let (cell, pos) = terrain_grid
         .grid()
         .translation_to_grid(Vec3::new(0.0, 0.0, radius));
-    planet_grid.with_grid(grid.clone(), |quadtree_grid| {
+    terrain_grid.with_grid(grid.clone(), |quadtree_grid| {
         quadtree_grid.insert((
             QuadtreeGrid(),
             cell,
@@ -112,10 +112,10 @@ pub fn build_planet(planet_grid: &mut GridCommands, radius: f32) {
         ));
     });
     // Z-
-    let (cell, pos) = planet_grid
+    let (cell, pos) = terrain_grid
         .grid()
         .translation_to_grid(Vec3::new(0.0, 0.0, -radius));
-    planet_grid.with_grid(grid.clone(), |quadtree_grid| {
+    terrain_grid.with_grid(grid.clone(), |quadtree_grid| {
         quadtree_grid.insert((
             QuadtreeGrid(),
             cell,
