@@ -11,6 +11,10 @@ pub struct PlanetMaterial {
     // so we start from binding slot 100, leaving slots 0-99 for the base material.
     #[uniform(100)]
     pub planet_radius: f32,
+    #[uniform(101)]
+    pub planet_position: Vec3,
+    #[uniform(102)]
+    pub floating_origin: Vec3,
 }
 
 impl MaterialExtension for PlanetMaterial {

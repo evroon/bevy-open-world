@@ -12,9 +12,6 @@ use super::{
 };
 
 #[derive(Component)]
-pub struct UniverseGrid();
-
-#[derive(Component)]
 pub struct PlanetGrid();
 
 #[derive(Component)]
@@ -50,7 +47,6 @@ pub fn build_planet(planet_grid: &mut GridCommands, radius: f32) {
             MeshPool::new(),
         ));
     });
-
     // Y-
     let (cell, pos) = planet_grid
         .grid()
@@ -140,7 +136,7 @@ pub fn update_quadtree(
         &Transform,
         &mut MeshPool,
     )>,
-    universe: Query<&Grid, With<UniverseGrid>>,
+    universe: Query<&Grid, With<PlanetGrid>>,
     mesh_cache: Res<MeshCache>,
 ) {
     if let Some(universe) = universe.iter().next() {
@@ -153,12 +149,20 @@ pub fn update_quadtree(
             let grid_position_in_universe = universe.grid_position(cell, grid_transform);
             let cam_pos_relative = cam_position_in_grid - grid_position_in_universe;
 
+            let norm = f32::abs(cam_pos_relative.x)
+                .max(f32::abs(cam_pos_relative.y))
+                .max(f32::abs(cam_pos_relative.z));
+
+            let cam_translation_deformed = cam_pos_relative / norm * cam_pos_relative.length();
+
+            // println!("{}", cam_translation_deformed);
+
             quadtree.root.build_around_point(
                 config,
                 &mut mesh_pool,
                 &mut commands,
                 &mesh_cache,
-                (grid_transform.to_matrix().inverse() * cam_pos_relative.extend(1.0)).xyz(),
+                (grid_transform.to_matrix().inverse() * cam_translation_deformed.extend(1.0)).xyz(),
                 &(entity, grid),
             );
         }

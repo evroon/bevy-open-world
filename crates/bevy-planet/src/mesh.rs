@@ -1,15 +1,15 @@
 use bevy::{
-    asset::RenderAssetUsages,
-    color::palettes::css::PURPLE,
-    mesh::Indices,
-    pbr::{ExtendedMaterial, OpaqueRendererMethod},
-    prelude::*,
+    asset::RenderAssetUsages, mesh::Indices, pbr::ExtendedMaterial, prelude::*,
     render::render_resource::PrimitiveTopology,
 };
 
-use super::{CELL_COUNT, CELL_SIZE, material::PlanetMaterial};
+use super::material::PlanetMaterial;
 
 type MeshDataResult = (usize, Vec<[f32; 3]>, Vec<[f32; 2]>, Vec<u32>);
+
+const CELL_COUNT: bevy::prelude::UVec2 = UVec2::splat(4);
+const CELL_COUNT_F32: bevy::prelude::Vec2 = Vec2::new(CELL_COUNT.x as f32, CELL_COUNT.y as f32);
+const CELL_SIZE: f32 = 1.0 / CELL_COUNT_F32.x;
 
 #[derive(Resource)]
 pub struct MeshCache {
@@ -69,9 +69,9 @@ fn build_mesh_data() -> MeshDataResult {
 }
 
 pub fn build_mesh_cache(
-    mut commands: Commands<'_, '_>,
+    commands: &mut Commands<'_, '_>,
     mut meshes: ResMut<'_, Assets<Mesh>>,
-    mut materials: ResMut<Assets<ExtendedMaterial<StandardMaterial, PlanetMaterial>>>,
+    material: MeshMaterial3d<ExtendedMaterial<StandardMaterial, PlanetMaterial>>,
 ) {
     let mut mesh = Mesh::new(
         PrimitiveTopology::TriangleList,
@@ -84,14 +84,6 @@ pub fn build_mesh_cache(
     mesh.insert_indices(Indices::U32(indices));
 
     let mesh_3d = Mesh3d(meshes.add(mesh));
-    let material = MeshMaterial3d(materials.add(ExtendedMaterial {
-        base: StandardMaterial {
-            base_color: PURPLE.into(),
-            opaque_render_method: OpaqueRendererMethod::Auto,
-            ..default()
-        },
-        extension: PlanetMaterial { planet_radius: 20. },
-    }));
 
     commands.insert_resource(MeshCache { mesh_3d, material });
 }

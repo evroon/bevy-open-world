@@ -411,6 +411,7 @@ version = "0.3.0"
 dependencies = [
  "bevy 0.17.2",
  "bevy_panorbit_camera",
+ "big_space",
 ]
 
 [[package]]

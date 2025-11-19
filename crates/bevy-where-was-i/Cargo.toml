@@ -13,6 +13,7 @@ categories = ["game-development"]
 
 [dependencies]
 bevy = {workspace = true}
+big_space = {workspace = true}
 
 [dev-dependencies]
 bevy = {workspace = true}

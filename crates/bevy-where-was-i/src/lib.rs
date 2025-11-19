@@ -8,6 +8,8 @@ use std::{fs::File, io::BufWriter};
 
 use bevy::prelude::*;
 use bevy::window::WindowClosing;
+use big_space::grid::Grid;
+use big_space::prelude::CellCoord;
 use serialization::{deserialize_transform, serialize_transform};
 
 mod serialization;
@@ -26,12 +28,16 @@ mod serialization;
 #[require(Transform)]
 pub struct WhereWasI {
     name: String,
+    grid: Option<Grid>,
 }
 
 impl WhereWasI {
     /// Construct a [`WhereWasI`] plugin with a name
     pub fn from_name(name: &str) -> Self {
-        Self { name: name.into() }
+        Self {
+            name: name.into(),
+            grid: None,
+        }
     }
 
     /// A shorthand used for cameras
@@ -117,14 +123,14 @@ fn load_state(mut to_save: Query<(&WhereWasI, &mut Transform)>, config: Res<Wher
 /// Note: this doesn't work for WASM.
 fn save_state(
     mut events: MessageReader<WindowClosing>,
-    to_save: Query<(&WhereWasI, &Transform)>,
+    to_save: Query<(&WhereWasI, &Transform, Option<&CellCoord>)>,
     config: Res<WhereWasIConfig>,
 ) {
     let directory = &config.directory;
     let mut saved_files = 0;
 
     if events.read().next().is_some() {
-        for (where_was_i, transform) in to_save.iter() {
+        for (where_was_i, transform, cell_coord) in to_save.iter() {
             let filename = where_was_i.name.clone();
 
             if let Ok(false) = fs::exists(directory) {
