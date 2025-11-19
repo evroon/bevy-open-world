@@ -133,57 +133,6 @@ fn player_move(
     }
 }
 
-/// Handles keyboard input and movement
-fn player_move_around_terrain(
-    keys: Res<ButtonInput<KeyCode>>,
-    time: Res<Time>,
-    primary_cursor_options: Single<&CursorOptions, With<PrimaryWindow>>,
-    settings: Option<Res<TerrainMovementSettings>>,
-    key_bindings: Res<KeyBindings>,
-    mut query: Query<&mut Transform, With<FlyCam>>,
-) {
-    if let Some(settings) = settings {
-        for mut transform in query.iter_mut() {
-            let mut velocity = Vec3::ZERO;
-            let local_x = transform.local_x();
-            let local_y = transform.local_y();
-            let local_z = transform.local_z();
-            let forward = -Vec3::new(local_z.x, local_z.y, local_z.z);
-            let right = Vec3::new(local_x.x, local_x.y, local_x.z);
-            let up = Vec3::new(local_y.x, local_y.y, local_y.z);
-
-            for key in keys.get_pressed() {
-                match primary_cursor_options.grab_mode {
-                    CursorGrabMode::None => (),
-                    _ => {
-                        let key = *key;
-                        if key == key_bindings.move_forward {
-                            velocity += forward;
-                        } else if key == key_bindings.move_backward {
-                            velocity -= forward;
-                        } else if key == key_bindings.move_left {
-                            velocity -= right;
-                        } else if key == key_bindings.move_right {
-                            velocity += right;
-                        } else if key == key_bindings.move_ascend {
-                            velocity += up;
-                        } else if key == key_bindings.move_descend {
-                            velocity -= up;
-                        }
-                    }
-                }
-            }
-
-            velocity = velocity.normalize_or_zero();
-
-            let height_above_surface = (transform.translation - settings.terrain_position).length();
-            let speed = settings.speed_on_terrain_surface + f32::abs(height_above_surface);
-
-            transform.translation += velocity * time.delta_secs() * speed
-        }
-    }
-}
-
 /// Grabs/ungrabs mouse cursor
 fn toggle_grab_cursor(mut primary_cursor_options: Single<&mut CursorOptions, With<PrimaryWindow>>) {
     match primary_cursor_options.grab_mode {
@@ -256,14 +205,6 @@ impl Plugin for FlyCameraPlugin {
         app.init_resource::<MovementSettings>()
             .init_resource::<RotationSettings>()
             .init_resource::<KeyBindings>()
-            .add_systems(
-                Update,
-                (
-                    player_look,
-                    cursor_grab,
-                    player_move,
-                    player_move_around_terrain,
-                ),
-            );
+            .add_systems(Update, (player_look, cursor_grab, player_move));
     }
 }
