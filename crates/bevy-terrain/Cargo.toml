@@ -1,7 +1,7 @@
 [package]
-name = "bevy-planet"
-description = "A plugin for Bevy that renders planets"
-repository = "https://github.com/evroon/bevy-planet"
+name = "bevy-terrain"
+description = "A plugin for Bevy that renders terrains"
+repository = "https://github.com/evroon/bevy-terrain"
 readme = "README.md"
 version = "0.1.0"
 publish = true

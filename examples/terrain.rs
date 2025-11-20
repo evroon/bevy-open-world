@@ -3,8 +3,8 @@ use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::prelude::*;
 use bevy_egui::EguiPlugin;
 use bevy_fly_camera::system::{FlyCam, FlyCameraPlugin};
-use bevy_planet::PlanetsPlugin;
-use bevy_planet::system::{UniverseGrid, build_planet};
+use bevy_terrain::TerrainPlugin;
+use bevy_terrain::system::{UniverseGrid, build_terrain};
 use bevy_volumetric_clouds::skybox::system::update_skybox_transform;
 use bevy_where_was_i::WhereWasIPlugin;
 
@@ -20,7 +20,7 @@ fn main() {
                 .disable::<TransformPlugin>()
                 .set(WindowPlugin {
                     primary_window: Some(Window {
-                        title: "Planet".to_string(),
+                        title: "Terrain".to_string(),
                         resolution: (1920, 1040).into(),
                         canvas: Some("#bevy".to_owned()),
                         prevent_default_event_handling: false,
@@ -35,7 +35,7 @@ fn main() {
                 .disable::<BigSpaceValidationPlugin>(),
         ))
         .add_plugins(EguiPlugin::default())
-        .add_plugins(PlanetsPlugin)
+        .add_plugins(TerrainPlugin)
         .add_plugins((FlyCameraPlugin, WhereWasIPlugin::default()))
         .add_systems(Startup, build_universe)
         .add_systems(Update, update_skybox_transform)
@@ -60,10 +60,10 @@ fn build_universe(mut commands: Commands) {
             Camera { ..default() },
             FlyCam,
             FloatingOrigin,
-            // WhereWasI::from_name("planet_example"),
+            // WhereWasI::from_name("terrain_example"),
             Transform::from_xyz(1.908292, 00.001, 1.066515).looking_at(Vec3::ZERO, Vec3::Y),
         ));
         universe_grid.spawn_spatial((DirectionalLight::default(),));
-        build_planet(universe_grid, 10.0);
+        build_terrain(universe_grid, 10.0);
     });
 }

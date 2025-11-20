@@ -378,7 +378,7 @@ version = "0.1.0"
 dependencies = [
  "bevy 0.17.2",
  "bevy-fly-camera",
- "bevy-planet",
+ "bevy-terrain",
  "bevy-volumetric-clouds",
  "bevy-where-was-i",
  "bevy_egui",
@@ -389,7 +389,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "bevy-planet"
+name = "bevy-terrain"
 version = "0.1.0"
 dependencies = [
  "bevy 0.17.2",

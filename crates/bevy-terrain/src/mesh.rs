@@ -7,14 +7,14 @@ use bevy::{
     render::render_resource::PrimitiveTopology,
 };
 
-use super::{CELL_COUNT, CELL_SIZE, material::PlanetMaterial};
+use super::{CELL_COUNT, CELL_SIZE, material::TerrainMaterial};
 
 type MeshDataResult = (usize, Vec<[f32; 3]>, Vec<[f32; 2]>, Vec<u32>);
 
 #[derive(Resource)]
 pub struct MeshCache {
     pub mesh_3d: Mesh3d,
-    pub material: MeshMaterial3d<ExtendedMaterial<StandardMaterial, PlanetMaterial>>,
+    pub material: MeshMaterial3d<ExtendedMaterial<StandardMaterial, TerrainMaterial>>,
 }
 
 /// Builds a mesh of size 1.0 x 1.0, with CELL_COUNT number of cells within in both dimensions.
@@ -71,7 +71,7 @@ fn build_mesh_data() -> MeshDataResult {
 pub fn build_mesh_cache(
     mut commands: Commands<'_, '_>,
     mut meshes: ResMut<'_, Assets<Mesh>>,
-    mut materials: ResMut<Assets<ExtendedMaterial<StandardMaterial, PlanetMaterial>>>,
+    mut materials: ResMut<Assets<ExtendedMaterial<StandardMaterial, TerrainMaterial>>>,
 ) {
     let mut mesh = Mesh::new(
         PrimitiveTopology::TriangleList,
@@ -90,7 +90,7 @@ pub fn build_mesh_cache(
             opaque_render_method: OpaqueRendererMethod::Auto,
             ..default()
         },
-        extension: PlanetMaterial { planet_radius: 20. },
+        extension: TerrainMaterial {},
     }));
 
     commands.insert_resource(MeshCache { mesh_3d, material });

@@ -40,4 +40,4 @@ turborand = "0.10.1"
 bevy-where-was-i = { path = "crates/bevy-where-was-i" }
 bevy-fly-camera = { path = "crates/bevy-fly-camera" }
 bevy-volumetric-clouds = { path = "crates/bevy-volumetric-clouds" }
-bevy-planet = { path = "crates/bevy-planet" }
+bevy-terrain = { path = "crates/bevy-terrain" }

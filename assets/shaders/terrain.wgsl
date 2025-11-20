@@ -24,12 +24,11 @@ struct Vertex {
     @location(2) tex_coords: vec2<f32>,
 };
 
-struct PlanetMaterial {
-    planet_radius: f32,
+struct TerrainMaterial {
 }
 
 @group(3) @binding(100)
-var<uniform> planet_material: PlanetMaterial;
+var<uniform> terrain_material: TerrainMaterial;
 
 
 @vertex
@@ -41,13 +40,8 @@ fn vertex(vertex: Vertex) -> VertexOutput {
     out.instance_index = vertex.instance_index;
     out.world_position = mesh_position_local_to_world(model, vec4<f32>(position, 1.0));
 
-    let world_pos_length = length(out.world_position.xyz);
-    let dir = out.world_position / world_pos_length;
-    // out.world_position = dir * planet_material.planet_radius;
-
     out.position = position_world_to_clip(out.world_position.xyz);
-    out.world_normal = dir.xyz;
-    // out.world_normal = vertex.world_normal;
+    out.world_normal = vertex.world_normal;
     out.uv = vertex.tex_coords;
     return out;
 }
