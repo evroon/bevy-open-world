@@ -1,0 +1,18 @@
+name: celestial
+services:
+    clickhouse-server:
+        ports:
+            - 18123:8123
+            - 19000:9000
+        environment:
+            - CLICKHOUSE_PASSWORD=not-secret
+        volumes:
+            - ./logs:/var/log/clickhouse-server
+            - ./data/archives:/var/lib/clickhouse/user_files
+        user: 1000:1000
+        container_name: adsb-clickhouse
+        ulimits:
+            nofile:
+                soft: 262144
+                hard: 262144
+        image: clickhouse/clickhouse-server

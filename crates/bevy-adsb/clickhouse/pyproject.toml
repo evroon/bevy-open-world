@@ -1,0 +1,14 @@
+[project]
+name = "scripts"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "matplotlib[mpl-toolkits]>=3.10.8",
+    "numpy>=2.4.0",
+    "pandas>=2.3.3",
+    "plotly>=6.5.0",
+    "requests>=2.32.5",
+    "ruff>=0.14.10",
+]
