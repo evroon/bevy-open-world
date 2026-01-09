@@ -24,6 +24,7 @@ Currently includes:
 - [bevy-adsb](/crates/bevy-adsb/): A plugin to visualize ADS-B aircraft traffic using real-world data from ADSB.lol.
 - [bevy-earth](/crates/bevy-earth/): A plugin to render a simple earth model with day/night cycle
 - [bevy-night-sky](/crates/bevy-night-sky/): A plugin to render a a skybox of our Milky Way sky at night
+- [bevy-osm](/crates/bevy-osm/): A plugin for rendering OpenStreetMap buildings, roads etc. in Bevy
 - [bevy-skybox](/crates/bevy-skybox/): A plugin to render a simple skybox
 - [bevy-terrain](/crates/bevy-terrain/): A plugin for rendering quadtree terrain in Bevy
 
