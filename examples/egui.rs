@@ -1,6 +1,6 @@
 //! This example showcases pbr atmospheric scattering
 
-use std::f32::consts::PI;
+use core::f32::consts::PI;
 
 use bevy::{
     camera::Exposure,

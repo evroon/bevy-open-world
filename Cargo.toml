@@ -15,10 +15,10 @@ publish = false
 members = ["crates/*"]
 
 [features]
-dev = ["bevy/dynamic_linking"]
+dev = ["bevy/dynamic_linking", "bevy/file_watcher"]
 
 [workspace.dependencies]
-bevy = { version = "0.17.3", features = ["file_watcher", "jpeg", "bevy_mesh"] }
+bevy = { version = "0.17.3", features = ["jpeg", "bevy_mesh"] }
 bevy_panorbit_camera = "0.33.1"
 bevy_egui = "0.38.1"
 wayland-sys = { version = "0.31.8", features = ["dlopen"] }
@@ -44,3 +44,25 @@ bevy-night-sky = { path = "crates/bevy-night-sky" }
 bevy-osm = { path = "crates/bevy-osm" }
 bevy-skybox = { path = "crates/bevy-skybox" }
 bevy-terrain = { path = "crates/bevy-terrain" }
+
+[lints.clippy]
+doc_markdown = "warn"
+manual_let_else = "warn"
+match_same_arms = "warn"
+redundant_closure_for_method_calls = "warn"
+redundant_else = "warn"
+semicolon_if_nothing_returned = "warn"
+undocumented_unsafe_blocks = "warn"
+ptr_as_ptr = "warn"
+ptr_cast_constness = "warn"
+ref_as_ptr = "warn"
+std_instead_of_core = "warn"
+alloc_instead_of_core = "warn"
+# Enable once availabe:
+# doc_paragraphs_missing_punctuation = "warn"
+
+[lints.rust]
+dead_code = "warn"
+unsafe_code = "deny"
+unsafe_op_in_unsafe_fn = "warn"
+unused_qualifications = "warn"

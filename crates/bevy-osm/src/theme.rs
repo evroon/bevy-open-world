@@ -146,11 +146,11 @@ pub fn get_way_build_instruction(tags: &Vec<Tag>) -> BuildInstruction {
     BuildInstruction::None
 }
 
-#[expect(unused_variables)]
+#[expect(dead_code, unused_variables)]
 pub fn get_rel_build_instruction(tags: &Vec<Tag>) -> BuildInstruction {
     // TODO: handle relations that are only partially included in a dataset
     return BuildInstruction::None;
-    #[expect(unreachable_code, unused_assignments)]
+    #[expect(unreachable_code)]
     let mut color = Color::WHITE;
 
     for tag in tags {

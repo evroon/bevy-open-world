@@ -4,7 +4,6 @@ mod theme;
 
 use std::fs::File;
 extern crate osm_xml as osm;
-use crate::mesh::{spawn_fill_mesh, spawn_stroke_mesh};
 use crate::{
     building::{Building, polygon_building},
     material::{MapMaterialHandle, OSMConfig},
@@ -60,9 +59,11 @@ pub fn build_tile() -> Vec<Building> {
             }
         }
         match get_way_build_instruction(&way.tags) {
+            #[expect(unused_variables)]
             BuildInstruction::Fill(fill) => {
                 // spawn_fill_mesh(&mut commands, &mut meshes, &mut materials, points, fill);
             }
+            #[expect(unused_variables)]
             BuildInstruction::Stroke(stroke) => {
                 // spawn_stroke_mesh(&mut commands, &mut meshes, &mut materials, points, stroke);
             }

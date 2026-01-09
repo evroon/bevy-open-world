@@ -87,8 +87,11 @@ fn setup(mut commands: Commands) {
 fn rotate_sun_around_earth(
     mut suns: Query<&mut Transform, With<Sun>>,
     adsb_config: Res<ADSBConfig>,
+    mut earth_config: ResMut<EarthConfig>,
 ) {
     for mut transform in suns.iter_mut() {
-        transform.rotation = adsb_config.get_sun_direction();
+        let sun_dir = adsb_config.get_sun_direction();
+        transform.rotation = sun_dir;
+        earth_config.sun_direction = sun_dir;
     }
 }
