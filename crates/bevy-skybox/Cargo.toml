@@ -1,0 +1,10 @@
+[package]
+name = "bevy-skybox"
+description = "A plugin for Bevy that renders a skybox"
+edition = "2024"
+
+[dependencies]
+bevy = { workspace = true, features = ["bevy_mesh"] }
+
+[dev-dependencies]
+bevy = { workspace = true }

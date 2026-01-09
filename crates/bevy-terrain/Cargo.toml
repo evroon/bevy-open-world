@@ -1,19 +1,11 @@
 [package]
 name = "bevy-terrain"
-description = "A plugin for Bevy that renders terrains"
-repository = "https://github.com/evroon/bevy-terrain"
-readme = "README.md"
-version = "0.1.0"
-publish = true
-authors = ["evroon"]
+description = "A plugin for Bevy that renders quadtree terrain"
 edition = "2024"
-license = "MIT"
-keywords = ["bevy", "serialization", "gamedev", "savegame", "plugin"]
-categories = ["game-development"]
 
 [dependencies]
-bevy = {workspace = true, features = ["bevy_mesh"]}
-big_space = {workspace = true, features=["debug"]}
+bevy = { workspace = true, features = ["bevy_mesh"] }
+big_space = "0.11.0"
 
 [dev-dependencies]
-bevy = {workspace = true}
+bevy = { workspace = true }

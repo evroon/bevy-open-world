@@ -1,0 +1,10 @@
+[package]
+name = "bevy-night-sky"
+description = "A plugin for Bevy that renders the night sky (milky way)"
+edition = "2024"
+
+[dependencies]
+bevy = { workspace = true, features = ["bevy_mesh"] }
+
+[dev-dependencies]
+bevy = { workspace = true }

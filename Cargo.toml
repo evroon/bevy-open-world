@@ -6,7 +6,6 @@ readme = "README.md"
 version = "0.1.0"
 edition = "2024"
 authors = ["evroon"]
-rust-version = "1.89.0"
 license = "MIT"
 keywords = ["bevy", "serialization", "gamedev", "savegame", "plugin"]
 categories = ["game-development"]
@@ -19,14 +18,15 @@ members = ["crates/*"]
 dev = ["bevy/dynamic_linking"]
 
 [workspace.dependencies]
-bevy = { version = "0.17.2", features=["file_watcher", "jpeg", "bevy_mesh"]}
-bevy_panorbit_camera = "0.33.0"
-bevy_egui = "0.38.0"
-wayland-sys = { version="0.31.7", features = ["dlopen"] }
-big_space = {version="0.11.0"}
+bevy = { version = "0.17.3", features = ["file_watcher", "jpeg", "bevy_mesh"] }
+bevy_panorbit_camera = "0.33.1"
+bevy_egui = "0.38.1"
+wayland-sys = { version = "0.31.8", features = ["dlopen"] }
+big_space = { version = "0.11.0" }
 
 [dependencies]
 bevy = { workspace = true }
+bevy-where-was-i = "0.3.0"
 wayland-sys = { workspace = true }
 
 [dev-dependencies]
@@ -34,10 +34,11 @@ bevy = { workspace = true }
 bevy_panorbit_camera = { workspace = true }
 bevy_egui = { workspace = true }
 wayland-sys = { workspace = true }
-big_space = {version ="0.11.0", features=["camera"]}
+big_space = { version = "0.11.0", features = ["camera"] }
 turborand = "0.10.1"
 
-bevy-where-was-i = { path = "crates/bevy-where-was-i" }
-bevy-fly-camera = { path = "crates/bevy-fly-camera" }
-bevy-volumetric-clouds = { path = "crates/bevy-volumetric-clouds" }
+bevy-adsb = { path = "crates/bevy-adsb" }
+bevy-earth = { path = "crates/bevy-earth" }
+bevy-night-sky = { path = "crates/bevy-night-sky" }
 bevy-terrain = { path = "crates/bevy-terrain" }
+bevy-skybox = { path = "crates/bevy-skybox" }
