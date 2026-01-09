@@ -41,5 +41,6 @@ turborand = "0.10.1"
 bevy-adsb = { path = "crates/bevy-adsb" }
 bevy-earth = { path = "crates/bevy-earth" }
 bevy-night-sky = { path = "crates/bevy-night-sky" }
-bevy-terrain = { path = "crates/bevy-terrain" }
+bevy-osm = { path = "crates/bevy-osm" }
 bevy-skybox = { path = "crates/bevy-skybox" }
+bevy-terrain = { path = "crates/bevy-terrain" }

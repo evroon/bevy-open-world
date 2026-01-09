@@ -1,0 +1,20 @@
+[package]
+name = "bevy-osm"
+description = "A plugin for Bevy that renders openstreetmap geometry"
+edition = "2024"
+
+[dependencies]
+bevy = { workspace = true, features = ["bevy_mesh"] }
+osm-xml = "0.6.2"
+lyon = "1.0.1"
+lyon_tessellation = "1.0.15"
+geo = "0.31.0"
+geo-types = "0.7.17"
+strum = "0.25.0"
+strum_macros = "0.25.2"
+async-std = "1.13.2"
+rand = "0.9.2"
+
+
+[dev-dependencies]
+bevy = { workspace = true }
