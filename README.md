@@ -3,9 +3,9 @@
 </h1>
 
 <p align="center">
-  <a href="https://github.com/evroon/adsb-globe/actions"
+  <a href="https://github.com/evroon/bevy-open-world/actions"
     ><img
-      src="https://img.shields.io/github/actions/workflow/status/evroon/adsb-globe/ci.yml"
+      src="https://img.shields.io/github/actions/workflow/status/evroon/bevy-open-world/ci.yml"
       alt="build status"
   /></a>
 </p>
