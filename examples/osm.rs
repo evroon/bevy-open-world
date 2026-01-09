@@ -1,4 +1,4 @@
-use bevy::{color::palettes::css::WHITE, prelude::*, render::view::Hdr};
+use bevy::{prelude::*, render::view::Hdr};
 use bevy_osm::OSMPlugin;
 use bevy_panorbit_camera::{PanOrbitCamera, PanOrbitCameraPlugin};
 use bevy_where_was_i::{WhereWasI, WhereWasIPlugin};
@@ -20,17 +20,7 @@ fn setup(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    commands.insert_resource(AmbientLight {
-        color: WHITE.into(),
-        brightness: 500.0,
-        ..default()
-    });
-
     commands.spawn((
-        Camera {
-            clear_color: ClearColorConfig::Custom(Color::BLACK),
-            ..default()
-        },
         Hdr,
         Camera3d::default(),
         Projection::Perspective(PerspectiveProjection {

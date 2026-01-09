@@ -75,7 +75,7 @@ pub fn get_way_build_instruction(tags: &Vec<Tag>) -> BuildInstruction {
                     return BuildInstruction::Stroke(StrokeInstruction { color, width: 0.04 });
                 }
                 _ => {
-                    println!("{:?}", tag);
+                    // println!("{:?}", tag);
                 }
             };
             return BuildInstruction::Stroke(StrokeInstruction { color, width: 0.04 });
