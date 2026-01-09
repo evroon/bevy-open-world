@@ -2,10 +2,9 @@ use bevy::DefaultPlugins;
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::prelude::*;
 use bevy_egui::EguiPlugin;
-use bevy_fly_camera::system::{FlyCam, FlyCameraPlugin};
 use bevy_terrain::TerrainPlugin;
 use bevy_terrain::system::{UniverseGrid, build_terrain};
-use bevy_volumetric_clouds::skybox::system::update_skybox_transform;
+use bevy_volumetric_clouds::fly_camera::{FlyCam, FlyCameraPlugin};
 use bevy_where_was_i::WhereWasIPlugin;
 
 use big_space::plugin::BigSpaceValidationPlugin;
@@ -38,7 +37,6 @@ fn main() {
         .add_plugins(TerrainPlugin)
         .add_plugins((FlyCameraPlugin, WhereWasIPlugin::default()))
         .add_systems(Startup, build_universe)
-        .add_systems(Update, update_skybox_transform)
         .add_plugins((
             FrameTimeDiagnosticsPlugin::default(),
             LogDiagnosticsPlugin::default(),

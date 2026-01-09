@@ -387,7 +387,8 @@ dependencies = [
  "bevy-night-sky",
  "bevy-skybox",
  "bevy-terrain",
- "bevy-where-was-i 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "bevy-volumetric-clouds",
+ "bevy-where-was-i",
  "bevy_egui",
  "bevy_panorbit_camera",
  "big_space",
@@ -417,14 +418,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c054ab45a84801251dd47ec4f1ba2ea331e84b1c00d59665358bcec6c4ee48a9"
 dependencies = [
  "bevy",
-]
-
-[[package]]
-name = "bevy-where-was-i"
-version = "0.3.0"
-dependencies = [
- "bevy",
- "bevy_panorbit_camera",
 ]
 
 [[package]]
