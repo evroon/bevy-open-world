@@ -1,27 +1,18 @@
 use std::f32::consts::PI;
 
 use bevy::prelude::*;
-use big_space::{
-    grid::Grid,
-    prelude::{CellCoord, GridCommands},
-};
 
 use super::{
     mesh::MeshCache,
     quadtree::{MeshPool, QuadTree, QuadTreeConfig, QuadTreeNode},
 };
 
-#[derive(Component)]
-pub struct UniverseGrid();
+pub fn build_planets(commands: Commands) {
+    build_planet(commands, 40.0);
+}
 
-#[derive(Component)]
-pub struct TerrainGrid();
-
-#[derive(Component)]
-pub struct QuadtreeGrid();
-
-pub fn build_terrain(terrain_grid: &mut GridCommands, radius: f32) {
-    terrain_grid.spawn_spatial(MeshPool::new());
+pub fn build_planet(mut commands: Commands, radius: f32) {
+    commands.spawn(MeshPool::new());
 
     let config = QuadTreeConfig {
         k: 1.1,
@@ -30,139 +21,88 @@ pub fn build_terrain(terrain_grid: &mut GridCommands, radius: f32) {
         size: radius,
     };
     let quadtree = QuadTree {
-        root: QuadTreeNode::new(Vec2::ZERO, Vec2::splat(radius * 2.0)),
+        root: QuadTreeNode::new(Vec2::ZERO, Vec2::splat(radius)),
     };
 
-    let grid = Grid::new(1.0e-1, 0.0);
-
-    // Y+
-    let (cell, pos) = terrain_grid
-        .grid()
-        .translation_to_grid(Vec3::new(0.0, radius, 0.0));
-    terrain_grid.with_grid(grid.clone(), |quadtree_grid| {
-        quadtree_grid.insert((
-            QuadtreeGrid(),
-            cell,
-            Transform::from_translation(pos),
-            quadtree.clone(),
-            config.clone(),
-            Visibility::Inherited,
-            MeshPool::new(),
-        ));
-    });
-
-    // Y-
-    let (cell, pos) = terrain_grid
-        .grid()
-        .translation_to_grid(Vec3::new(0.0, -radius, 0.0));
-    terrain_grid.with_grid(grid.clone(), |quadtree_grid| {
-        quadtree_grid.insert((
-            QuadtreeGrid(),
-            cell,
-            Transform::from_rotation(Quat::from_rotation_x(PI)).with_translation(pos),
-            quadtree.clone(),
-            config.clone(),
-            Visibility::Inherited,
-            MeshPool::new(),
-        ));
-    });
+    // Top
+    commands.spawn((
+        Transform::from_translation(Vec3::new(0.0, radius * 0.5, 0.0)),
+        quadtree.clone(),
+        config.clone(),
+        Visibility::Inherited,
+    ));
+    // Bottom
+    commands.spawn((
+        Transform::from_rotation(Quat::from_rotation_x(PI)).with_translation(Vec3::new(
+            0.0,
+            -radius * 0.5,
+            0.0,
+        )),
+        quadtree.clone(),
+        config.clone(),
+        Visibility::Inherited,
+    ));
     // X+
-    let (cell, pos) = terrain_grid
-        .grid()
-        .translation_to_grid(Vec3::new(radius, 0.0, 0.0));
-    terrain_grid.with_grid(grid.clone(), |quadtree_grid| {
-        quadtree_grid.insert((
-            QuadtreeGrid(),
-            cell,
-            Transform::from_rotation(Quat::from_rotation_z(-PI * 0.5)).with_translation(pos),
-            quadtree.clone(),
-            config.clone(),
-            Visibility::Inherited,
-            MeshPool::new(),
-        ));
-    });
+    commands.spawn((
+        Transform::from_rotation(Quat::from_rotation_z(-PI * 0.5)).with_translation(Vec3::new(
+            radius * 0.5,
+            0.0,
+            0.0,
+        )),
+        quadtree.clone(),
+        config.clone(),
+        Visibility::Inherited,
+    ));
     // X-
-    let (cell, pos) = terrain_grid
-        .grid()
-        .translation_to_grid(Vec3::new(-radius, 0.0, 0.0));
-    terrain_grid.with_grid(grid.clone(), |quadtree_grid| {
-        quadtree_grid.insert((
-            QuadtreeGrid(),
-            cell,
-            Transform::from_rotation(Quat::from_rotation_z(PI * 0.5)).with_translation(pos),
-            quadtree.clone(),
-            config.clone(),
-            Visibility::Inherited,
-            MeshPool::new(),
-        ));
-    });
+    commands.spawn((
+        Transform::from_rotation(Quat::from_rotation_z(PI * 0.5)).with_translation(Vec3::new(
+            -radius * 0.5,
+            0.0,
+            0.0,
+        )),
+        quadtree.clone(),
+        config.clone(),
+        Visibility::Inherited,
+    ));
     // Z+
-    let (cell, pos) = terrain_grid
-        .grid()
-        .translation_to_grid(Vec3::new(0.0, 0.0, radius));
-    terrain_grid.with_grid(grid.clone(), |quadtree_grid| {
-        quadtree_grid.insert((
-            QuadtreeGrid(),
-            cell,
-            Transform::from_rotation(Quat::from_rotation_x(PI * 0.5)).with_translation(pos),
-            quadtree.clone(),
-            config.clone(),
-            Visibility::Inherited,
-            MeshPool::new(),
-        ));
-    });
+    commands.spawn((
+        Transform::from_rotation(Quat::from_rotation_x(PI * 0.5)).with_translation(Vec3::new(
+            0.0,
+            0.0,
+            radius * 0.5,
+        )),
+        quadtree.clone(),
+        config.clone(),
+        Visibility::Inherited,
+    ));
     // Z-
-    let (cell, pos) = terrain_grid
-        .grid()
-        .translation_to_grid(Vec3::new(0.0, 0.0, -radius));
-    terrain_grid.with_grid(grid.clone(), |quadtree_grid| {
-        quadtree_grid.insert((
-            QuadtreeGrid(),
-            cell,
-            Transform::from_rotation(Quat::from_rotation_x(-PI * 0.5)).with_translation(pos),
-            quadtree,
-            config,
-            Visibility::Inherited,
-            MeshPool::new(),
-        ));
-    });
+    commands.spawn((
+        Transform::from_rotation(Quat::from_rotation_x(-PI * 0.5)).with_translation(Vec3::new(
+            0.0,
+            0.0,
+            -radius * 0.5,
+        )),
+        quadtree,
+        config,
+        Visibility::Inherited,
+    ));
 }
 
-pub fn update_quadtree(
+pub fn update_terrain_quadtree(
     mut commands: Commands,
-    camera: Single<(&Transform, &CellCoord), With<Camera>>,
-    mut quadtrees: Query<(
-        Entity,
-        &mut QuadTree,
-        &Grid,
-        &CellCoord,
-        &QuadTreeConfig,
-        &Transform,
-        &mut MeshPool,
-    )>,
-    universe: Query<&Grid, With<UniverseGrid>>,
+    camera: Single<&Transform, With<Camera>>,
+    mut quadtrees: Query<(Entity, &mut QuadTree, &QuadTreeConfig, &Transform)>,
+    mut mesh_pool: Single<&mut MeshPool>,
     mesh_cache: Res<MeshCache>,
 ) {
-    if let Some(universe) = universe.iter().next() {
-        let (cam_trans, cam_cell_coord) = *camera;
-
-        for (entity, mut quadtree, grid, cell, config, grid_transform, mut mesh_pool) in
-            quadtrees.iter_mut()
-        {
-            let cam_position_in_grid = grid.grid_position(cam_cell_coord, cam_trans);
-            let grid_position_in_universe = universe.grid_position(cell, grid_transform);
-            let cam_pos_relative = cam_position_in_grid - grid_position_in_universe;
-
-            quadtree.root.build_around_point(
-                config,
-                &mut mesh_pool,
-                &mut commands,
-                &mesh_cache,
-                (grid_transform.to_matrix().inverse() * cam_pos_relative.extend(1.0)).xyz(),
-                &(entity, grid),
-            );
-        }
-    } else {
-        error!("Could not find universe grid");
+    for (entity, mut quadtree, config, transform) in quadtrees.iter_mut() {
+        quadtree.root.build_around_point(
+            config,
+            &entity,
+            &mut mesh_pool,
+            &mut commands,
+            &mesh_cache,
+            camera.translation - transform.translation,
+        );
     }
 }

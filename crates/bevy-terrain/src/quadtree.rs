@@ -1,9 +1,8 @@
 use std::collections::VecDeque;
 
-use bevy::{camera::visibility::NoFrustumCulling, prelude::*};
-use big_space::grid::Grid;
+use bevy::prelude::*;
 
-use super::mesh::{MeshCache, rect_to_transform};
+use super::mesh::{MeshCache, rect_to_transform, spawn_mesh};
 
 #[derive(Component, Debug, Default)]
 pub struct MeshPool(pub VecDeque<Entity>);
@@ -42,6 +41,8 @@ pub struct QuadTreeNode {
     pub south_west: Option<Box<QuadTreeNode>>,
 }
 
+pub const QUADTREE_SIZE: f32 = 40.0;
+
 /// subdivide based on non-euclidian max(dx, dy, dz) distance from camera
 ///
 /// https://proland.inrialpes.fr/doc/proland-4.0/core/html/index.html
@@ -52,33 +53,9 @@ fn should_subdivide(object_rect: Rect, camera_position: Vec3, k: f32) -> bool {
         f32::min(d_bottom_left.x, d_top_right.x),
         f32::min(d_bottom_left.y, d_top_right.y),
     );
-    let d = f32::max(d_horiz, camera_position.y.abs());
+    let d = f32::max(d_horiz, camera_position.y);
 
     d < k * object_rect.width()
-}
-
-pub fn spawn_mesh(
-    commands: &mut Commands,
-    mesh_cache: &Res<MeshCache>,
-    rect: Rect,
-    root_grid: &(Entity, &Grid),
-) -> Entity {
-    let (root_grid_id, root_grid) = root_grid;
-    let transform = rect_to_transform(rect);
-
-    let (object_cell, object_pos) = root_grid.translation_to_grid(transform.translation);
-
-    let entity = commands.spawn((
-        object_cell,
-        mesh_cache.mesh_3d.clone(),
-        Transform::from_translation(object_pos).with_scale(transform.scale),
-        mesh_cache.material.clone(),
-        NoFrustumCulling,
-    ));
-
-    let eid = entity.id();
-    commands.entity(*root_grid_id).add_child(eid);
-    eid
 }
 
 impl MeshPool {
@@ -89,25 +66,24 @@ impl MeshPool {
     pub fn get_mesh(
         &mut self,
         commands: &mut Commands,
+        root_entity: &Entity,
         mesh_cache: &Res<MeshCache>,
         rect: Rect,
-        root_grid: &(Entity, &Grid),
     ) -> Entity {
         if let Some(el) = self.0.pop_front() {
-            let mut root_entity = commands.get_entity(root_grid.0).unwrap();
+            let mut root_entity = commands.get_entity(*root_entity).unwrap();
             root_entity.add_child(el);
-            let transform = rect_to_transform(rect);
-
-            let (object_cell, object_pos) = root_grid.1.translation_to_grid(transform.translation);
 
             if let Ok(mut entity) = commands.get_entity(el) {
+                entity.remove::<Visibility>();
                 entity.insert(Visibility::Visible);
-                entity.insert(Transform::from_translation(object_pos).with_scale(transform.scale));
-                entity.insert(object_cell);
+
+                entity.remove::<Transform>();
+                entity.insert(rect_to_transform(rect));
             }
             return el;
         }
-        spawn_mesh(commands, mesh_cache, rect, root_grid)
+        spawn_mesh(commands, root_entity, mesh_cache, rect)
     }
 
     fn despawn_mesh(&mut self, commands: &mut Commands, entity_id: Entity) {
@@ -170,16 +146,15 @@ impl QuadTreeNode {
     pub fn destruct(
         &mut self,
         mesh_pool: &mut MeshPool,
+        root_entity: &Entity,
         commands: &mut Commands,
-        root_grid: &(Entity, &Grid),
     ) {
-        let (root_entity, _) = root_grid;
         if let Some(entity_id) = self.entity {
             mesh_pool.despawn_mesh(commands, entity_id);
-            let mut ent = commands.get_entity(*root_entity).unwrap();
-            ent.remove_children(&[entity_id]);
-            ent.entry::<Transform>()
-                .and_modify(|mut t| t.translation = Vec3::ZERO);
+            commands
+                .get_entity(*root_entity)
+                .unwrap()
+                .remove_children(&[entity_id]);
             self.entity = None;
         }
 
@@ -187,30 +162,30 @@ impl QuadTreeNode {
             self.north_east
                 .as_mut()
                 .unwrap()
-                .destruct(mesh_pool, commands, root_grid);
+                .destruct(mesh_pool, root_entity, commands);
             self.north_west
                 .as_mut()
                 .unwrap()
-                .destruct(mesh_pool, commands, root_grid);
+                .destruct(mesh_pool, root_entity, commands);
             self.south_east
                 .as_mut()
                 .unwrap()
-                .destruct(mesh_pool, commands, root_grid);
+                .destruct(mesh_pool, root_entity, commands);
             self.south_west
                 .as_mut()
                 .unwrap()
-                .destruct(mesh_pool, commands, root_grid);
+                .destruct(mesh_pool, root_entity, commands);
         }
     }
 
     pub fn build_around_point(
         &mut self,
         config: &QuadTreeConfig,
+        root_entity: &Entity,
         mesh_pool: &mut MeshPool,
         commands: &mut Commands,
         mesh_cache: &Res<MeshCache>,
         ref_point: Vec3,
-        root_grid: &(Entity, &Grid),
     ) {
         let _should_subdivide = should_subdivide(self.rect, ref_point, config.k);
         let increase_lod =
@@ -227,39 +202,60 @@ impl QuadTreeNode {
             }
 
             self.north_east.as_mut().unwrap().build_around_point(
-                config, mesh_pool, commands, mesh_cache, ref_point, root_grid,
+                config,
+                root_entity,
+                mesh_pool,
+                commands,
+                mesh_cache,
+                ref_point,
             );
             self.north_west.as_mut().unwrap().build_around_point(
-                config, mesh_pool, commands, mesh_cache, ref_point, root_grid,
+                config,
+                root_entity,
+                mesh_pool,
+                commands,
+                mesh_cache,
+                ref_point,
             );
             self.south_east.as_mut().unwrap().build_around_point(
-                config, mesh_pool, commands, mesh_cache, ref_point, root_grid,
+                config,
+                root_entity,
+                mesh_pool,
+                commands,
+                mesh_cache,
+                ref_point,
             );
             self.south_west.as_mut().unwrap().build_around_point(
-                config, mesh_pool, commands, mesh_cache, ref_point, root_grid,
+                config,
+                root_entity,
+                mesh_pool,
+                commands,
+                mesh_cache,
+                ref_point,
             );
         } else {
             if self.north_east.is_some() {
                 self.north_east
                     .as_mut()
                     .unwrap()
-                    .destruct(mesh_pool, commands, root_grid);
+                    .destruct(mesh_pool, root_entity, commands);
                 self.north_west
                     .as_mut()
                     .unwrap()
-                    .destruct(mesh_pool, commands, root_grid);
+                    .destruct(mesh_pool, root_entity, commands);
                 self.south_east
                     .as_mut()
                     .unwrap()
-                    .destruct(mesh_pool, commands, root_grid);
+                    .destruct(mesh_pool, root_entity, commands);
                 self.south_west
                     .as_mut()
                     .unwrap()
-                    .destruct(mesh_pool, commands, root_grid);
+                    .destruct(mesh_pool, root_entity, commands);
             }
 
             if self.entity.is_none() {
-                self.entity = Some(mesh_pool.get_mesh(commands, mesh_cache, self.rect, root_grid));
+                self.entity =
+                    Some(mesh_pool.get_mesh(commands, root_entity, mesh_cache, self.rect));
             }
         }
     }

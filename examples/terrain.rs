@@ -1,25 +1,30 @@
 use bevy::DefaultPlugins;
+use bevy::asset::AssetMetaCheck;
+use bevy::color::palettes::css::WHITE;
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
+use bevy::pbr::ExtendedMaterial;
+use bevy::pbr::wireframe::{WireframeConfig, WireframePlugin};
 use bevy::prelude::*;
+use bevy::render::RenderPlugin;
+use bevy::render::settings::{RenderCreation, WgpuFeatures, WgpuSettings};
+use bevy::render::view::Hdr;
 use bevy_egui::EguiPlugin;
-use bevy_terrain::TerrainPlugin;
-use bevy_terrain::system::{UniverseGrid, build_terrain};
+use bevy_skybox::system::{init_skybox, update_skybox};
+use bevy_terrain::build_terrain_tile;
+use bevy_terrain::material::PlanetMaterial;
+use bevy_terrain::mesh::build_mesh_cache;
+use bevy_terrain::system::update_terrain_quadtree;
 use bevy_volumetric_clouds::fly_camera::{FlyCam, FlyCameraPlugin};
-use bevy_where_was_i::WhereWasIPlugin;
-
-use big_space::plugin::BigSpaceValidationPlugin;
-use big_space::prelude::*;
+use bevy_where_was_i::{WhereWasI, WhereWasIPlugin};
 
 fn main() {
     App::new()
         .insert_resource(ClearColor(Color::linear_rgb(0.4, 0.4, 0.4)))
-        .add_plugins((
+        .add_plugins(
             DefaultPlugins
-                .build()
-                .disable::<TransformPlugin>()
                 .set(WindowPlugin {
                     primary_window: Some(Window {
-                        title: "Terrain".to_string(),
+                        title: "Celestial".to_string(),
                         resolution: (1920, 1040).into(),
                         canvas: Some("#bevy".to_owned()),
                         prevent_default_event_handling: false,
@@ -28,15 +33,41 @@ fn main() {
                     }),
 
                     ..default()
+                })
+                .set(AssetPlugin {
+                    meta_check: AssetMetaCheck::Never,
+                    ..default()
+                })
+                .set(RenderPlugin {
+                    render_creation: RenderCreation::Automatic(WgpuSettings {
+                        // WARN this is a native only feature. It will not work with webgl or webgpu
+                        features: WgpuFeatures::POLYGON_MODE_LINE,
+                        ..default()
+                    }),
+                    ..default()
                 }),
-            BigSpaceDefaultPlugins
-                .build()
-                .disable::<BigSpaceValidationPlugin>(),
-        ))
+        )
         .add_plugins(EguiPlugin::default())
-        .add_plugins(TerrainPlugin)
         .add_plugins((FlyCameraPlugin, WhereWasIPlugin::default()))
-        .add_systems(Startup, build_universe)
+        .insert_resource(WireframeConfig {
+            default_color: WHITE.into(),
+            ..default()
+        })
+        .add_plugins(WireframePlugin::default())
+        .add_plugins(MaterialPlugin::<
+            ExtendedMaterial<StandardMaterial, PlanetMaterial>,
+        >::default())
+        .add_systems(
+            Startup,
+            (
+                build_mesh_cache,
+                init_skybox,
+                build_terrain_tile,
+                setup_camera,
+            ),
+        )
+        .add_systems(Update, update_skybox)
+        .add_systems(Update, update_terrain_quadtree)
         .add_plugins((
             FrameTimeDiagnosticsPlugin::default(),
             LogDiagnosticsPlugin::default(),
@@ -44,24 +75,22 @@ fn main() {
         .run();
 }
 
-fn build_universe(mut commands: Commands) {
-    commands.spawn_big_space(Grid::new(1.0e-1, 0.0), |universe_grid| {
-        universe_grid.insert((UniverseGrid(),));
-        universe_grid.spawn_spatial((
-            Projection::Perspective(PerspectiveProjection {
-                fov: core::f32::consts::PI / 4.0,
-                near: 10e-6,
-                far: 10.0,
-                aspect_ratio: 1.0,
-            }),
-            Camera3d::default(),
-            Camera { ..default() },
-            FlyCam,
-            FloatingOrigin,
-            // WhereWasI::from_name("terrain_example"),
-            Transform::from_xyz(1.908292, 00.001, 1.066515).looking_at(Vec3::ZERO, Vec3::Y),
-        ));
-        universe_grid.spawn_spatial((DirectionalLight::default(),));
-        build_terrain(universe_grid, 10.0);
-    });
+fn setup_camera(mut commands: Commands) {
+    commands.spawn((
+        Transform::from_xyz(100.0, 100.0, 0.0).looking_at(Vec3::ZERO, Vec3::Y),
+        DirectionalLight::default(),
+    ));
+    commands.spawn((
+        Projection::Perspective(PerspectiveProjection {
+            fov: core::f32::consts::PI / 4.0,
+            near: 10e-6,
+            far: 10.0,
+            aspect_ratio: 1.0,
+        }),
+        Hdr,
+        Camera3d::default(),
+        FlyCam,
+        WhereWasI::from_name("terrain_camera"),
+        Transform::from_xyz(500.0, 500.0, 500.0).looking_at(Vec3::ZERO, Vec3::Y),
+    ));
 }
