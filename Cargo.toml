@@ -18,9 +18,9 @@ members = ["crates/*"]
 dev = ["bevy/dynamic_linking", "bevy/file_watcher"]
 
 [workspace.dependencies]
-bevy = { version = "0.17.3", features = ["jpeg", "bevy_mesh"] }
+bevy = { version = "0.18.0", features = ["jpeg", "bevy_mesh"] }
 bevy_panorbit_camera = "0.33.1"
-bevy_egui = "0.38.1"
+bevy_egui = "0.39.0"
 wayland-sys = { version = "0.31.8", features = ["dlopen"] }
 big_space = { version = "0.11.0" }
 
