@@ -154,7 +154,7 @@ impl QuadTreeNode {
             commands
                 .get_entity(*root_entity)
                 .unwrap()
-                .remove_children(&[entity_id]);
+                .detach_child(entity_id);
             self.entity = None;
         }
 
