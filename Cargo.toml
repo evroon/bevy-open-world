@@ -32,7 +32,7 @@ big_space = { version = "0.11.0" }
 [dependencies]
 bevy = { workspace = true }
 bevy-volumetric-clouds = "0.1.5"
-bevy-where-was-i = "0.3.0"
+bevy-where-was-i = "0.4.0"
 wayland-sys = { workspace = true }
 
 [dev-dependencies]

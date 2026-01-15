@@ -24,7 +24,7 @@ fn main() {
             DefaultPlugins
                 .set(WindowPlugin {
                     primary_window: Some(Window {
-                        title: "Celestial".to_string(),
+                        title: "Bevy Open World".to_string(),
                         resolution: (1920, 1040).into(),
                         canvas: Some("#bevy".to_owned()),
                         prevent_default_event_handling: false,

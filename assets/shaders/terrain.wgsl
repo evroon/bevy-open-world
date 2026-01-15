@@ -16,7 +16,7 @@
     pbr_functions::{apply_pbr_lighting, main_pass_post_lighting_processing},
 }
 #endif
-#import celestial::common
+#import bevy_open_world::common
 const EPSILON = 0.0001;
 
 struct Vertex {

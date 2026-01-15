@@ -1,4 +1,4 @@
-name: celestial
+name: bevy_open_world
 services:
     clickhouse-server:
         ports:
