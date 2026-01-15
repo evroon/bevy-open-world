@@ -58,9 +58,6 @@ fn setup(mut commands: Commands) {
     // Camera
     commands.spawn((
         Camera3d::default(),
-        Camera {
-            ..Default::default()
-        },
         Hdr,
         Tonemapping::TonyMcMapface,
         Bloom::NATURAL,
