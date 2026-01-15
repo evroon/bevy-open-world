@@ -858,6 +858,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "bevy_camera_controller"
+version = "0.18.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6bc6fe8a42ad770c56bbc94e5d96696069200cdfdb9e57cb6db3f480f92a4571"
+dependencies = [
+ "bevy_app 0.18.0",
+ "bevy_camera 0.18.0",
+ "bevy_ecs 0.18.0",
+ "bevy_input 0.18.0",
+ "bevy_log 0.18.0",
+ "bevy_math 0.18.0",
+ "bevy_time 0.18.0",
+ "bevy_transform 0.18.0",
+ "bevy_window 0.18.0",
+]
+
+[[package]]
 name = "bevy_color"
 version = "0.17.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1521,6 +1538,7 @@ dependencies = [
  "bevy_asset 0.18.0",
  "bevy_audio",
  "bevy_camera 0.18.0",
+ "bevy_camera_controller",
  "bevy_color 0.18.0",
  "bevy_core_pipeline 0.18.0",
  "bevy_derive 0.18.0",
@@ -1762,11 +1780,11 @@ checksum = "7ef8e4b7e61dfe7719bb03c884dc270cd46a82efb40f93e9933b990c5c190c59"
 
 [[package]]
 name = "bevy_panorbit_camera"
-version = "0.33.1"
+version = "0.34.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dc968ff740adf4d2f8e02264981fc3e38e663af43fad88e59888ccc9ec1d0fab"
+checksum = "ec2a3ef5147368953aecb485e6362ea0e23acbd3e4adb02e47058a8c16e9bfe5"
 dependencies = [
- "bevy 0.17.3",
+ "bevy 0.18.0",
 ]
 
 [[package]]
