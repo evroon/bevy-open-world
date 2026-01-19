@@ -48,7 +48,7 @@ fn main() {
                 }),
         )
         .add_plugins(EguiPlugin::default())
-        .add_plugins((FlyCameraPlugin, WhereWasIPlugin::default()))
+        .add_plugins(WhereWasIPlugin::default())
         .insert_resource(WireframeConfig {
             default_color: WHITE.into(),
             ..default()
@@ -81,15 +81,15 @@ fn setup_camera(mut commands: Commands) {
         DirectionalLight::default(),
     ));
     commands.spawn((
-        Projection::Perspective(PerspectiveProjection {
-            fov: core::f32::consts::PI / 4.0,
-            near: 10e-6,
-            far: 10.0,
-            aspect_ratio: 1.0,
-        }),
+        // Projection::Perspective(PerspectiveProjection {
+        //     fov: core::f32::consts::PI / 4.0,
+        //     near: 10e-6,
+        //     far: 10.0,
+        //     aspect_ratio: 1.0,
+        // }),
         Hdr,
         Camera3d::default(),
-        FlyCam,
+        // FlyCam,
         WhereWasI::from_name("terrain_camera"),
         Transform::from_xyz(500.0, 500.0, 500.0).looking_at(Vec3::ZERO, Vec3::Y),
     ));

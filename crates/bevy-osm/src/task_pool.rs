@@ -1,13 +1,12 @@
 //! This example shows how to use the ECS and the [`AsyncComputeTaskPool`]
 //! to spawn, poll, and complete tasks across systems and system ticks.
 
+use crate::{build_tile, building::spawn_building, material::MapMaterialHandle, mesh::Shape};
 use bevy::{
     ecs::{system::SystemState, world::CommandQueue},
     prelude::*,
     tasks::{AsyncComputeTaskPool, Task, block_on, futures_lite::future},
 };
-
-use crate::{build_tile, building::spawn_building, material::MapMaterialHandle};
 
 #[derive(Component)]
 pub struct ComputeTransform(pub Task<CommandQueue>);
@@ -17,7 +16,7 @@ pub fn spawn_task(mut commands: Commands, map_materials: Res<MapMaterialHandle>)
     let handle: Handle<StandardMaterial> = map_materials.unknown_building.clone();
     let entity = commands.spawn_empty().id();
     let task = thread_pool.spawn(async move {
-        let buildings = build_tile();
+        let (buildings, strokes) = build_tile();
 
         let mut command_queue = CommandQueue::default();
 
@@ -30,6 +29,12 @@ pub fn spawn_task(mut commands: Commands, map_materials: Res<MapMaterialHandle>)
                 for (mes, transform) in a {
                     mt.push((Mesh3d(meshes.add(mes)), transform));
                 }
+            }
+
+            let aa: Vec<Handle<Mesh>> = strokes.iter().map(|s| meshes.add(s.clone())).collect();
+
+            for a in aa {
+                world.spawn((Mesh3d(a), MeshMaterial3d(handle.clone()), Shape));
             }
 
             for (mesh, trans) in mt {

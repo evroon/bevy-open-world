@@ -48,7 +48,7 @@ impl StrokeVertexConstructor<Vertex> for VertexConstructor {
 
 /// A marker component for our shapes so we can query them separately from the ground plane
 #[derive(Component)]
-struct Shape;
+pub struct Shape;
 
 pub struct StrokeInstruction {
     pub color: Color,
@@ -71,13 +71,7 @@ pub enum BuildInstruction {
     None,
 }
 
-pub fn spawn_stroke_mesh(
-    commands: &mut Commands,
-    meshes: &mut ResMut<Assets<Mesh>>,
-    materials: &mut ResMut<Assets<StandardMaterial>>,
-    points: Vec<Point>,
-    instruction: StrokeInstruction,
-) {
+pub fn spawn_stroke_mesh(points: Vec<Point>, instruction: StrokeInstruction) -> Mesh {
     let mut path_builder = Path::builder();
     path_builder.begin(points[0]);
     for p in points[1..].iter() {
@@ -99,20 +93,10 @@ pub fn spawn_stroke_mesh(
         error!("StrokeTessellator error: {:?}", e);
     }
 
-    commands.spawn((
-        Mesh3d(meshes.add(build_mesh(&buffers))),
-        MeshMaterial3d(materials.add(StandardMaterial::default())),
-        Shape,
-    ));
+    build_mesh(&buffers)
 }
 
-pub fn spawn_fill_mesh(
-    commands: &mut Commands,
-    meshes: &mut ResMut<Assets<Mesh>>,
-    materials: &mut ResMut<Assets<StandardMaterial>>,
-    points: Vec<Point>,
-    instruction: FillInstruction,
-) {
+pub fn spawn_fill_mesh(points: Vec<Point>, instruction: FillInstruction) -> Mesh {
     let mut path_builder = Path::builder();
     path_builder.begin(points[0]);
     for p in points[1..].iter() {
@@ -134,14 +118,10 @@ pub fn spawn_fill_mesh(
         error!("FillTessellator error: {:?}", e);
     }
 
-    commands.spawn((
-        Mesh3d(meshes.add(build_mesh(&buffers))),
-        MeshMaterial3d(materials.add(StandardMaterial::default())),
-        Shape,
-    ));
+    build_mesh(&buffers)
 }
 
-fn build_mesh(buffers: &VertexBuffers) -> Mesh {
+pub fn build_mesh(buffers: &VertexBuffers) -> Mesh {
     let mut mesh = Mesh::new(
         PrimitiveTopology::TriangleList,
         RenderAssetUsages::default(),

@@ -517,11 +517,11 @@ dependencies = [
 
 [[package]]
 name = "bevy-where-was-i"
-version = "0.3.0"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a7dbf0f901d805c1fb1e0d151c9094a2c2925c43388d47dc37c97843bff11866"
+checksum = "bff9328089e8a30fdf0bd3f1073e0d81ff0583e392863411c261b18f91ff39ac"
 dependencies = [
- "bevy 0.17.3",
+ "bevy 0.18.0",
 ]
 
 [[package]]
