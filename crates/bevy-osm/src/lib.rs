@@ -7,6 +7,7 @@ extern crate osm_xml as osm;
 use crate::{
     building::{Building, polygon_building},
     material::{MapMaterialHandle, OSMConfig},
+    mesh::{spawn_fill_mesh, spawn_stroke_mesh},
     task_pool::{handle_tasks, spawn_task},
 };
 use bevy::prelude::*;
@@ -28,8 +29,9 @@ impl Plugin for OSMPlugin {
     }
 }
 
-pub fn build_tile() -> Vec<Building> {
-    let mut result = Vec::new();
+pub fn build_tile() -> (Vec<Building>, Vec<Mesh>) {
+    let mut buildings = Vec::new();
+    let mut meshes = Vec::new();
     let mut rng = rand::rng();
     let f = File::open("assets/osm/manhattan.osm").unwrap();
     let doc = &osm::OSM::parse(f).unwrap();
@@ -59,23 +61,25 @@ pub fn build_tile() -> Vec<Building> {
             }
         }
         match get_way_build_instruction(&way.tags) {
-            #[expect(unused_variables)]
             BuildInstruction::Fill(fill) => {
-                // spawn_fill_mesh(&mut commands, &mut meshes, &mut materials, points, fill);
+                meshes.push(spawn_fill_mesh(points, fill));
             }
-            #[expect(unused_variables)]
             BuildInstruction::Stroke(stroke) => {
-                // spawn_stroke_mesh(&mut commands, &mut meshes, &mut materials, points, stroke);
+                meshes.push(spawn_stroke_mesh(points, stroke));
             }
             BuildInstruction::Building(building) => {
-                result.push(polygon_building(&building, points, &mut rng));
+                buildings.push(polygon_building(&building, points, &mut rng));
             }
             BuildInstruction::None => {}
         }
     }
 
-    println!("Finished building {} buildings", result.len());
-    result
+    println!(
+        "Finished building {} buildings, {} meshes",
+        buildings.len(),
+        meshes.len()
+    );
+    (buildings, meshes)
     // for rel in doc.relations.values() {
     //     let mut points = Vec::new();
     //     for m in &rel.members {

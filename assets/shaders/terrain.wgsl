@@ -16,6 +16,7 @@
     pbr_functions::{apply_pbr_lighting, main_pass_post_lighting_processing},
 }
 #endif
+#import bevy_open_world::common
 const EPSILON = 0.0001;
 
 struct Vertex {
@@ -24,11 +25,73 @@ struct Vertex {
     @location(2) tex_coords: vec2<f32>,
 };
 
-struct TerrainMaterial {
+const VERTICES_PER_NODE = 8.0;
+const CELL_VERTEX_SPACING = 1.0 / VERTICES_PER_NODE;
+
+struct PlanetMaterial {
+    planet_radius: f32,
 }
 
-@group(3) @binding(100)
-var<uniform> terrain_material: TerrainMaterial;
+@group(2) @binding(100)
+var<uniform> planet_material: PlanetMaterial;
+
+// https://github.com/bevy-interstellar/wgsl_noise
+fn noise_fade_vec2f(x: vec2<f32>) -> vec2<f32> {
+    return x * x * x * (x * (x * 6.0 - 15.0) + 10.0);
+}
+
+fn noise_permute_vec4f(x: vec4<f32>) -> vec4<f32> {
+    return (((x * 34.0) + 10.0) * x) % 289.0;
+}
+
+fn noise_perlin_vec2f(p: vec2<f32>) -> f32 {
+    var pi = floor(p.xyxy) + vec4(0.0, 0.0, 1.0, 1.0);
+    pi = pi % 289.0;    // to avoid trauncation effects in permutation
+
+    let pf = fract(p.xyxy) - vec4(0.0, 0.0, 1.0, 1.0);
+
+    let ix = pi.xzxz;
+    let iy = pi.yyww;
+    let fx = pf.xzxz;
+    let fy = pf.yyww;
+
+    let i = noise_permute_vec4f(noise_permute_vec4f(ix) + iy);
+
+    var gx = fract(i * (1.0 / 41.0)) * 2.0 - 1.0;
+    let gy = abs(gx) - 0.5 ;
+    let tx = floor(gx + 0.5);
+    gx = gx - tx;
+
+    var g00 = vec2(gx.x, gy.x);
+    var g10 = vec2(gx.y, gy.y);
+    var g01 = vec2(gx.z, gy.z);
+    var g11 = vec2(gx.w, gy.w);
+
+    let norm = inverseSqrt(vec4(
+        dot(g00, g00),
+        dot(g01, g01),
+        dot(g10, g10),
+        dot(g11, g11)
+    ));
+    g00 *= norm.x;
+    g01 *= norm.y;
+    g10 *= norm.z;
+    g11 *= norm.w;
+
+    let n00 = dot(g00, vec2(fx.x, fy.x));
+    let n10 = dot(g10, vec2(fx.y, fy.y));
+    let n01 = dot(g01, vec2(fx.z, fy.z));
+    let n11 = dot(g11, vec2(fx.w, fy.w));
+
+    let fade_xy = noise_fade_vec2f(pf.xy);
+    let n_x = mix(vec2(n00, n01), vec2(n10, n11), fade_xy.x);
+    let n_xy = mix(n_x.x, n_x.y, fade_xy.y);
+    return 2.3 * n_xy;
+}
+
+fn get_height(pos: vec2f) -> f32 {
+    return noise_perlin_vec2f(pos) * 0.1;
+}
 
 
 @vertex
@@ -38,10 +101,11 @@ fn vertex(vertex: Vertex) -> VertexOutput {
 
     var out: VertexOutput;
     out.instance_index = vertex.instance_index;
-    out.world_position = mesh_position_local_to_world(model, vec4<f32>(position, 1.0));
+    out.world_position = mesh_position_local_to_world(model, vec4<f32>(position, 1.0));// * planet_material.planet_radius;
+    out.world_position.y = get_height(out.world_position.xz);
 
     out.position = position_world_to_clip(out.world_position.xyz);
-    out.world_normal = vertex.world_normal;
+    out.world_normal = vec3(0.0, 1.0, 0.0);
     out.uv = vertex.tex_coords;
     return out;
 }

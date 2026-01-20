@@ -1,49 +1,54 @@
 use bevy::{
     asset::RenderAssetUsages,
+    camera::visibility::NoFrustumCulling,
     color::palettes::css::PURPLE,
-    mesh::Indices,
+    mesh::{Indices, PrimitiveTopology},
     pbr::{ExtendedMaterial, OpaqueRendererMethod},
     prelude::*,
-    render::render_resource::PrimitiveTopology,
 };
 
-use super::{CELL_COUNT, CELL_SIZE, material::TerrainMaterial};
+use crate::{CELL_VERTEX_COUNT, CELL_VERTEX_SPACING, material::PlanetMaterial};
 
 type MeshDataResult = (usize, Vec<[f32; 3]>, Vec<[f32; 2]>, Vec<u32>);
 
 #[derive(Resource)]
 pub struct MeshCache {
     pub mesh_3d: Mesh3d,
-    pub material: MeshMaterial3d<ExtendedMaterial<StandardMaterial, TerrainMaterial>>,
+    pub material: MeshMaterial3d<ExtendedMaterial<StandardMaterial, PlanetMaterial>>,
 }
 
-/// Builds a mesh of size 1.0 x 1.0, with CELL_COUNT number of cells within in both dimensions.
+/// Builds a mesh of size 1.0 x 1.0, with CELL_VERTEX_COUNT number of cells within in both
+/// dimensions.
 ///
 /// Therefore its corners always are:
 /// - Bottomleft: [-0.5, -0.5]
 /// - Topright: [0.5, 0.5]
 fn build_mesh_data() -> MeshDataResult {
-    let cell_count = (CELL_COUNT.x * CELL_COUNT.y) as usize;
-    let triangle_count = cell_count * 6;
+    let cell_count = (CELL_VERTEX_COUNT.x * CELL_VERTEX_COUNT.y) as usize;
+    let triangle_count = (cell_count + 8) * 6;
 
     let mut positions = vec![[0., 0., 0.]; triangle_count];
     let mut tex_coords = vec![[0., 0.]; triangle_count];
     let mut indices = vec![0; triangle_count];
 
-    for x in 0..CELL_COUNT.x {
-        for y in 0..CELL_COUNT.y {
-            let x_pos = (x as f32) * CELL_SIZE - 0.5;
-            let z_pos = (y as f32) * CELL_SIZE - 0.5;
+    for x in 0..CELL_VERTEX_COUNT.x {
+        for y in 0..CELL_VERTEX_COUNT.y {
+            let x_pos = (x as f32) * CELL_VERTEX_SPACING - 0.5;
+            let z_pos = (y as f32) * CELL_VERTEX_SPACING - 0.5;
 
-            let i_32 = x + y * CELL_COUNT.x;
+            let i_32 = x + y * CELL_VERTEX_COUNT.x;
             let i: usize = i_32 as usize;
 
             positions[i * 6] = [x_pos, 0.0, z_pos];
-            positions[i * 6 + 1] = [x_pos, 0.0, z_pos + CELL_SIZE];
-            positions[i * 6 + 2] = [x_pos + CELL_SIZE, 0.0, z_pos];
-            positions[i * 6 + 3] = [x_pos + CELL_SIZE, 0.0, z_pos + CELL_SIZE];
-            positions[i * 6 + 4] = [x_pos + CELL_SIZE, 0.0, z_pos];
-            positions[i * 6 + 5] = [x_pos, 0.0, z_pos + CELL_SIZE];
+            positions[i * 6 + 1] = [x_pos, 0.0, z_pos + CELL_VERTEX_SPACING];
+            positions[i * 6 + 2] = [x_pos + CELL_VERTEX_SPACING, 0.0, z_pos];
+            positions[i * 6 + 3] = [
+                x_pos + CELL_VERTEX_SPACING,
+                0.0,
+                z_pos + CELL_VERTEX_SPACING,
+            ];
+            positions[i * 6 + 4] = [x_pos + CELL_VERTEX_SPACING, 0.0, z_pos];
+            positions[i * 6 + 5] = [x_pos, 0.0, z_pos + CELL_VERTEX_SPACING];
 
             tex_coords[i * 6] = [0.0, 0.0];
             tex_coords[i * 6 + 1] = [0.0, 1.0];
@@ -71,7 +76,7 @@ fn build_mesh_data() -> MeshDataResult {
 pub fn build_mesh_cache(
     mut commands: Commands<'_, '_>,
     mut meshes: ResMut<'_, Assets<Mesh>>,
-    mut materials: ResMut<Assets<ExtendedMaterial<StandardMaterial, TerrainMaterial>>>,
+    mut materials: ResMut<Assets<ExtendedMaterial<StandardMaterial, PlanetMaterial>>>,
 ) {
     let mut mesh = Mesh::new(
         PrimitiveTopology::TriangleList,
@@ -90,7 +95,7 @@ pub fn build_mesh_cache(
             opaque_render_method: OpaqueRendererMethod::Auto,
             ..default()
         },
-        extension: TerrainMaterial {},
+        extension: PlanetMaterial { planet_radius: 20. },
     }));
 
     commands.insert_resource(MeshCache { mesh_3d, material });
@@ -99,6 +104,23 @@ pub fn build_mesh_cache(
 pub fn rect_to_transform(rect: Rect) -> Transform {
     Transform::from_translation(Vec3::new(rect.center().x, 0.0, rect.center().y))
         .with_scale(Vec3::new(rect.width(), rect.width(), rect.height()))
+}
+
+pub fn spawn_mesh(
+    commands: &mut Commands,
+    root_entity: &Entity,
+    mesh_cache: &Res<MeshCache>,
+    rect: Rect,
+) -> Entity {
+    let entity = commands.spawn((
+        mesh_cache.mesh_3d.clone(),
+        rect_to_transform(rect),
+        mesh_cache.material.clone(),
+        NoFrustumCulling,
+    ));
+    let eid = entity.id();
+    commands.entity(*root_entity).add_child(eid);
+    eid
 }
 
 #[cfg(test)]
