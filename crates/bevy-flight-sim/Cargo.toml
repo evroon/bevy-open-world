@@ -1,0 +1,11 @@
+[package]
+name = "bevy-flight-sim"
+description = "A plugin for Bevy that implements flight simulator elements (instruments etc.)"
+edition = "2024"
+
+[dependencies]
+bevy = { workspace = true, features = ["bevy_mesh"] }
+bevy_prototype_lyon = "0.16.0"
+
+[dev-dependencies]
+bevy = { workspace = true }
