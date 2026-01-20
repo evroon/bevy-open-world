@@ -434,7 +434,7 @@ name = "bevy-adsb"
 version = "0.0.0"
 dependencies = [
  "bevy 0.18.0",
- "bevy-volumetric-clouds",
+ "bevy-volumetric-clouds 0.1.5",
  "bevy_egui",
  "chrono",
  "ehttp",
@@ -466,7 +466,7 @@ dependencies = [
  "bevy-osm",
  "bevy-skybox",
  "bevy-terrain",
- "bevy-volumetric-clouds",
+ "bevy-volumetric-clouds 0.2.0",
  "bevy-where-was-i",
  "bevy_egui",
  "bevy_panorbit_camera",
@@ -513,6 +513,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c054ab45a84801251dd47ec4f1ba2ea331e84b1c00d59665358bcec6c4ee48a9"
 dependencies = [
  "bevy 0.17.3",
+]
+
+[[package]]
+name = "bevy-volumetric-clouds"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a2485827dffe73b35c9dd06427c0a1290c9f26d4d16aaf00ae1cbd308151a5b2"
+dependencies = [
+ "bevy 0.18.0",
 ]
 
 [[package]]

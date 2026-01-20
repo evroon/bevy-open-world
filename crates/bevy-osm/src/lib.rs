@@ -61,11 +61,9 @@ pub fn build_tile() -> (Vec<Building>, Vec<Mesh>) {
             }
         }
         match get_way_build_instruction(&way.tags) {
-            #[expect(unused_variables)]
             BuildInstruction::Fill(fill) => {
                 meshes.push(spawn_fill_mesh(points, fill));
             }
-            #[expect(unused_variables)]
             BuildInstruction::Stroke(stroke) => {
                 meshes.push(spawn_stroke_mesh(points, stroke));
             }

@@ -31,7 +31,7 @@ big_space = { version = "0.11.0" }
 
 [dependencies]
 bevy = { workspace = true }
-bevy-volumetric-clouds = "0.1.5"
+bevy-volumetric-clouds = { version = "0.2.0", features = ["fly_camera"] }
 bevy-where-was-i = "0.4.0"
 wayland-sys = { workspace = true }
 
