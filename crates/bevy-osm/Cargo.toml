@@ -8,7 +8,7 @@ bevy = { workspace = true, features = ["bevy_mesh"] }
 osm-xml = "0.6.2"
 lyon = "1.0.1"
 lyon_tessellation = "1.0.15"
-geo = "0.31.0"
+geo = "0.32.0"
 geo-types = "0.7.17"
 strum = "0.25.0"
 strum_macros = "0.27.2"
