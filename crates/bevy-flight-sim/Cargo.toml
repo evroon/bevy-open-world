@@ -4,8 +4,15 @@ description = "A plugin for Bevy that implements flight simulator elements (inst
 edition = "2024"
 
 [dependencies]
-bevy = { workspace = true, features = ["bevy_mesh"] }
-bevy_prototype_lyon = "0.16.0"
+bevy = { workspace = true, features = [
+    "jpeg",
+    "bevy_mesh",
+    "free_camera",
+    "pan_camera",
+] }
+bevy_svg = { workspace = true }
+# thiserror = "2.0"
+# usvg = "0.46"
 
 [dev-dependencies]
 bevy = { workspace = true }

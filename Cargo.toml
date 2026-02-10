@@ -14,8 +14,8 @@ publish = false
 [workspace]
 members = ["crates/*"]
 
-[features]
-dev = ["bevy/dynamic_linking", "bevy/file_watcher"]
+# [features]
+# dev = ["bevy/dynamic_linking", "bevy/file_watcher"]
 
 [workspace.dependencies]
 bevy = { version = "0.18.0", features = [
@@ -26,28 +26,37 @@ bevy = { version = "0.18.0", features = [
 ] }
 bevy_panorbit_camera = "0.34.0"
 bevy_egui = "0.39.0"
-wayland-sys = { version = "0.31.8", features = ["dlopen"] }
-big_space = { version = "0.11.0" }
+big_space = { version = "0.12.0" }
+bevy_svg = "0.18.0"
 
 [dependencies]
-bevy = { workspace = true }
+bevy = { workspace = true, features = [
+    "jpeg",
+    "bevy_mesh",
+    "free_camera",
+    "pan_camera",
+] }
 bevy-volumetric-clouds = { version = "0.2.0", features = ["fly_camera"] }
 bevy-where-was-i = "0.4.0"
-wayland-sys = { workspace = true }
+bevy_svg = { workspace = true }
 
 [dev-dependencies]
-bevy = { workspace = true }
+bevy = { workspace = true, features = [
+    "jpeg",
+    "bevy_mesh",
+    "free_camera",
+    "pan_camera",
+] }
 bevy_panorbit_camera = { workspace = true }
 bevy_egui = { workspace = true }
-wayland-sys = { workspace = true }
-big_space = { version = "0.11.0", features = ["camera"] }
-turborand = "0.10.1"
+big_space = { workspace = true, features = ["camera"] }
+# turborand = "0.10.1"
 
 bevy-adsb = { path = "crates/bevy-adsb" }
 bevy-earth = { path = "crates/bevy-earth" }
 bevy-flight-sim = { path = "crates/bevy-flight-sim" }
 bevy-night-sky = { path = "crates/bevy-night-sky" }
-bevy-osm = { path = "crates/bevy-osm" }
+# bevy-osm = { path = "crates/bevy-osm" }
 bevy-skybox = { path = "crates/bevy-skybox" }
 bevy-terrain = { path = "crates/bevy-terrain" }
 
