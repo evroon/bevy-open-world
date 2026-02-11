@@ -17,6 +17,10 @@ members = ["crates/*"]
 [features]
 dev = ["bevy/dynamic_linking", "bevy/file_watcher"]
 
+# https://github.com/Bluefinger/turborand#compiling-for-wasm
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+instant = { version = "0.1", features = ["wasm-bindgen"] }
+
 [workspace.dependencies]
 bevy = { version = "0.18.0", features = [
     "jpeg",
@@ -49,9 +53,6 @@ bevy_panorbit_camera = { workspace = true }
 bevy_egui = { workspace = true }
 big_space = { workspace = true, features = ["camera"] }
 turborand = "0.10.1"
-
-[target.'cfg(target_arch = "wasm32")'.dependencies]
-instant = { version = "0.1", features = ["wasm-bindgen"] }
 
 bevy-adsb = { path = "crates/bevy-adsb" }
 bevy-earth = { path = "crates/bevy-earth" }
