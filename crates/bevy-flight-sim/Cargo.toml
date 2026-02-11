@@ -1,0 +1,13 @@
+[package]
+name = "bevy-flight-sim"
+description = "A plugin for Bevy that implements flight simulator elements (instruments etc.)"
+edition = "2024"
+
+[dependencies]
+bevy = { workspace = true, features = [
+    "jpeg",
+    "bevy_mesh",
+    "free_camera",
+    "pan_camera",
+] }
+bevy-svg = { path = "../bevy-svg" }
