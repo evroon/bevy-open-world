@@ -14,8 +14,8 @@ publish = false
 [workspace]
 members = ["crates/*"]
 
-# [features]
-# dev = ["bevy/dynamic_linking", "bevy/file_watcher"]
+[features]
+dev = ["bevy/dynamic_linking", "bevy/file_watcher"]
 
 [workspace.dependencies]
 bevy = { version = "0.18.0", features = [
