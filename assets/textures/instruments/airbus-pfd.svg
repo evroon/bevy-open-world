@@ -2,19 +2,19 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-  width="152.32648mm"
-  height="149.31885mm"
-  viewBox="0 0 575.72213 564.35471"
-  version="1.1"
-  id="svg5"
-  xml:space="preserve"
-  inkscape:version="1.2.2 (b0a8486541, 2022-12-01)"
-  sodipodi:docname="airbus-pfd.svg"
-  xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-  xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
-  xmlns:xlink="http://www.w3.org/1999/xlink"
-  xmlns="http://www.w3.org/2000/svg"
-  xmlns:svg="http://www.w3.org/2000/svg"><sodipodi:namedview
+   width="152.32648mm"
+   height="149.31885mm"
+   viewBox="0 0 575.72213 564.35471"
+   version="1.1"
+   id="svg5"
+   xml:space="preserve"
+   inkscape:version="1.2.2 (b0a8486541, 2022-12-01)"
+   sodipodi:docname="airbus-pfd.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"><sodipodi:namedview
      id="namedview7"
      pagecolor="#ffffff"
      bordercolor="#666666"
@@ -25,15 +25,15 @@
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
      showgrid="false"
-     inkscape:zoom="5.194286"
-     inkscape:cx="470.61329"
-     inkscape:cy="352.59899"
-     inkscape:window-width="2560"
-     inkscape:window-height="1403"
+     inkscape:zoom="2.597143"
+     inkscape:cx="182.31572"
+     inkscape:cy="333.63585"
+     inkscape:window-width="3840"
+     inkscape:window-height="2091"
      inkscape:window-x="0"
      inkscape:window-y="0"
      inkscape:window-maximized="1"
-     inkscape:current-layer="svg5" /><defs
+     inkscape:current-layer="layer20" /><defs
      id="defs2" /><image
      width="551.96045"
      height="562.65216"
@@ -1315,7 +1315,7 @@
          y="794.36633"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:23.0236px;font-family:'FBW Display-EIS';-inkscape-font-specification:'FBW Display-EIS, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#dfa0dc;fill-opacity:1;stroke-width:0.575591">KLAX</tspan></text><text
        xml:space="preserve"
-       style="display:inline;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:19.5124px;line-height:1.25;font-family:'FBW Display-EIS';-inkscape-font-specification:'FBW Display-EIS, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#09df0f;fill-opacity:1;stroke:none;stroke-width:0.48781"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:19.5124px;line-height:1.25;font-family:'FBW Display-EIS';-inkscape-font-specification:'FBW Display-EIS, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;display:inline;fill:#09df0f;fill-opacity:1;stroke:none;stroke-width:0.48781"
        x="129.87709"
        y="323.05933"
        id="text20605"
@@ -1324,7 +1324,12 @@
          id="tspan20603"
          x="129.87709"
          y="323.05933"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:19.5124px;font-family:'FBW Display-EIS';-inkscape-font-specification:'FBW Display-EIS, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#09df0f;fill-opacity:1;stroke-width:0.48781">SPEED</tspan></text><text
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:19.5124px;font-family:'FBW Display-EIS';-inkscape-font-specification:'FBW Display-EIS, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#09df0f;fill-opacity:1;stroke-width:0.48781">SPEED</tspan><tspan
+         sodipodi:role="line"
+         x="129.87709"
+         y="347.44983"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:19.5124px;font-family:'FBW Display-EIS';-inkscape-font-specification:'FBW Display-EIS, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#09df0f;fill-opacity:1;stroke-width:0.48781"
+         id="tspan1481" /></text><text
        xml:space="preserve"
        style="display:inline;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:19.5124px;line-height:1.25;font-family:'FBW Display-EIS';-inkscape-font-specification:'FBW Display-EIS, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#09df0f;fill-opacity:1;stroke:none;stroke-width:0.48781"
        x="255.8351"

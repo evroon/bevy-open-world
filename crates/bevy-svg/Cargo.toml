@@ -1,0 +1,44 @@
+[package]
+authors = ["Daniel Wiesenberg <weasy@hotmail.de>"]
+description = "Load and draw SVG files in Bevy."
+edition = "2024"
+license = "MIT OR Apache-2.0"
+name = "bevy-svg"
+readme = "README.md"
+repository = "https://github.com/Weasy666/bevy_svg/"
+version = "0.18.0"
+keywords = ["gamedev", "graphics", "bevy", "svg"]
+categories = [
+    "game-engines",
+    "game-development",
+    "graphics",
+    "multimedia",
+    "rendering",
+]
+exclude = ["assets", "examples"]
+rust-version = "1.89"
+
+
+[dependencies]
+bevy = { version = "0.18", default-features = false, features = [
+    "bevy_asset",
+    "bevy_core_pipeline",
+    "bevy_log",
+    "bevy_render",
+    "bevy_sprite_render",
+    "bevy_sprite",
+] }
+copyless = "0.1"
+serde = "1.0.228"
+
+lyon_geom = "1.0"
+lyon_tessellation = "1.0"
+lyon_path = "1.0"
+usvg = "0.47.0"
+svgtypes = "0.16"
+
+anyhow = "1.0"
+thiserror = "2.0"
+
+[dev-dependencies]
+bevy = { version = "0.18", default-features = true }

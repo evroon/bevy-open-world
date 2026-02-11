@@ -27,7 +27,6 @@ bevy = { version = "0.18.0", features = [
 bevy_panorbit_camera = "0.34.0"
 bevy_egui = "0.39.0"
 big_space = { version = "0.12.0" }
-bevy_svg = "0.18.0"
 
 [dependencies]
 bevy = { workspace = true, features = [
@@ -38,7 +37,6 @@ bevy = { workspace = true, features = [
 ] }
 bevy-volumetric-clouds = { version = "0.2.0", features = ["fly_camera"] }
 bevy-where-was-i = "0.4.0"
-bevy_svg = { workspace = true }
 
 [dev-dependencies]
 bevy = { workspace = true, features = [
@@ -58,6 +56,7 @@ bevy-flight-sim = { path = "crates/bevy-flight-sim" }
 bevy-night-sky = { path = "crates/bevy-night-sky" }
 # bevy-osm = { path = "crates/bevy-osm" }
 bevy-skybox = { path = "crates/bevy-skybox" }
+bevy-svg = { path = "crates/bevy-svg" }
 bevy-terrain = { path = "crates/bevy-terrain" }
 
 [lints.clippy]

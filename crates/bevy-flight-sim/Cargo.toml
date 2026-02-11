@@ -10,9 +10,4 @@ bevy = { workspace = true, features = [
     "free_camera",
     "pan_camera",
 ] }
-bevy_svg = { workspace = true }
-# thiserror = "2.0"
-# usvg = "0.46"
-
-[dev-dependencies]
-bevy = { workspace = true }
+bevy-svg = { path = "../bevy-svg" }
