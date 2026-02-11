@@ -90,9 +90,7 @@ fn svg_mesh_linker(
                     commands.entity(entity).despawn();
                 }
             }
-            AssetEvent::Unused { .. } => {
-                // TODO: does anything need done here?
-            }
+            AssetEvent::Unused { .. } => {}
         }
     }
 

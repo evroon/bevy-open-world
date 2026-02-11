@@ -1,7 +1,7 @@
 use bevy::{
     asset::{Asset, Handle},
     color::Color,
-    log::{debug, trace, warn},
+    log::{trace, warn},
     math::Vec2,
     mesh::Mesh,
     reflect::{Reflect, std_traits::ReflectDefault},
@@ -416,13 +416,13 @@ impl Convert<Color> for &usvg::Stop {
 
 impl<'iter> Convert<PathConvIter<'iter>> for PathWithTransform<'iter> {
     fn convert(self) -> PathConvIter<'iter> {
-        return PathConvIter {
+        PathConvIter {
             iter: self.path.data().segments().peekable(),
             first: Point::new(0.0, 0.0),
             prev: Point::new(0.0, 0.0),
             deferred: None,
             needs_end: false,
-        };
+        }
     }
 }
 

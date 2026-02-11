@@ -477,6 +477,7 @@ dependencies = [
  "bevy-earth",
  "bevy-flight-sim",
  "bevy-night-sky",
+ "bevy-osm",
  "bevy-skybox",
  "bevy-svg",
  "bevy-terrain",
@@ -485,6 +486,8 @@ dependencies = [
  "bevy_egui",
  "bevy_panorbit_camera",
  "big_space 0.12.0",
+ "instant",
+ "turborand",
 ]
 
 [[package]]
@@ -498,6 +501,7 @@ dependencies = [
  "lyon",
  "lyon_tessellation",
  "osm-xml",
+ "rand",
  "strum",
  "strum_macros",
 ]
@@ -4106,8 +4110,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ff2abc00be7fca6ebc474524697ae276ad847ad0a6b3faa4bcb027e9a4614ad0"
 dependencies = [
  "cfg-if",
+ "js-sys",
  "libc",
  "wasi",
+ "wasm-bindgen",
 ]
 
 [[package]]
@@ -4665,6 +4671,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e05c02b5e89bff3b946cedeca278abc628fe811e604f027c45a8aa3cf793d0eb"
 dependencies = [
  "libc",
+]
+
+[[package]]
+name = "instant"
+version = "0.1.13"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e0242819d153cba4b4b05a5a8f2a7e9bbf97b6055b2a002b395c96b5ff3c0222"
+dependencies = [
+ "cfg-if",
+ "js-sys",
+ "wasm-bindgen",
+ "web-sys",
 ]
 
 [[package]]
@@ -6939,6 +6957,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d2df906b07856748fa3f6e0ad0cbaa047052d4a7dd609e231c4f72cee8c36f31"
 dependencies = [
  "core_maths",
+]
+
+[[package]]
+name = "turborand"
+version = "0.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ffa9ae3c65785079fa553e8aea4ae4b12579b5c5029b4133b54ea3afb2e3e9fa"
+dependencies = [
+ "getrandom 0.2.17",
+ "instant",
 ]
 
 [[package]]

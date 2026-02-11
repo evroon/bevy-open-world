@@ -48,13 +48,16 @@ bevy = { workspace = true, features = [
 bevy_panorbit_camera = { workspace = true }
 bevy_egui = { workspace = true }
 big_space = { workspace = true, features = ["camera"] }
-# turborand = "0.10.1"
+turborand = "0.10.1"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+instant = { version = "0.1", features = ["wasm-bindgen"] }
 
 bevy-adsb = { path = "crates/bevy-adsb" }
 bevy-earth = { path = "crates/bevy-earth" }
 bevy-flight-sim = { path = "crates/bevy-flight-sim" }
 bevy-night-sky = { path = "crates/bevy-night-sky" }
-# bevy-osm = { path = "crates/bevy-osm" }
+bevy-osm = { path = "crates/bevy-osm" }
 bevy-skybox = { path = "crates/bevy-skybox" }
 bevy-svg = { path = "crates/bevy-svg" }
 bevy-terrain = { path = "crates/bevy-terrain" }
