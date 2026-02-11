@@ -158,11 +158,8 @@ impl QuadTreeNode {
             self.entity = None;
         }
 
-        if self.north_east.is_some() {
-            self.north_east
-                .as_mut()
-                .unwrap()
-                .destruct(mesh_pool, root_entity, commands);
+        if let Some(north_east) = &mut self.north_east {
+            north_east.destruct(mesh_pool, root_entity, commands);
             self.north_west
                 .as_mut()
                 .unwrap()
@@ -234,11 +231,8 @@ impl QuadTreeNode {
                 ref_point,
             );
         } else {
-            if self.north_east.is_some() {
-                self.north_east
-                    .as_mut()
-                    .unwrap()
-                    .destruct(mesh_pool, root_entity, commands);
+            if let Some(north_east) = &mut self.north_east {
+                north_east.destruct(mesh_pool, root_entity, commands);
                 self.north_west
                     .as_mut()
                     .unwrap()
