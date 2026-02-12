@@ -1,9 +1,9 @@
 use core::f32::consts::PI;
 
 use bevy::DefaultPlugins;
-use bevy::anti_alias::fxaa::Fxaa;
 use bevy::anti_alias::taa::TemporalAntiAliasing;
 use bevy::asset::AssetMetaCheck;
+use bevy::camera::Exposure;
 use bevy::color::palettes::css::WHITE;
 use bevy::core_pipeline::tonemapping::Tonemapping;
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
@@ -17,8 +17,6 @@ use bevy::pbr::{
 };
 use bevy::post_process::bloom::Bloom;
 use bevy::prelude::*;
-use bevy::render::RenderPlugin;
-use bevy::render::settings::{RenderCreation, WgpuFeatures, WgpuSettings};
 use bevy::render::view::Hdr;
 use bevy_egui::EguiPlugin;
 use bevy_terrain::material::PlanetMaterial;
@@ -47,14 +45,6 @@ fn main() {
                 })
                 .set(AssetPlugin {
                     meta_check: AssetMetaCheck::Never,
-                    ..default()
-                })
-                .set(RenderPlugin {
-                    render_creation: RenderCreation::Automatic(WgpuSettings {
-                        // WARN this is a native only feature. It will not work with webgl or webgpu
-                        features: WgpuFeatures::POLYGON_MODE_LINE,
-                        ..default()
-                    }),
                     ..default()
                 }),
         )
@@ -92,15 +82,11 @@ fn setup_camera_fog(
         ..default()
     }
     .build();
+
     // Sun
     commands.spawn((
         DirectionalLight {
             shadows_enabled: true,
-            // lux::RAW_SUNLIGHT is recommended for use with this feature, since
-            // other values approximate sunlight *post-scattering* in various
-            // conditions. RAW_SUNLIGHT in comparison is the illuminance of the
-            // sun unfiltered by the atmosphere, so it is the proper input for
-            // sunlight to be filtered by the atmosphere.
             illuminance: lux::RAW_SUNLIGHT,
             ..default()
         },
@@ -112,22 +98,12 @@ fn setup_camera_fog(
     commands.spawn((
         Camera3d::default(),
         Transform::from_xyz(-2.4, 0.04, 0.0).looking_at(Vec3::Y * 0.1, Vec3::Y),
-        // Earthlike atmosphere
         Atmosphere::earthlike(scattering_mediums.add(ScatteringMedium::default())),
-        // Can be adjusted to change the scene scale and rendering quality
         AtmosphereSettings::default(),
-        // The directional light illuminance used in this scene
-        // (the one recommended for use with this feature) is
-        // quite bright, so raising the exposure compensation helps
-        // bring the scene to a nicer brightness range.
-        // Exposure { ev100: 13.0 },
-        // Tonemapper chosen just because it looked good with the scene, any
-        // tonemapper would be fine :)
+        Exposure { ev100: 13.0 },
         Tonemapping::AcesFitted,
         Hdr,
-        // Bloom gives the sun a much more natural look.
         Bloom::NATURAL,
-        // Enables the atmosphere to drive reflections and ambient lighting (IBL) for this view
         AtmosphereEnvironmentMapLight::default(),
         FlyCam,
         VolumetricFog {
@@ -139,23 +115,6 @@ fn setup_camera_fog(
         TemporalAntiAliasing::default(),
         ScreenSpaceReflections::default(),
     ));
-}
-
-// Spawns the camera.
-pub fn spawn_camera_for_water(mut commands: Commands) {
-    // Create the camera. Add an environment map and skybox so the water has
-    // something interesting to reflect, other than the cube. Enable deferred
-    // rendering by adding depth and deferred prepasses. Turn on FXAA to make
-    // the scene look a little nicer. Finally, add screen space reflections.
-    commands
-        .spawn((
-            Camera3d::default(),
-            Transform::from_translation(vec3(-1.25, 2.25, 4.5)).looking_at(Vec3::ZERO, Vec3::Y),
-            Hdr,
-            Msaa::Off,
-        ))
-        .insert(ScreenSpaceReflections::default())
-        .insert(Fxaa::default());
 }
 
 fn dynamic_scene(mut suns: Query<&mut Transform, With<DirectionalLight>>, time: Res<Time>) {

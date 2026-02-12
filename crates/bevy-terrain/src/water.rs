@@ -84,7 +84,7 @@ pub fn spawn_water(
                 },
             },
         })),
-        Transform::from_scale(Vec3::splat(100.0)),
+        Transform::from_scale(Vec3::splat(1e5)),
     ));
 }
 
