@@ -1,45 +1,20 @@
 //! Demonstrates screen space reflections in deferred rendering.
 
-use std::ops::Range;
-
 use bevy::{
-    anti_alias::fxaa::Fxaa,
-    color::palettes::css::{BLACK, WHITE},
-    core_pipeline::Skybox,
+    color::palettes::css::BLACK,
     image::{
         ImageAddressMode, ImageFilterMode, ImageLoaderSettings, ImageSampler,
         ImageSamplerDescriptor,
     },
-    input::mouse::MouseWheel,
-    math::{vec3, vec4},
-    pbr::{
-        DefaultOpaqueRendererMethod, ExtendedMaterial, MaterialExtension, ScreenSpaceReflections,
-    },
+    math::vec4,
+    pbr::{ExtendedMaterial, MaterialExtension},
     prelude::*,
-    render::{
-        render_resource::{AsBindGroup, ShaderType},
-        view::Hdr,
-    },
+    render::render_resource::{AsBindGroup, ShaderType},
     shader::ShaderRef,
 };
 
 /// This example uses a shader source file from the assets subdirectory
 const SHADER_ASSET_PATH: &str = "shaders/water_material.wgsl";
-
-// The speed of camera movement.
-const CAMERA_KEYBOARD_ZOOM_SPEED: f32 = 0.1;
-const CAMERA_KEYBOARD_ORBIT_SPEED: f32 = 0.02;
-const CAMERA_MOUSE_WHEEL_ZOOM_SPEED: f32 = 0.25;
-
-// We clamp camera distances to this range.
-const CAMERA_ZOOM_RANGE: Range<f32> = 2.0..12.0;
-
-static TURN_SSR_OFF_HELP_TEXT: &str = "Press Space to turn screen-space reflections off";
-static TURN_SSR_ON_HELP_TEXT: &str = "Press Space to turn screen-space reflections on";
-static MOVE_CAMERA_HELP_TEXT: &str =
-    "Press WASD or use the mouse wheel to pan and orbit the camera";
-static SWITCH_TO_FLIGHT_HELMET_HELP_TEXT: &str = "Press Enter to switch to the flight helmet model";
-static SWITCH_TO_CUBE_HELP_TEXT: &str = "Press Enter to switch to the cube model";
 
 /// A custom [`ExtendedMaterial`] that creates animated water ripples.
 #[derive(Asset, TypePath, AsBindGroup, Debug, Clone)]
@@ -68,50 +43,12 @@ pub struct WaterSettings {
     octave_strengths: Vec4,
 }
 
-/// The current settings that the user has chosen.
-#[derive(Resource)]
-pub struct AppSettings {
-    /// Whether screen space reflections are on.
-    ssr_on: bool,
-    /// Which model is being displayed.
-    displayed_model: DisplayedModel,
-}
-
-/// Which model is being displayed.
-#[derive(Default)]
-enum DisplayedModel {
-    /// The cube is being displayed.
-    #[default]
-    Cube,
-    /// The flight helmet is being displayed.
-    FlightHelmet,
-}
-
-fn main() {
-    // Enable deferred rendering, which is necessary for screen-space
-    // reflections at this time. Disable multisampled antialiasing, as deferred
-    // rendering doesn't support that.
-    App::new()
-        .insert_resource(DefaultOpaqueRendererMethod::deferred())
-        .init_resource::<AppSettings>()
-        .add_plugins(DefaultPlugins.set(WindowPlugin {
-            primary_window: Some(Window {
-                title: "Bevy Screen Space Reflections Example".into(),
-                ..default()
-            }),
-            ..default()
-        }))
-        .add_plugins(MaterialPlugin::<ExtendedMaterial<StandardMaterial, Water>>::default())
-        .add_systems(Update, adjust_app_settings)
-        .run();
-}
-
 // Spawns the water plane.
 pub fn spawn_water(
-    commands: &mut Commands,
-    asset_server: &AssetServer,
-    meshes: &mut Assets<Mesh>,
-    water_materials: &mut Assets<ExtendedMaterial<StandardMaterial, Water>>,
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut water_materials: ResMut<Assets<ExtendedMaterial<StandardMaterial, Water>>>,
+    asset_server: Res<AssetServer>,
 ) {
     commands.spawn((
         Mesh3d(meshes.add(Plane3d::new(Vec3::Y, Vec2::splat(1.0)))),
@@ -151,88 +88,8 @@ pub fn spawn_water(
     ));
 }
 
-// Spawns the camera.
-pub fn spawn_camera(commands: &mut Commands, asset_server: &AssetServer) {
-    // Create the camera. Add an environment map and skybox so the water has
-    // something interesting to reflect, other than the cube. Enable deferred
-    // rendering by adding depth and deferred prepasses. Turn on FXAA to make
-    // the scene look a little nicer. Finally, add screen space reflections.
-    commands
-        .spawn((
-            Camera3d::default(),
-            Transform::from_translation(vec3(-1.25, 2.25, 4.5)).looking_at(Vec3::ZERO, Vec3::Y),
-            Hdr,
-            Msaa::Off,
-        ))
-        .insert(EnvironmentMapLight {
-            diffuse_map: asset_server.load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2"),
-            specular_map: asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2"),
-            intensity: 5000.0,
-            ..default()
-        })
-        .insert(Skybox {
-            image: asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2"),
-            brightness: 5000.0,
-            ..default()
-        })
-        .insert(ScreenSpaceReflections::default())
-        .insert(Fxaa::default());
-}
-
 impl MaterialExtension for Water {
     fn deferred_fragment_shader() -> ShaderRef {
         SHADER_ASSET_PATH.into()
-    }
-}
-
-// Adjusts app settings per user input.
-pub fn adjust_app_settings(
-    mut commands: Commands,
-    keyboard_input: Res<ButtonInput<KeyCode>>,
-    mut app_settings: ResMut<AppSettings>,
-    mut cameras: Query<Entity, With<Camera>>,
-) {
-    // If there are no changes, we're going to bail for efficiency. Record that
-    // here.
-    let mut any_changes = false;
-
-    // If the user pressed Space, toggle SSR.
-    if keyboard_input.just_pressed(KeyCode::Space) {
-        app_settings.ssr_on = !app_settings.ssr_on;
-        any_changes = true;
-    }
-
-    // If the user pressed Enter, switch models.
-    if keyboard_input.just_pressed(KeyCode::Enter) {
-        app_settings.displayed_model = match app_settings.displayed_model {
-            DisplayedModel::Cube => DisplayedModel::FlightHelmet,
-            DisplayedModel::FlightHelmet => DisplayedModel::Cube,
-        };
-        any_changes = true;
-    }
-
-    // If there were no changes, bail.
-    if !any_changes {
-        return;
-    }
-
-    // Update SSR settings.
-    for camera in cameras.iter_mut() {
-        if app_settings.ssr_on {
-            commands
-                .entity(camera)
-                .insert(ScreenSpaceReflections::default());
-        } else {
-            commands.entity(camera).remove::<ScreenSpaceReflections>();
-        }
-    }
-}
-
-impl Default for AppSettings {
-    fn default() -> Self {
-        Self {
-            ssr_on: true,
-            displayed_model: default(),
-        }
     }
 }
