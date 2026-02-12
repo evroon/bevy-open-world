@@ -2,6 +2,7 @@ pub mod material;
 pub mod mesh;
 pub mod quadtree;
 pub mod system;
+pub mod water;
 
 use bevy::prelude::*;
 
