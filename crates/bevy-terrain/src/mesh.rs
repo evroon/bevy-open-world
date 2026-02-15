@@ -97,7 +97,7 @@ fn build_mesh_data(heights: HashMap<(i32, i32), f32>) -> Mesh {
 pub fn build_mesh_cache(
     mut commands: Commands<'_, '_>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    asset_server: Res<AssetServer>,
+    _asset_server: Res<AssetServer>,
 ) {
     let material = MeshMaterial3d(materials.add(StandardMaterial {
         base_color: GREEN.into(),

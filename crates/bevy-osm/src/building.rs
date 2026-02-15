@@ -15,10 +15,10 @@ use crate::osm_types::BuildingClass;
 
 #[derive(Component, Debug)]
 pub struct Building {
-    pub class: Option<BuildingClass>,
+    pub _class: Option<BuildingClass>,
     pub translate: [f32; 2],
     pub height: f32,
-    pub levels: Option<f32>,
+    pub _levels: Option<f32>,
     pub line: Vec<[f32; 2]>,
     pub vertices: Vec<[f32; 3]>,
     pub triangle_indices: Vec<u32>,
@@ -63,10 +63,10 @@ pub fn polygon_building(
     };
     let height = height / 40.0;
     Building {
-        class: building_instruction.class,
+        _class: building_instruction.class,
         translate: [0.0, 0.0],
         height,
-        levels: building_instruction.levels,
+        _levels: building_instruction.levels,
         line,
         vertices: triangles
             .vertices

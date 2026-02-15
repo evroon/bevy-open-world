@@ -66,7 +66,7 @@ impl MeshPool {
     pub fn get_mesh(
         &mut self,
         commands: &mut Commands,
-        mut meshes: &mut ResMut<'_, Assets<Mesh>>,
+        meshes: &mut ResMut<'_, Assets<Mesh>>,
         root_entity: &Entity,
         mesh_cache: &Res<MeshCache>,
         rect: Rect,
@@ -84,7 +84,7 @@ impl MeshPool {
         //     }
         //     return el;
         // }
-        spawn_mesh(commands, &mut meshes, root_entity, mesh_cache, rect)
+        spawn_mesh(commands, meshes, root_entity, mesh_cache, rect)
     }
 
     fn despawn_mesh(&mut self, commands: &mut Commands, entity_id: Entity) {

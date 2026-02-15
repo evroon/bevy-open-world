@@ -10,10 +10,10 @@ pub fn spawn_runway(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    asset_server: Res<AssetServer>,
+    _asset_server: Res<AssetServer>,
 ) {
     let texture_repeat = 10.0;
-    let repeat_loader = |s: &mut _| {
+    let _repeat_loader = |s: &mut _| {
         *s = ImageLoaderSettings {
             sampler: ImageSampler::Descriptor(ImageSamplerDescriptor {
                 address_mode_u: ImageAddressMode::Repeat,
