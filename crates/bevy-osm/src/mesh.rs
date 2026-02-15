@@ -77,7 +77,7 @@ pub fn spawn_stroke_mesh(points: Vec<Point>, instruction: StrokeInstruction) -> 
     for p in points[1..].iter() {
         path_builder.line_to(*p);
     }
-    path_builder.end(false);
+    path_builder.end(true);
 
     let mut buffers = VertexBuffers::new();
     let mut tess = StrokeTessellator::new();
@@ -102,7 +102,7 @@ pub fn spawn_fill_mesh(points: Vec<Point>, instruction: FillInstruction) -> Mesh
     for p in points[1..].iter() {
         path_builder.line_to(*p);
     }
-    path_builder.end(false);
+    path_builder.end(true);
 
     let mut buffers = VertexBuffers::new();
     let mut tess = FillTessellator::new();
@@ -132,7 +132,7 @@ pub fn build_mesh(buffers: &VertexBuffers) -> Mesh {
         buffers
             .vertices
             .iter()
-            .map(|v| [v.position[0], 0.0, v.position[1]])
+            .map(|v| [v.position[0], 0.1, v.position[1]])
             .collect::<Vec<[f32; 3]>>(),
     );
     mesh.insert_attribute(

@@ -90,6 +90,7 @@ pub fn build_planet(mut commands: Commands, radius: f32) {
 
 pub fn update_terrain_quadtree(
     mut commands: Commands,
+    mut meshes: ResMut<'_, Assets<Mesh>>,
     camera: Single<&Transform, With<Camera>>,
     mut quadtrees: Query<(Entity, &mut QuadTree, &QuadTreeConfig, &Transform)>,
     mut mesh_pool: Single<&mut MeshPool>,
@@ -98,6 +99,7 @@ pub fn update_terrain_quadtree(
     for (entity, mut quadtree, config, transform) in quadtrees.iter_mut() {
         quadtree.root.build_around_point(
             config,
+            &mut meshes,
             &entity,
             &mut mesh_pool,
             &mut commands,

@@ -21,12 +21,4 @@ impl MaterialExtension for PlanetMaterial {
     fn deferred_vertex_shader() -> ShaderRef {
         SHADER_ASSET_PATH.into()
     }
-
-    fn fragment_shader() -> ShaderRef {
-        SHADER_ASSET_PATH.into()
-    }
-
-    fn deferred_fragment_shader() -> ShaderRef {
-        SHADER_ASSET_PATH.into()
-    }
 }

@@ -50,11 +50,8 @@ impl AssetLoader for SvgAssetLoader {
                 })?
                 .to_string_lossy();
             svg.name = name.to_string();
-            debug!("Parsing SVG: {} ... Done", load_context.path());
 
-            debug!("Tessellating SVG: {} ...", load_context.path());
             let mesh = svg.tessellate();
-            debug!("Tessellating SVG: {} ... Done", load_context.path());
             let mesh_handle = load_context.add_labeled_asset("mesh".to_string(), mesh);
             svg.mesh = mesh_handle;
 

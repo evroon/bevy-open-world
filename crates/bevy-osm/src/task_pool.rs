@@ -1,7 +1,7 @@
 //! This example shows how to use the ECS and the [`AsyncComputeTaskPool`]
 //! to spawn, poll, and complete tasks across systems and system ticks.
 
-use crate::{build_tile, building::spawn_building, material::MapMaterialHandle, mesh::Shape};
+use crate::{building::spawn_building, material::MapMaterialHandle, mesh::Shape, tile::build_tile};
 use bevy::{
     ecs::{system::SystemState, world::CommandQueue},
     prelude::*,
@@ -16,7 +16,7 @@ pub fn spawn_task(mut commands: Commands, map_materials: Res<MapMaterialHandle>)
     let handle: Handle<StandardMaterial> = map_materials.unknown_building.clone();
     let entity = commands.spawn_empty().id();
     let task = thread_pool.spawn(async move {
-        let (buildings, strokes) = build_tile();
+        let (buildings, strokes) = build_tile("assets/osm/monaco.osm");
 
         let mut command_queue = CommandQueue::default();
 

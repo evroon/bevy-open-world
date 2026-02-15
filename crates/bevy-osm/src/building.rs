@@ -1,8 +1,8 @@
 use bevy::asset::RenderAssetUsages;
 use bevy::mesh::{Indices, PrimitiveTopology, VertexAttributeValues};
 use bevy::prelude::*;
-use geo::LineString;
 use geo::algorithm::TriangulateEarcut;
+use geo::{LineString, Winding};
 use geo_types::Polygon;
 use lyon::geom::Point;
 use rand::Rng;
@@ -15,10 +15,10 @@ use crate::osm_types::BuildingClass;
 
 #[derive(Component, Debug)]
 pub struct Building {
-    pub class: Option<BuildingClass>,
+    pub _class: Option<BuildingClass>,
     pub translate: [f32; 2],
     pub height: f32,
-    pub levels: Option<f32>,
+    pub _levels: Option<f32>,
     pub line: Vec<[f32; 2]>,
     pub vertices: Vec<[f32; 3]>,
     pub triangle_indices: Vec<u32>,
@@ -29,7 +29,7 @@ pub fn polygon_building(
     polygon: Vec<Point<f32>>,
     rng: &mut ThreadRng,
 ) -> Building {
-    let polygon = Polygon::new(
+    let mut polygon = Polygon::new(
         LineString::from(
             polygon
                 .iter()
@@ -39,6 +39,12 @@ pub fn polygon_building(
         ),
         vec![],
     );
+
+    polygon.exterior_mut(|exterior| {
+        if exterior.is_ccw() {
+            exterior.make_cw_winding();
+        }
+    });
 
     let line: Vec<[f32; 2]> = polygon
         .exterior()
@@ -57,10 +63,10 @@ pub fn polygon_building(
     };
     let height = height / 40.0;
     Building {
-        class: building_instruction.class,
+        _class: building_instruction.class,
         translate: [0.0, 0.0],
         height,
-        levels: building_instruction.levels,
+        _levels: building_instruction.levels,
         line,
         vertices: triangles
             .vertices
@@ -170,8 +176,7 @@ impl Wall {
             // println!("{:?}", &point);
             let last: bool = i + 1 == points_len;
             let ix2: u32 = i as u32 * 4;
-            if last {
-            } else {
+            if !last {
                 let (i1, i2) = ([ix2, ix2 + 2, ix2 + 1], [ix2 + 2, ix2 + 3, ix2 + 1]); // Yto-Z
                 wall.indices.extend(i1);
                 wall.indices.extend(i2);
