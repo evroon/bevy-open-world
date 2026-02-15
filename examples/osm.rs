@@ -5,7 +5,6 @@ use bevy_egui::EguiPlugin;
 use bevy_flight_sim::runway::spawn_aircraft;
 use bevy_osm::OSMPlugin;
 use bevy_osm::elevation::spawn_elevation_mesh;
-use bevy_panorbit_camera::PanOrbitCameraPlugin;
 use bevy_terrain::WaterPlugin;
 use bevy_terrain::camera::{
     get_camera_bundle_for_open_world, rotate_sun, setup_lighting_for_open_world,
@@ -23,7 +22,6 @@ fn main() {
         .add_plugins((
             DefaultPlugins,
             OSMPlugin,
-            PanOrbitCameraPlugin,
             WhereWasIPlugin::default(),
             FlyCameraPlugin,
             EguiPlugin::default(),
