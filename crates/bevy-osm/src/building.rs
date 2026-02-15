@@ -5,7 +5,7 @@ use geo::algorithm::TriangulateEarcut;
 use geo::{LineString, Winding};
 use geo_types::Polygon;
 use lyon::geom::Point;
-use rand::Rng;
+use rand::RngExt;
 use rand::rngs::ThreadRng;
 use std::f32::consts::FRAC_PI_2;
 use std::ops::Sub;
