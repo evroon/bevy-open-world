@@ -1,3 +1,4 @@
+pub mod camera;
 pub mod material;
 pub mod mesh;
 pub mod quadtree;
@@ -8,7 +9,7 @@ use bevy::prelude::*;
 
 use quadtree::{MeshPool, QuadTree, QuadTreeConfig, QuadTreeNode};
 
-pub const CELL_VERTEX_COUNT: UVec2 = UVec2::splat(8);
+pub const CELL_VERTEX_COUNT: IVec2 = IVec2::splat(8);
 pub const CELL_VERTEX_COUNT_F32: Vec2 =
     Vec2::new(CELL_VERTEX_COUNT.x as f32, CELL_VERTEX_COUNT.y as f32);
 pub const CELL_VERTEX_SPACING: f32 = 1.0 / CELL_VERTEX_COUNT_F32.x;
@@ -28,7 +29,7 @@ pub fn build_terrain_tile(mut commands: Commands) {
     };
 
     commands.spawn((
-        Transform::from_translation(Vec3::new(0.0, 0.0, 0.0)),
+        Transform::from_translation(Vec3::new(0.0, 1.0, 0.0)),
         quadtree.clone(),
         config.clone(),
         Visibility::Inherited,

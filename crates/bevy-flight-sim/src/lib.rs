@@ -4,6 +4,7 @@ use bevy_svg::SvgPlugin;
 use crate::pfd::setup_pfd;
 
 pub mod pfd;
+pub mod runway;
 
 pub struct FlightSimPlugin;
 

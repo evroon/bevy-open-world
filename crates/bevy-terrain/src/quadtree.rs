@@ -2,7 +2,7 @@ use std::collections::VecDeque;
 
 use bevy::prelude::*;
 
-use super::mesh::{MeshCache, rect_to_transform, spawn_mesh};
+use super::mesh::{MeshCache, spawn_mesh};
 
 #[derive(Component, Debug, Default)]
 pub struct MeshPool(pub VecDeque<Entity>);
@@ -66,30 +66,32 @@ impl MeshPool {
     pub fn get_mesh(
         &mut self,
         commands: &mut Commands,
+        mut meshes: &mut ResMut<'_, Assets<Mesh>>,
         root_entity: &Entity,
         mesh_cache: &Res<MeshCache>,
         rect: Rect,
     ) -> Entity {
-        if let Some(el) = self.0.pop_front() {
-            let mut root_entity = commands.get_entity(*root_entity).unwrap();
-            root_entity.add_child(el);
+        // if let Some(el) = self.0.pop_front() {
+        //     let mut root_entity = commands.get_entity(*root_entity).unwrap();
+        //     root_entity.add_child(el);
 
-            if let Ok(mut entity) = commands.get_entity(el) {
-                entity.remove::<Visibility>();
-                entity.insert(Visibility::Visible);
+        //     if let Ok(mut entity) = commands.get_entity(el) {
+        //         entity.remove::<Visibility>();
+        //         entity.insert(Visibility::Visible);
 
-                entity.remove::<Transform>();
-                entity.insert(rect_to_transform(rect));
-            }
-            return el;
-        }
-        spawn_mesh(commands, root_entity, mesh_cache, rect)
+        //         entity.remove::<Transform>();
+        //         entity.insert(rect_to_transform(rect));
+        //     }
+        //     return el;
+        // }
+        spawn_mesh(commands, &mut meshes, root_entity, mesh_cache, rect)
     }
 
     fn despawn_mesh(&mut self, commands: &mut Commands, entity_id: Entity) {
         if let Ok(mut entity) = commands.get_entity(entity_id) {
-            entity.insert(Visibility::Hidden);
-            self.0.push_back(entity_id);
+            // entity.insert(Visibility::Hidden);
+            entity.despawn();
+            // self.0.push_back(entity_id);
         } else {
             panic!("could not despawn mesh");
         }
@@ -175,9 +177,11 @@ impl QuadTreeNode {
         }
     }
 
+    #[expect(clippy::too_many_arguments)]
     pub fn build_around_point(
         &mut self,
         config: &QuadTreeConfig,
+        meshes: &mut ResMut<'_, Assets<Mesh>>,
         root_entity: &Entity,
         mesh_pool: &mut MeshPool,
         commands: &mut Commands,
@@ -200,6 +204,7 @@ impl QuadTreeNode {
 
             self.north_east.as_mut().unwrap().build_around_point(
                 config,
+                meshes,
                 root_entity,
                 mesh_pool,
                 commands,
@@ -208,6 +213,7 @@ impl QuadTreeNode {
             );
             self.north_west.as_mut().unwrap().build_around_point(
                 config,
+                meshes,
                 root_entity,
                 mesh_pool,
                 commands,
@@ -216,6 +222,7 @@ impl QuadTreeNode {
             );
             self.south_east.as_mut().unwrap().build_around_point(
                 config,
+                meshes,
                 root_entity,
                 mesh_pool,
                 commands,
@@ -224,6 +231,7 @@ impl QuadTreeNode {
             );
             self.south_west.as_mut().unwrap().build_around_point(
                 config,
+                meshes,
                 root_entity,
                 mesh_pool,
                 commands,
@@ -249,7 +257,7 @@ impl QuadTreeNode {
 
             if self.entity.is_none() {
                 self.entity =
-                    Some(mesh_pool.get_mesh(commands, root_entity, mesh_cache, self.rect));
+                    Some(mesh_pool.get_mesh(commands, meshes, root_entity, mesh_cache, self.rect));
             }
         }
     }

@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use bevy::color::Color;
+use bevy::log::error;
 use osm_xml::Tag;
 
 use crate::{mesh::BuildingInstruction, osm_types::BuildingClass};
@@ -136,13 +137,13 @@ pub fn get_way_build_instruction(tags: &Vec<Tag>) -> BuildInstruction {
                 height: tag_map.get("building:height").map(|h| h.parse().unwrap()),
                 levels: tag_map.get("building:levels").map(|h| {
                     h.parse().unwrap_or_else(|_| {
-                        panic!("Could not parse building levels: {}", h);
+                        error!("Could not parse building levels: {}", h);
+                        1.0
                     })
                 }),
             });
         }
     }
-    // println!("{:?}", tags);
     BuildInstruction::None
 }
 

@@ -1,20 +1,20 @@
+use std::collections::HashMap;
+
 use bevy::{
     asset::RenderAssetUsages,
     camera::visibility::NoFrustumCulling,
-    color::palettes::css::PURPLE,
-    mesh::{Indices, PrimitiveTopology},
-    pbr::{ExtendedMaterial, OpaqueRendererMethod},
+    color::palettes::css::GREEN,
+    mesh::{Indices, PrimitiveTopology, triangle_normal},
+    pbr::OpaqueRendererMethod,
     prelude::*,
 };
+use noise::{NoiseFn, Perlin};
 
-use crate::{CELL_VERTEX_COUNT, CELL_VERTEX_SPACING, material::PlanetMaterial};
-
-type MeshDataResult = (usize, Vec<[f32; 3]>, Vec<[f32; 2]>, Vec<u32>);
+use crate::{CELL_VERTEX_COUNT, CELL_VERTEX_COUNT_F32, CELL_VERTEX_SPACING};
 
 #[derive(Resource)]
 pub struct MeshCache {
-    pub mesh_3d: Mesh3d,
-    pub material: MeshMaterial3d<ExtendedMaterial<StandardMaterial, PlanetMaterial>>,
+    pub material: MeshMaterial3d<StandardMaterial>,
 }
 
 /// Builds a mesh of size 1.0 x 1.0, with CELL_VERTEX_COUNT number of cells within in both
@@ -23,32 +23,50 @@ pub struct MeshCache {
 /// Therefore its corners always are:
 /// - Bottomleft: [-0.5, -0.5]
 /// - Topright: [0.5, 0.5]
-fn build_mesh_data() -> MeshDataResult {
+///
+/// [`heights`] must include values in a range of -1..CELL_VERTEX_COUNT+2 (inclusive) in both
+/// dimensions.
+fn build_mesh_data(heights: HashMap<(i32, i32), f32>) -> Mesh {
+    let mut mesh = Mesh::new(
+        PrimitiveTopology::TriangleList,
+        RenderAssetUsages::MAIN_WORLD | RenderAssetUsages::RENDER_WORLD,
+    );
+
     let cell_count = (CELL_VERTEX_COUNT.x * CELL_VERTEX_COUNT.y) as usize;
     let triangle_count = (cell_count + 8) * 6;
 
     let mut positions = vec![[0., 0., 0.]; triangle_count];
+    let mut normals = vec![[0., 0., 0.]; triangle_count];
     let mut tex_coords = vec![[0., 0.]; triangle_count];
     let mut indices = vec![0; triangle_count];
 
+    let get_vertex = |x: i32, z: i32| {
+        let x_pos = (x as f32) * CELL_VERTEX_SPACING - 0.5;
+        let z_pos = (z as f32) * CELL_VERTEX_SPACING - 0.5;
+        [x_pos, heights[&(x, z)], z_pos]
+    };
+    let get_normal = |x: i32, z: i32| {
+        triangle_normal(get_vertex(x, z), get_vertex(x, z + 1), get_vertex(x + 1, z))
+    };
+
     for x in 0..CELL_VERTEX_COUNT.x {
-        for y in 0..CELL_VERTEX_COUNT.y {
-            let x_pos = (x as f32) * CELL_VERTEX_SPACING - 0.5;
-            let z_pos = (y as f32) * CELL_VERTEX_SPACING - 0.5;
+        for z in 0..CELL_VERTEX_COUNT.y {
+            let i_32 = (x + z * CELL_VERTEX_COUNT.x) as u32;
+            let i = i_32 as usize;
 
-            let i_32 = x + y * CELL_VERTEX_COUNT.x;
-            let i: usize = i_32 as usize;
+            positions[i * 6] = get_vertex(x, z);
+            positions[i * 6 + 1] = get_vertex(x, z + 1);
+            positions[i * 6 + 2] = get_vertex(x + 1, z);
+            positions[i * 6 + 3] = get_vertex(x + 1, z + 1);
+            positions[i * 6 + 4] = get_vertex(x + 1, z);
+            positions[i * 6 + 5] = get_vertex(x, z + 1);
 
-            positions[i * 6] = [x_pos, 0.0, z_pos];
-            positions[i * 6 + 1] = [x_pos, 0.0, z_pos + CELL_VERTEX_SPACING];
-            positions[i * 6 + 2] = [x_pos + CELL_VERTEX_SPACING, 0.0, z_pos];
-            positions[i * 6 + 3] = [
-                x_pos + CELL_VERTEX_SPACING,
-                0.0,
-                z_pos + CELL_VERTEX_SPACING,
-            ];
-            positions[i * 6 + 4] = [x_pos + CELL_VERTEX_SPACING, 0.0, z_pos];
-            positions[i * 6 + 5] = [x_pos, 0.0, z_pos + CELL_VERTEX_SPACING];
+            normals[i * 6] = get_normal(x, z);
+            normals[i * 6 + 1] = get_normal(x, z + 1);
+            normals[i * 6 + 2] = get_normal(x + 1, z);
+            normals[i * 6 + 3] = get_normal(x + 1, z + 1);
+            normals[i * 6 + 4] = get_normal(x + 1, z);
+            normals[i * 6 + 5] = get_normal(x, z + 1);
 
             tex_coords[i * 6] = [0.0, 0.0];
             tex_coords[i * 6 + 1] = [0.0, 1.0];
@@ -65,55 +83,78 @@ fn build_mesh_data() -> MeshDataResult {
                 i_32 * 6 + 4,
                 i_32 * 6 + 5,
             ];
-            let i_idx_usize = i * 6;
-            indices.splice(i_idx_usize..i_idx_usize + 6, slice.iter().cloned());
+            indices.splice(i * 6..i * 6 + 6, slice.iter().cloned());
         }
     }
 
-    (triangle_count, positions, tex_coords, indices)
+    mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, positions);
+    mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normals);
+    mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, tex_coords);
+    mesh.insert_indices(Indices::U32(indices));
+    mesh
 }
 
 pub fn build_mesh_cache(
     mut commands: Commands<'_, '_>,
-    mut meshes: ResMut<'_, Assets<Mesh>>,
-    mut materials: ResMut<Assets<ExtendedMaterial<StandardMaterial, PlanetMaterial>>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    asset_server: Res<AssetServer>,
 ) {
-    let mut mesh = Mesh::new(
-        PrimitiveTopology::TriangleList,
-        RenderAssetUsages::MAIN_WORLD | RenderAssetUsages::RENDER_WORLD,
-    );
-    let (_, positions, tex_coords, indices) = build_mesh_data();
-
-    mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, positions);
-    mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, tex_coords);
-    mesh.insert_indices(Indices::U32(indices));
-
-    let mesh_3d = Mesh3d(meshes.add(mesh));
-    let material = MeshMaterial3d(materials.add(ExtendedMaterial {
-        base: StandardMaterial {
-            base_color: PURPLE.into(),
-            opaque_render_method: OpaqueRendererMethod::Auto,
-            ..default()
-        },
-        extension: PlanetMaterial { planet_radius: 20. },
+    let material = MeshMaterial3d(materials.add(StandardMaterial {
+        base_color: GREEN.into(),
+        reflectance: 0.01,
+        // base_color_texture: Some(asset_server.load("textures/rocky/rocky_terrain_02_diff_2k.jpg")),
+        // metallic_roughness_texture: Some(
+        //     asset_server.load("textures/rocky/rocky_terrain_02_rough_2k.jpg"),
+        // ),
+        // normal_map_texture: Some(
+        //     asset_server.load("textures/rocky/rocky_terrain_02_nor_gl_2k.jpg"),
+        // ),
+        // occlusion_texture: Some(asset_server.load("textures/rocky/rocky_terrain_02_ao_2k.jpg")),
+        opaque_render_method: OpaqueRendererMethod::Auto,
+        ..Default::default()
     }));
 
-    commands.insert_resource(MeshCache { mesh_3d, material });
+    commands.insert_resource(MeshCache { material });
 }
 
 pub fn rect_to_transform(rect: Rect) -> Transform {
     Transform::from_translation(Vec3::new(rect.center().x, 0.0, rect.center().y))
-        .with_scale(Vec3::new(rect.width(), rect.width(), rect.height()))
+        .with_scale(Vec3::new(rect.width(), 1.0, rect.height()))
 }
 
 pub fn spawn_mesh(
     commands: &mut Commands,
+    meshes: &mut ResMut<'_, Assets<Mesh>>,
     root_entity: &Entity,
     mesh_cache: &Res<MeshCache>,
     rect: Rect,
 ) -> Entity {
+    let perlin = Perlin::new(1);
+    let x_rng = (rect.width() / (CELL_VERTEX_COUNT_F32.x + 0.0)) as f64;
+    let z_rng = (rect.height() / (CELL_VERTEX_COUNT_F32.y + 0.0)) as f64;
+    let vert_scale = 0.3;
+
+    let heights = (-1i32..CELL_VERTEX_COUNT.x + 2)
+        .flat_map(|x| {
+            (-1i32..CELL_VERTEX_COUNT.y + 2).map(move |z| {
+                (
+                    (x, z),
+                    vert_scale
+                        * perlin.get([
+                            rect.min.x as f64 + x as f64 * x_rng,
+                            0.0,
+                            rect.min.y as f64 + z as f64 * z_rng,
+                        ]) as f32
+                        - 0.9,
+                )
+            })
+        })
+        .collect();
+
+    let mesh_3d = Mesh3d(meshes.add(build_mesh_data(heights)));
+
     let entity = commands.spawn((
-        mesh_cache.mesh_3d.clone(),
+        mesh_3d.clone(),
         rect_to_transform(rect),
         mesh_cache.material.clone(),
         NoFrustumCulling,
