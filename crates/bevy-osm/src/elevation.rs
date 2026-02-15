@@ -100,7 +100,7 @@ pub fn spawn_elevation_mesh(
 
     commands.spawn((
         mesh_3d.clone(),
-        Transform::from_scale(Vec3::new(100.0, 0.01, 100.0)),
+        Transform::from_scale(Vec3::new(100.0, 0.1, 100.0)),
         material.clone(),
         NoFrustumCulling,
     ));
