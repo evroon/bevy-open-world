@@ -1,3 +1,5 @@
+pub mod elevation;
+pub mod location;
 pub mod mesh;
 pub mod osm_types;
 mod theme;
