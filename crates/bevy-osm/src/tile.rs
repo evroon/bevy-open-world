@@ -1,19 +1,19 @@
-use std::fs::File;
 extern crate osm_xml as osm;
 use crate::{
     building::{Building, polygon_building},
+    location::{Location, get_osm_for_location},
     mesh::{BuildInstruction, spawn_fill_mesh, spawn_stroke_mesh},
     theme::get_way_build_instruction,
 };
 use bevy::prelude::*;
 use lyon::math::point;
 
-pub fn build_tile(path: &str) -> (Vec<Building>, Vec<Mesh>) {
+pub fn build_tile(location: Location) -> (Vec<Building>, Vec<Mesh>) {
     let mut buildings = Vec::new();
     let mut meshes = Vec::new();
     let mut rng = rand::rng();
-    let f = File::open(path).unwrap();
-    let doc = &osm::OSM::parse(f).unwrap();
+
+    let doc = get_osm_for_location(location);
     let mut position_sum = (0.0, 0.0);
     let mut node_count = 0.0;
 

@@ -1,7 +1,7 @@
-//! This example shows how to use the ECS and the [`AsyncComputeTaskPool`]
-//! to spawn, poll, and complete tasks across systems and system ticks.
-
-use crate::{building::spawn_building, material::MapMaterialHandle, mesh::Shape, tile::build_tile};
+use crate::{
+    building::spawn_building, location::Location, material::MapMaterialHandle, mesh::Shape,
+    tile::build_tile,
+};
 use bevy::{
     ecs::{system::SystemState, world::CommandQueue},
     prelude::*,
@@ -15,29 +15,31 @@ pub fn spawn_task(mut commands: Commands, map_materials: Res<MapMaterialHandle>)
     let thread_pool = AsyncComputeTaskPool::get();
     let handle: Handle<StandardMaterial> = map_materials.unknown_building.clone();
     let entity = commands.spawn_empty().id();
+
     let task = thread_pool.spawn(async move {
-        let (buildings, strokes) = build_tile("assets/osm/monaco.osm");
+        let (buildings, strokes) = build_tile(Location::MonacoFull);
 
         let mut command_queue = CommandQueue::default();
 
         command_queue.push(move |world: &mut World| {
             let mut meshes = SystemState::<ResMut<Assets<Mesh>>>::new(world).get_mut(world);
 
-            let mut mt = Vec::new();
+            let mut building_meshes = Vec::new();
             for building in buildings {
-                let a = spawn_building(&building);
-                for (mes, transform) in a {
-                    mt.push((Mesh3d(meshes.add(mes)), transform));
+                let building = spawn_building(&building);
+                for (mes, transform) in building {
+                    building_meshes.push((Mesh3d(meshes.add(mes)), transform));
                 }
             }
 
-            let aa: Vec<Handle<Mesh>> = strokes.iter().map(|s| meshes.add(s.clone())).collect();
+            let stroke_meshes: Vec<Handle<Mesh>> =
+                strokes.iter().map(|s| meshes.add(s.clone())).collect();
 
-            for a in aa {
-                world.spawn((Mesh3d(a), MeshMaterial3d(handle.clone()), Shape));
+            for mesh in stroke_meshes {
+                world.spawn((Mesh3d(mesh), MeshMaterial3d(handle.clone()), Shape));
             }
 
-            for (mesh, trans) in mt {
+            for (mesh, trans) in building_meshes {
                 world.spawn((mesh, MeshMaterial3d(handle.clone()), trans));
             }
 

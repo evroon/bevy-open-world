@@ -10,29 +10,27 @@ use bevy::{
 };
 use noise::{NoiseFn, Perlin};
 
-use crate::{CELL_VERTEX_COUNT, CELL_VERTEX_COUNT_F32, CELL_VERTEX_SPACING};
-
 #[derive(Resource)]
 pub struct MeshCache {
     pub material: MeshMaterial3d<StandardMaterial>,
 }
 
-/// Builds a mesh of size 1.0 x 1.0, with CELL_VERTEX_COUNT number of cells within in both
+/// Builds a mesh of size 1.0 x 1.0, with vertex_count number of cells within in both
 /// dimensions.
 ///
 /// Therefore its corners always are:
 /// - Bottomleft: [-0.5, -0.5]
 /// - Topright: [0.5, 0.5]
 ///
-/// [`heights`] must include values in a range of -1..CELL_VERTEX_COUNT+2 (inclusive) in both
+/// [`heights`] must include values in a range of -1..vertex_count+2 (inclusive) in both
 /// dimensions.
-fn build_mesh_data(heights: HashMap<(i32, i32), f32>) -> Mesh {
+pub fn build_mesh_data(heights: HashMap<(i32, i32), f32>, vertex_count: IVec2) -> Mesh {
     let mut mesh = Mesh::new(
         PrimitiveTopology::TriangleList,
         RenderAssetUsages::MAIN_WORLD | RenderAssetUsages::RENDER_WORLD,
     );
 
-    let cell_count = (CELL_VERTEX_COUNT.x * CELL_VERTEX_COUNT.y) as usize;
+    let cell_count = (vertex_count.x * vertex_count.y) as usize;
     let triangle_count = (cell_count + 8) * 6;
 
     let mut positions = vec![[0., 0., 0.]; triangle_count];
@@ -40,18 +38,21 @@ fn build_mesh_data(heights: HashMap<(i32, i32), f32>) -> Mesh {
     let mut tex_coords = vec![[0., 0.]; triangle_count];
     let mut indices = vec![0; triangle_count];
 
+    let vertex_spacing_x = 1.0 / vertex_count.x as f32;
+    let vertex_spacing_z = 1.0 / vertex_count.y as f32;
+
     let get_vertex = |x: i32, z: i32| {
-        let x_pos = (x as f32) * CELL_VERTEX_SPACING - 0.5;
-        let z_pos = (z as f32) * CELL_VERTEX_SPACING - 0.5;
+        let x_pos = (x as f32) * vertex_spacing_x - 0.5;
+        let z_pos = (z as f32) * vertex_spacing_z - 0.5;
         [x_pos, heights[&(x, z)], z_pos]
     };
     let get_normal = |x: i32, z: i32| {
         triangle_normal(get_vertex(x, z), get_vertex(x, z + 1), get_vertex(x + 1, z))
     };
 
-    for x in 0..CELL_VERTEX_COUNT.x {
-        for z in 0..CELL_VERTEX_COUNT.y {
-            let i_32 = (x + z * CELL_VERTEX_COUNT.x) as u32;
+    for x in 0..vertex_count.x {
+        for z in 0..vertex_count.y {
+            let i_32 = (x + z * vertex_count.x) as u32;
             let i = i_32 as usize;
 
             positions[i * 6] = get_vertex(x, z);
@@ -122,40 +123,50 @@ pub fn rect_to_transform(rect: Rect) -> Transform {
         .with_scale(Vec3::new(rect.width(), 1.0, rect.height()))
 }
 
+pub fn iterate_mesh_vertices(
+    vertex_count: IVec2,
+    rect: Rect,
+) -> impl Iterator<Item = (i32, i32, f64, f64)> {
+    let x_rng = rect.width() as f64 / (vertex_count.x as f64);
+    let z_rng = rect.height() as f64 / (vertex_count.y as f64);
+
+    (-1i32..vertex_count.x + 2).flat_map(move |x| {
+        (-1i32..vertex_count.y + 2).map(move |z| {
+            (
+                x,
+                z,
+                rect.min.x as f64 + x as f64 * x_rng,
+                rect.min.y as f64 + z as f64 * z_rng,
+            )
+        })
+    })
+}
+
 pub fn spawn_mesh(
     commands: &mut Commands,
     meshes: &mut ResMut<'_, Assets<Mesh>>,
     root_entity: &Entity,
     mesh_cache: &Res<MeshCache>,
-    rect: Rect,
+    world_rect: Rect,
 ) -> Entity {
+    let vertex_count = IVec2::splat(8);
     let perlin = Perlin::new(1);
-    let x_rng = (rect.width() / (CELL_VERTEX_COUNT_F32.x + 0.0)) as f64;
-    let z_rng = (rect.height() / (CELL_VERTEX_COUNT_F32.y + 0.0)) as f64;
     let vert_scale = 0.3;
 
-    let heights = (-1i32..CELL_VERTEX_COUNT.x + 2)
-        .flat_map(|x| {
-            (-1i32..CELL_VERTEX_COUNT.y + 2).map(move |z| {
-                (
-                    (x, z),
-                    vert_scale
-                        * perlin.get([
-                            rect.min.x as f64 + x as f64 * x_rng,
-                            0.0,
-                            rect.min.y as f64 + z as f64 * z_rng,
-                        ]) as f32
-                        - 0.9,
-                )
-            })
+    let heights = iterate_mesh_vertices(vertex_count, world_rect)
+        .map(|(x_local, z_local, x_world, z_world)| {
+            (
+                (x_local, z_local),
+                vert_scale * perlin.get([x_world, 0.0, z_world]) as f32 - 0.9,
+            )
         })
         .collect();
 
-    let mesh_3d = Mesh3d(meshes.add(build_mesh_data(heights)));
+    let mesh_3d = Mesh3d(meshes.add(build_mesh_data(heights, vertex_count)));
 
     let entity = commands.spawn((
         mesh_3d.clone(),
-        rect_to_transform(rect),
+        rect_to_transform(world_rect),
         mesh_cache.material.clone(),
         NoFrustumCulling,
     ));
