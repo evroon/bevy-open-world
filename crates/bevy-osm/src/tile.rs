@@ -13,29 +13,17 @@ pub fn build_tile(location: Location) -> (Vec<Building>, Vec<Mesh>) {
     let mut meshes = Vec::new();
     let mut rng = rand::rng();
 
-    let doc = get_osm_for_location(location);
-    let mut position_sum = (0.0, 0.0);
-    let mut node_count = 0.0;
-
-    for way in doc.ways.values() {
-        for n in &way.nodes {
-            if let osm::Reference::Node(node) = doc.resolve_reference(n) {
-                let (x, y) = (node.lat as f32, node.lon as f32);
-                position_sum.0 += x;
-                position_sum.1 += y;
-                node_count += 1.0;
-            }
-        }
-    }
-    let position_avg = (position_sum.0 / node_count, position_sum.1 / node_count);
+    let doc = get_osm_for_location(location.clone());
+    let area = location.get_area();
+    let coords_to_world = location.lat_lon_to_meters();
 
     for way in doc.ways.values() {
         let mut points = Vec::new();
         for n in &way.nodes {
             if let osm::Reference::Node(node) = doc.resolve_reference(n) {
                 points.push(point(
-                    (node.lat as f32 - position_avg.0) * 1000.0,
-                    (node.lon as f32 - position_avg.1) * 1000.0,
+                    (node.lat as f32 - area.center().x) * coords_to_world.x,
+                    (node.lon as f32 - area.center().y) * coords_to_world.y,
                 ));
             }
         }

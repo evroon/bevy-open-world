@@ -17,7 +17,7 @@ pub fn spawn_task(mut commands: Commands, map_materials: Res<MapMaterialHandle>)
     let entity = commands.spawn_empty().id();
 
     let task = thread_pool.spawn(async move {
-        let (buildings, strokes) = build_tile(Location::MonacoFull);
+        let (buildings, strokes) = build_tile(Location::MonacoCenter);
 
         let mut command_queue = CommandQueue::default();
 

@@ -75,8 +75,9 @@ pub fn spawn_elevation_mesh(
     mut meshes: ResMut<'_, Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    let location = Location::MonacoFull;
+    let location = Location::MonacoCenter;
     let world_rect = location.get_area();
+    let coords_to_world_scale = location.lat_lon_to_meters();
     let vertex_count = IVec2::splat(128);
     let material = MeshMaterial3d(materials.add(StandardMaterial {
         base_color: GREEN.into(),
@@ -100,7 +101,11 @@ pub fn spawn_elevation_mesh(
 
     commands.spawn((
         mesh_3d.clone(),
-        Transform::from_scale(Vec3::new(100.0, 0.1, 100.0)),
+        Transform::from_scale(Vec3::new(
+            world_rect.half_size().x * coords_to_world_scale.x,
+            1.0,
+            world_rect.half_size().y * coords_to_world_scale.y,
+        )),
         material.clone(),
         NoFrustumCulling,
     ));
