@@ -35,7 +35,6 @@ pub fn get_way_build_instruction(tags: &Vec<Tag>) -> BuildInstruction {
                     return BuildInstruction::None;
                 }
                 _ => {
-                    // println!("{:?}", tag);
                     return BuildInstruction::None;
                 }
             }

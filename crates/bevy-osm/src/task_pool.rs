@@ -13,16 +13,18 @@ pub struct ComputeTransform(pub Task<CommandQueue>);
 
 pub fn spawn_task(mut commands: Commands, map_materials: Res<MapMaterialHandle>) {
     let thread_pool = AsyncComputeTaskPool::get();
-    let handle: Handle<StandardMaterial> = map_materials.unknown_building.clone();
+    let building_material: Handle<StandardMaterial> = map_materials.unknown_building.clone();
+    let light_material: Handle<StandardMaterial> = map_materials.light.clone();
     let entity = commands.spawn_empty().id();
 
     let task = thread_pool.spawn(async move {
-        let (buildings, strokes) = build_tile(Location::MonacoFull);
+        let (buildings, strokes, lights) = build_tile(Location::MonacoCenter);
 
         let mut command_queue = CommandQueue::default();
 
         command_queue.push(move |world: &mut World| {
             let mut meshes = SystemState::<ResMut<Assets<Mesh>>>::new(world).get_mut(world);
+            let light_mesh = meshes.add(Cuboid::from_size(Vec3::splat(1.0)));
 
             let mut building_meshes = Vec::new();
             for building in buildings {
@@ -36,11 +38,23 @@ pub fn spawn_task(mut commands: Commands, map_materials: Res<MapMaterialHandle>)
                 strokes.iter().map(|s| meshes.add(s.clone())).collect();
 
             for mesh in stroke_meshes {
-                world.spawn((Mesh3d(mesh), MeshMaterial3d(handle.clone()), Shape));
+                world.spawn((
+                    Mesh3d(mesh),
+                    MeshMaterial3d(building_material.clone()),
+                    Shape,
+                ));
             }
 
             for (mesh, trans) in building_meshes {
-                world.spawn((mesh, MeshMaterial3d(handle.clone()), trans));
+                world.spawn((mesh, MeshMaterial3d(building_material.clone()), trans));
+            }
+
+            for light in lights {
+                world.spawn((
+                    Mesh3d(light_mesh.clone()),
+                    MeshMaterial3d(light_material.clone()),
+                    Transform::from_translation(light.trans),
+                ));
             }
 
             world.entity_mut(entity).remove::<ComputeTransform>();

@@ -64,10 +64,15 @@ pub struct FillInstruction {
     pub color: Color,
 }
 
+pub struct LightInstruction {
+    pub trans: Vec3,
+}
+
 pub enum BuildInstruction {
     Fill(FillInstruction),
     Stroke(StrokeInstruction),
     Building(BuildingInstruction),
+    Light(LightInstruction),
     None,
 }
 

@@ -2,40 +2,29 @@ extern crate osm_xml as osm;
 use crate::{
     building::{Building, polygon_building},
     location::{Location, get_osm_for_location},
-    mesh::{BuildInstruction, spawn_fill_mesh, spawn_stroke_mesh},
+    mesh::{BuildInstruction, LightInstruction, spawn_fill_mesh, spawn_stroke_mesh},
     theme::get_way_build_instruction,
 };
 use bevy::prelude::*;
 use lyon::math::point;
 
-pub fn build_tile(location: Location) -> (Vec<Building>, Vec<Mesh>) {
+pub fn build_tile(location: Location) -> (Vec<Building>, Vec<Mesh>, Vec<LightInstruction>) {
     let mut buildings = Vec::new();
     let mut meshes = Vec::new();
+    let mut lights = Vec::new();
     let mut rng = rand::rng();
 
-    let doc = get_osm_for_location(location);
-    let mut position_sum = (0.0, 0.0);
-    let mut node_count = 0.0;
-
-    for way in doc.ways.values() {
-        for n in &way.nodes {
-            if let osm::Reference::Node(node) = doc.resolve_reference(n) {
-                let (x, y) = (node.lat as f32, node.lon as f32);
-                position_sum.0 += x;
-                position_sum.1 += y;
-                node_count += 1.0;
-            }
-        }
-    }
-    let position_avg = (position_sum.0 / node_count, position_sum.1 / node_count);
+    let doc = get_osm_for_location(location.clone());
+    let area = location.get_area();
+    let coords_to_world = location.lat_lon_to_meters();
 
     for way in doc.ways.values() {
         let mut points = Vec::new();
         for n in &way.nodes {
             if let osm::Reference::Node(node) = doc.resolve_reference(n) {
                 points.push(point(
-                    (node.lat as f32 - position_avg.0) * 1000.0,
-                    (node.lon as f32 - position_avg.1) * 1000.0,
+                    (node.lon as f32 - area.center().y) * coords_to_world.y,
+                    (node.lat as f32 - area.center().x) * coords_to_world.x,
                 ));
             }
         }
@@ -44,21 +33,27 @@ pub fn build_tile(location: Location) -> (Vec<Building>, Vec<Mesh>) {
                 meshes.push(spawn_fill_mesh(points, fill));
             }
             BuildInstruction::Stroke(stroke) => {
+                let center = points[0];
                 meshes.push(spawn_stroke_mesh(points, stroke));
+                lights.push(LightInstruction {
+                    trans: Vec3::new(center.x, 2.0, center.y),
+                });
             }
             BuildInstruction::Building(building) => {
                 buildings.push(polygon_building(&building, points, &mut rng));
             }
+            BuildInstruction::Light(_light) => {}
             BuildInstruction::None => {}
         }
     }
 
     println!(
-        "Finished building {} buildings, {} meshes",
+        "Finished building {} buildings, {} meshes, {} lights",
         buildings.len(),
-        meshes.len()
+        meshes.len(),
+        lights.len()
     );
-    (buildings, meshes)
+    (buildings, meshes, lights)
     // for rel in doc.relations.values() {
     //     let mut points = Vec::new();
     //     for m in &rel.members {

@@ -13,7 +13,7 @@ use strum_macros::Display;
 
 const OVERPASS_BASE_URL: &str = "https://overpass-api.de/api/map";
 
-#[derive(PartialEq, Eq, Hash, Display)]
+#[derive(PartialEq, Eq, Hash, Display, Clone)]
 pub enum Location {
     MonacoCenter,
     MonacoFull,
@@ -35,13 +35,18 @@ impl Location {
     pub fn get_elevation_path(&self) -> String {
         self.get_path().to_owned() + "elevation.json"
     }
+    pub fn lat_lon_to_meters(&self) -> Vec2 {
+        // Assume at equator
+        Vec2::splat(1.1e5)
+    }
+    /// The area of the location in lat, lon coordinates
     pub fn get_area(&self) -> Rect {
         match self {
             Self::MonacoCenter => {
-                Rect::from_corners(Vec2::new(7.40848, 43.72264), Vec2::new(7.43320, 43.73864))
+                Rect::from_corners(Vec2::new(43.72264, 7.40848), Vec2::new(43.73864, 7.43320))
             }
             Self::MonacoFull => {
-                Rect::from_corners(Vec2::new(7.38732, 43.71795), Vec2::new(7.45083, 43.75758))
+                Rect::from_corners(Vec2::new(43.71795, 7.38732), Vec2::new(43.75758, 7.45083))
             }
         }
     }
@@ -58,7 +63,7 @@ pub fn get_osm_for_location(location: Location) -> OSM {
         let area = location.get_area();
         let request = ehttp::Request::get(format!(
             "{OVERPASS_BASE_URL}?bbox={},{},{},{}",
-            area.min.x, area.min.y, area.max.x, area.max.y
+            area.min.y, area.min.x, area.max.y, area.max.x
         ));
         let response = ehttp::fetch_blocking(&request);
 
