@@ -23,8 +23,12 @@ pub fn build_tile(location: Location) -> (Vec<Building>, Vec<Mesh>, Vec<LightIns
         for n in &way.nodes {
             if let osm::Reference::Node(node) = doc.resolve_reference(n) {
                 points.push(point(
+                    // 1. We need to switch (lat, lon) to (lon, lat)
+                    // 2. We need to invert the lat coordinates on z-axis because Bevy's coordinate
+                    //    system has the Z-axis pointed downwards (instead of upwards) when X-axis
+                    //    points to the right.
                     (node.lon as f32 - area.center().y) * coords_to_world.y,
-                    (node.lat as f32 - area.center().x) * coords_to_world.x,
+                    -(node.lat as f32 - area.center().x) * coords_to_world.x,
                 ));
             }
         }
@@ -47,7 +51,7 @@ pub fn build_tile(location: Location) -> (Vec<Building>, Vec<Mesh>, Vec<LightIns
         }
     }
 
-    println!(
+    info!(
         "Finished building {} buildings, {} meshes, {} lights",
         buildings.len(),
         meshes.len(),

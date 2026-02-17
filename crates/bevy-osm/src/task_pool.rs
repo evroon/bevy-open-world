@@ -53,7 +53,7 @@ pub fn spawn_task(mut commands: Commands, map_materials: Res<MapMaterialHandle>)
                 world.spawn((
                     Mesh3d(light_mesh.clone()),
                     MeshMaterial3d(light_material.clone()),
-                    Transform::from_translation(light.trans),
+                    Transform::from_translation(light.trans).with_scale(Vec3::splat(5.0)),
                 ));
             }
 

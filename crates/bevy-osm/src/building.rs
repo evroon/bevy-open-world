@@ -61,7 +61,6 @@ pub fn polygon_building(
             None => rng.random_range(6.0..12.5),
         },
     };
-    let height = height / 40.0;
     Building {
         _class: building_instruction.class,
         translate: [0.0, 0.0],
@@ -121,7 +120,7 @@ pub fn spawn_building(building: &Building) -> Vec<(Mesh, Transform)> {
             building
                 .vertices
                 .iter()
-                .map(|_| [0., 1., 0.] as [f32; 3])
+                .map(|_| [0., 1., 0.])
                 .collect::<Vec<[f32; 3]>>(),
         ),
     );
@@ -132,10 +131,9 @@ pub fn spawn_building(building: &Building) -> Vec<(Mesh, Transform)> {
     roof.invert_winding().unwrap();
     roof.compute_normals();
 
-    let translation = transform.translation + Vec3::new(0., building.height, 0.);
-    let transform: Transform = Transform::from_translation(translation);
+    let translation = transform.translation + Vec3::Y * building.height;
 
-    result.push((roof, transform));
+    result.push((roof, Transform::from_translation(translation)));
     result
 }
 
@@ -168,7 +166,7 @@ impl Wall {
             .collect::<Vec<Vec3>>();
 
         let heightv: Vec3 = Vec3::Y * height;
-        let material_lengh = 1.;
+        let material_lenght = 1.;
         let mut len: f32 = 0.;
         let points_len = wall.points.len();
 
@@ -194,10 +192,10 @@ impl Wall {
                 wall.vertices.push((point_next + heightv).into());
 
                 let diff = point_next.sub(point).length();
-                wall.uvs.push([len / material_lengh, 0.]);
-                wall.uvs.push([len / material_lengh, 1.]);
-                wall.uvs.push([len / material_lengh, 0.]);
-                wall.uvs.push([len / material_lengh, 1.]);
+                wall.uvs.push([len / material_lenght, 0.]);
+                wall.uvs.push([len / material_lenght, 1.]);
+                wall.uvs.push([len / material_lenght, 0.]);
+                wall.uvs.push([len / material_lenght, 1.]);
 
                 let norm_arr = norm.to_array();
                 wall.normals.push(norm_arr);

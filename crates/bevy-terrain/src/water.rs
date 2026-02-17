@@ -79,12 +79,12 @@ pub fn spawn_water(
                         vec4(0.080, 0.059, 0.073, -0.062),
                         vec4(0.153, 0.138, -0.149, -0.195),
                     ],
-                    octave_scales: vec4(1.0, 2.1, 7.9, 14.9) * 1e5,
+                    octave_scales: vec4(1.0, 2.1, 7.9, 14.9) * 1e6,
                     octave_strengths: vec4(0.16, 0.18, 0.093, 0.044),
                 },
             },
         })),
-        Transform::from_scale(Vec3::splat(1e3)),
+        Transform::from_scale(Vec3::splat(1e4)),
     ));
 }
 
