@@ -1,4 +1,7 @@
-use bevy::prelude::{Assets, Color, FromWorld, Handle, Resource, StandardMaterial, World, default};
+use bevy::{
+    color::LinearRgba,
+    prelude::{Assets, Color, FromWorld, Handle, Resource, StandardMaterial, World, default},
+};
 use std::collections::HashMap;
 use strum::IntoEnumIterator;
 
@@ -26,6 +29,7 @@ pub struct MapMaterialHandle {
     pub roof: Handle<StandardMaterial>,
     pub roofs: HashMap<BuildingClass, Handle<StandardMaterial>>,
     pub walls: HashMap<BuildingClass, Handle<StandardMaterial>>,
+    pub light: Handle<StandardMaterial>,
     pub unknown_building: Handle<StandardMaterial>,
     pub unknown_building_roof: Handle<StandardMaterial>,
     // pub road: HashMap<RoadClass, Handle<StandardMaterial>>,
@@ -106,6 +110,15 @@ impl FromWorld for MapMaterialHandle {
             ..default()
         });
 
+        let light = standard_materials.add(StandardMaterial {
+            base_color: Color::WHITE,
+            depth_bias: 0.,
+            reflectance: 0.5,
+            perceptual_roughness: 0.7,
+            emissive: LinearRgba::rgb(100.0, 100.0, 10.0),
+            ..default()
+        });
+
         // let mut road: HashMap<RoadClass, Handle<StandardMaterial>> = HashMap::new();
         // for road_class in RoadClass::iter() {
         //     let color = Color::from(&road_class);
@@ -126,6 +139,7 @@ impl FromWorld for MapMaterialHandle {
             walls,
             unknown_building,
             unknown_building_roof,
+            light,
         }
     }
 }
