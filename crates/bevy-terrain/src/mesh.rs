@@ -133,8 +133,12 @@ pub fn iterate_mesh_vertices(
     (-1i32..vertex_count.x + 2).flat_map(move |x| {
         (-1i32..vertex_count.y + 2).map(move |z| {
             (
-                x,
+                // 1. We need to switch (lat, lon) to (lon, lat)
+                // 2. We need to invert the lat coordinates on z-axis because Bevy's coordinate
+                //    system has the Z-axis pointed downwards (instead of upwards) when X-axis
+                //    points to the right.
                 z,
+                vertex_count.x + 1 - x,
                 rect.min.x as f64 + x as f64 * x_rng,
                 rect.min.y as f64 + z as f64 * z_rng,
             )

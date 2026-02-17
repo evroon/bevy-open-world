@@ -9,7 +9,6 @@ use bevy_terrain::WaterPlugin;
 use bevy_terrain::camera::{
     get_camera_bundle_for_open_world, rotate_sun, setup_lighting_for_open_world,
 };
-use bevy_terrain::system::update_terrain_quadtree;
 use bevy_terrain::water::spawn_water;
 use bevy_volumetric_clouds::fly_camera::{FlyCam, FlyCameraPlugin, MovementSettings};
 use bevy_where_was_i::{WhereWasI, WhereWasIPlugin};
@@ -32,12 +31,13 @@ fn main() {
             (
                 setup_lighting_for_open_world,
                 spawn_camera,
+                spawn_gizmo,
                 spawn_water,
                 spawn_aircraft,
                 spawn_elevation_mesh,
             ),
         )
-        .add_systems(Update, (update_terrain_quadtree, rotate_sun))
+        .add_systems(Update, rotate_sun)
         .run();
 }
 
@@ -50,4 +50,29 @@ fn spawn_camera(mut commands: Commands, scattering_mediums: ResMut<Assets<Scatte
         far: 10.0,
         ..default()
     }));
+}
+
+fn spawn_gizmo(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut standard_materials: ResMut<Assets<StandardMaterial>>,
+) {
+    let length = 50.0;
+
+    commands.spawn((
+        Mesh3d(meshes.add(Cuboid::from_size(length * Vec3::new(10.0, 1.0, 1.0)))),
+        MeshMaterial3d(standard_materials.add(StandardMaterial {
+            emissive: LinearRgba::rgb(100.0, 10.0, 10.0),
+            ..default()
+        })),
+        Transform::from_translation(Vec3::new(length * 5.0, 0.0, 3e3)),
+    ));
+    commands.spawn((
+        Mesh3d(meshes.add(Cuboid::from_size(length * Vec3::new(1.0, 1.0, 10.0)))),
+        MeshMaterial3d(standard_materials.add(StandardMaterial {
+            emissive: LinearRgba::rgb(10.0, 10.0, 100.0),
+            ..default()
+        })),
+        Transform::from_translation(Vec3::new(0.0, 0.0, 3e3 + length * 5.0)),
+    ));
 }

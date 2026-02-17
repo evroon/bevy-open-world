@@ -24,7 +24,7 @@ pub fn build_tile(location: Location) -> (Vec<Building>, Vec<Mesh>, Vec<LightIns
             if let osm::Reference::Node(node) = doc.resolve_reference(n) {
                 points.push(point(
                     (node.lon as f32 - area.center().y) * coords_to_world.y,
-                    (node.lat as f32 - area.center().x) * coords_to_world.x,
+                    -(node.lat as f32 - area.center().x) * coords_to_world.x,
                 ));
             }
         }
@@ -47,7 +47,7 @@ pub fn build_tile(location: Location) -> (Vec<Building>, Vec<Mesh>, Vec<LightIns
         }
     }
 
-    println!(
+    info!(
         "Finished building {} buildings, {} meshes, {} lights",
         buildings.len(),
         meshes.len(),
