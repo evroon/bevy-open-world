@@ -124,11 +124,7 @@ pub fn spawn_elevation_mesh(
 
     commands.spawn((
         mesh_3d.clone(),
-        Transform::from_scale(Vec3::new(
-            world_rect.size().y * coords_to_world_scale.y,
-            1.0,
-            world_rect.size().x * coords_to_world_scale.x,
-        )),
+        Transform::from_scale(Vec3::new(size_meters.y, 1.0, size_meters.x)),
         material.clone(),
         NoFrustumCulling,
     ));
