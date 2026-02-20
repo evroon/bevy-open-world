@@ -1,3 +1,5 @@
+pub mod chunk;
+pub mod config;
 pub mod elevation;
 pub mod location;
 pub mod mesh;
@@ -6,7 +8,8 @@ mod theme;
 
 extern crate osm_xml as osm;
 use crate::{
-    material::{MapMaterialHandle, OSMConfig},
+    config::OSMConfig,
+    material::MapMaterialHandle,
     task_pool::{handle_tasks, spawn_task},
 };
 use bevy::prelude::*;

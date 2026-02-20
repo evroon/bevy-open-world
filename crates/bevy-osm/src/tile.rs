@@ -15,21 +15,13 @@ pub fn build_tile(location: Location) -> (Vec<Building>, Vec<Mesh>, Vec<LightIns
     let mut rng = rand::rng();
 
     let doc = get_osm_for_location(location.clone());
-    let area = location.get_area();
-    let coords_to_world = location.lat_lon_to_meters();
 
     for way in doc.ways.values() {
         let mut points = Vec::new();
         for n in &way.nodes {
             if let osm::Reference::Node(node) = doc.resolve_reference(n) {
-                points.push(point(
-                    // 1. We need to switch (lat, lon) to (lon, lat)
-                    // 2. We need to invert the lat coordinates on z-axis because Bevy's coordinate
-                    //    system has the Z-axis pointed downwards (instead of upwards) when X-axis
-                    //    points to the right.
-                    (node.lon as f32 - area.center().y) * coords_to_world.y,
-                    -(node.lat as f32 - area.center().x) * coords_to_world.x,
-                ));
+                let (x, z) = location.lat_lon_to_world(node.lat, node.lon);
+                points.push(point(x as f32, z as f32));
             }
         }
         match get_way_build_instruction(&way.tags) {

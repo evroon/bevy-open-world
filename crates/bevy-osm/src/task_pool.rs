@@ -1,5 +1,5 @@
 use crate::{
-    building::spawn_building, location::Location, material::MapMaterialHandle, mesh::Shape,
+    building::spawn_building, config::OSMConfig, material::MapMaterialHandle, mesh::Shape,
     tile::build_tile,
 };
 use bevy::{
@@ -11,14 +11,19 @@ use bevy::{
 #[derive(Component)]
 pub struct ComputeTransform(pub Task<CommandQueue>);
 
-pub fn spawn_task(mut commands: Commands, map_materials: Res<MapMaterialHandle>) {
+pub fn spawn_task(
+    mut commands: Commands,
+    map_materials: Res<MapMaterialHandle>,
+    config: Res<OSMConfig>,
+) {
     let thread_pool = AsyncComputeTaskPool::get();
     let building_material: Handle<StandardMaterial> = map_materials.unknown_building.clone();
     let light_material: Handle<StandardMaterial> = map_materials.light.clone();
     let entity = commands.spawn_empty().id();
+    let location = config.location.clone();
 
     let task = thread_pool.spawn(async move {
-        let (buildings, strokes, lights) = build_tile(Location::MonacoCenter);
+        let (buildings, strokes, lights) = build_tile(location);
 
         let mut command_queue = CommandQueue::default();
 

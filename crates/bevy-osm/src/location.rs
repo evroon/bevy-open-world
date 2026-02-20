@@ -1,6 +1,7 @@
 use std::{
     fs::{self, File},
     io::Write,
+    ops::{Add, Sub},
     path::Path,
 };
 
@@ -11,6 +12,8 @@ use bevy::{
 use osm::OSM;
 use strum_macros::Display;
 
+use crate::chunk::{Chunk, get_chunk_for_coord};
+
 const OVERPASS_BASE_URL: &str = "https://overpass-api.de/api/map";
 
 #[derive(PartialEq, Eq, Hash, Display, Clone)]
@@ -20,6 +23,10 @@ pub enum Location {
 }
 
 impl Location {
+    fn get_chunk(&self) -> Chunk {
+        let center = self.get_area().center();
+        get_chunk_for_coord(center.x as f64, center.y as f64, 15)
+    }
     fn get_path(&self) -> &str {
         match self {
             Self::MonacoCenter => "assets/osm/monaco-center/",
@@ -38,6 +45,17 @@ impl Location {
     pub fn lat_lon_to_meters(&self) -> Vec2 {
         // Assume at equator
         Vec2::splat(1.1e5)
+    }
+    #[inline]
+    pub fn lat_lon_to_world(&self, lat: f64, lon: f64) -> (f64, f64) {
+        // 1. We need to switch (lat, lon) to (lon, lat)
+        // 2. We need to invert the lat coordinates on z-axis because Bevy's coordinate
+        //    system has the Z-axis pointed downwards (instead of upwards) when X-axis
+        //    points to the right.
+        (
+            (lon - self.get_area().center().y as f64) * self.lat_lon_to_meters().y as f64,
+            -(lat - self.get_area().center().x as f64) * self.lat_lon_to_meters().x as f64,
+        )
     }
     /// The area of the location in lat, lon coordinates
     pub fn get_area(&self) -> Rect {
