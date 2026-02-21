@@ -1,5 +1,9 @@
 use crate::{
-    building::spawn_building, location::Location, material::MapMaterialHandle, mesh::Shape,
+    building::spawn_building,
+    chunk::Chunk,
+    elevation::{cache_elevation_for_chunk, cache_raster_tile_for_chunk},
+    material::MapMaterialHandle,
+    mesh::Shape,
     tile::build_tile,
 };
 use bevy::{
@@ -11,14 +15,27 @@ use bevy::{
 #[derive(Component)]
 pub struct ComputeTransform(pub Task<CommandQueue>);
 
-pub fn spawn_task(mut commands: Commands, map_materials: Res<MapMaterialHandle>) {
+pub fn load_chunk(
+    mut commands: Commands,
+    map_materials: Res<MapMaterialHandle>,
+    asset_server: Res<AssetServer>,
+    mut chunk: Chunk,
+) {
     let thread_pool = AsyncComputeTaskPool::get();
     let building_material: Handle<StandardMaterial> = map_materials.unknown_building.clone();
     let light_material: Handle<StandardMaterial> = map_materials.light.clone();
     let entity = commands.spawn_empty().id();
 
+    cache_elevation_for_chunk(chunk.clone());
+    cache_raster_tile_for_chunk(chunk.clone());
+
+    chunk.elevation = asset_server.load(chunk.get_elevation_cache_path_bevy());
+    chunk.raster = asset_server.load(chunk.get_osm_raster_cache_path_bevy());
+
+    commands.spawn(chunk.clone());
+
     let task = thread_pool.spawn(async move {
-        let (buildings, strokes, lights) = build_tile(Location::MonacoCenter);
+        let (buildings, strokes, lights) = build_tile(chunk);
 
         let mut command_queue = CommandQueue::default();
 

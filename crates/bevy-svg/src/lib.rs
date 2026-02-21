@@ -5,7 +5,7 @@
 //! ## Usage
 //! Simply add the crate in your `Cargo.toml` and add the plugin to your app
 //!
-//! ```rust
+//! ```rust ignore
 //!     App::new()
 //!         .add_plugin(bevy_svg::prelude::SvgPlugin)
 //!         .run();

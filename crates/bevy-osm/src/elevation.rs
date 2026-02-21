@@ -1,131 +1,115 @@
-use std::{collections::HashMap, fs::File, path::Path};
+use std::{fs::File, io::Write, path::Path};
 
-use bevy::{
-    color::palettes::css::GREEN, log::info, math::Vec2,
-    render::render_resource::encase::private::Length,
-};
-use bevy_terrain::mesh::{build_mesh_data, iterate_mesh_vertices};
-use lyon::geom::euclid::num::Ceil;
-use serde::{Deserialize, Serialize};
+use bevy::log::info;
+use bevy_terrain::mesh::{HeightMap, build_mesh_data, iterate_mesh_vertices};
 
-use crate::location::Location;
-use bevy::{camera::visibility::NoFrustumCulling, prelude::*};
+use crate::chunk::{Chunk, ChunkLoaded};
+use bevy::prelude::*;
 
-#[derive(Serialize, Deserialize)]
-pub struct TerrainData(pub Vec<(f32, f32, f32)>);
+const ELEVATION_BASE_URL: &str = "https://tiles.mapterhorn.com";
+const RASTER_BASE_URL: &str = "https://tile.openstreetmap.org";
+const HEIGHT_OFFSET: f32 = 130.0;
 
-#[derive(Serialize, Deserialize)]
-struct ElevationResponse {
-    elevations: Vec<f32>,
-}
+pub fn cache_elevation_for_chunk(chunk: Chunk) {
+    chunk.ensure_cache_dirs_exist();
 
-const ELEVATION_BASE_URL: &str = "https://www.elevation-api.eu/v1/elevation";
-
-pub fn get_elevation_for_coords(
-    location: Location,
-    coords: Vec<(Vec2, IVec2)>,
-) -> HashMap<(i32, i32), f32> {
-    location.ensure_cache_dir_exists();
-
-    let path = location.get_elevation_path();
-    let path = Path::new(&path);
+    let path_str = chunk.get_elevation_cache_path();
+    let path = Path::new(&path_str);
 
     if !path.exists() {
-        let mut data = TerrainData(Vec::new());
-        info!("Downloading elevation data for {location}");
+        info!("Downloading elevation tile for {chunk:?}");
 
-        let chunk_size = 512;
-        let chunk_count = (coords.length() / chunk_size).ceil();
+        let (z, x, y) = (chunk.z, chunk.x, chunk.y);
+        let request = ehttp::Request::get(format!("{ELEVATION_BASE_URL}/{z}/{x}/{y}.webp"));
 
-        coords
-            .chunks(chunk_size)
-            .enumerate()
-            .for_each(|(i, chunk)| {
-                let chunk_joined = chunk
-                    .iter()
-                    .map(|(x, _)| format!("[{},{}]", x.x, x.y))
-                    .collect::<Vec<String>>()
-                    .join(",");
+        File::create(path)
+            .unwrap()
+            .write_all(&ehttp::fetch_blocking(&request).unwrap().bytes)
+            .expect("Could not write to tile cache");
 
-                let request =
-                    ehttp::Request::get(format!("{ELEVATION_BASE_URL}?pts=[{chunk_joined}]"));
-                info!("Downloading elevation data for {location}: {i} / {chunk_count}");
-
-                let response_raw = ehttp::fetch_blocking(&request);
-                let response: std::result::Result<ElevationResponse, serde_json::Error> =
-                    serde_json::from_slice(&response_raw.unwrap().bytes);
-
-                chunk
-                    .iter()
-                    .zip(response.expect("Invalid elevation API response").elevations)
-                    .for_each(|((global_coords, _), elevation)| {
-                        data.0.push((global_coords.x, global_coords.y, elevation));
-                    });
-            });
-        serde_json::to_writer(File::create_new(path).unwrap(), &data).unwrap();
-
-        info!("Finished downloading elevation data for {location}");
+        info!("Finished downloading elevation tile for {chunk:?}");
     }
-
-    let path = Path::new(&path);
-    let a: TerrainData = serde_json::from_reader(File::open(path).unwrap()).unwrap();
-    coords
-        .iter()
-        .zip(a.0)
-        .map(|((global_coord, local_coord), (lat, lon, elevation))| {
-            assert_eq!(lat, global_coord.x);
-            assert_eq!(lon, global_coord.y);
-            ((local_coord.x, local_coord.y), elevation - 1.0)
-        })
-        .collect()
 }
 
-pub fn spawn_elevation_mesh(
+pub fn cache_raster_tile_for_chunk(chunk: Chunk) {
+    chunk.ensure_cache_dirs_exist();
+
+    let path_str = chunk.get_osm_raster_cache_path();
+    let path = Path::new(&path_str);
+
+    if !path.exists() {
+        info!("Downloading raster tile for {chunk:?}");
+
+        let (z, x, y) = (chunk.z, chunk.x, chunk.y);
+        let request = ehttp::Request::get(format!("{RASTER_BASE_URL}/{z}/{x}/{y}.png"));
+
+        File::create(path)
+            .unwrap()
+            .write_all(&ehttp::fetch_blocking(&request).unwrap().bytes)
+            .expect("Could not write to tile cache");
+
+        info!("Finished downloading raster tile for {chunk:?}");
+    }
+}
+
+fn elevation_color_to_height_meters(c: Color) -> f32 {
+    let lin_color = c.to_srgba();
+    (lin_color.red * 256.0 * 256.0 + lin_color.green * 256.0 + lin_color.blue)
+        - 32768.0
+        - HEIGHT_OFFSET
+}
+
+pub fn spawn_elevation_meshes(
     mut commands: Commands,
-    mut meshes: ResMut<'_, Assets<Mesh>>,
+    mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    asset_server: Res<AssetServer>,
+    images: Res<Assets<Image>>,
+    chunks_to_load: Query<(Entity, &Chunk), Without<ChunkLoaded>>,
 ) {
-    let location = Location::MonacoCenter;
-    let world_rect = location.get_area();
-    let coords_to_world_scale = location.lat_lon_to_meters();
-    let size_meters = world_rect.size() * coords_to_world_scale;
+    let vertex_count = 512;
 
-    let meters_per_elevation = 100.0;
+    chunks_to_load.iter().for_each(|(entity, chunk)| {
+        if asset_server.is_loaded(chunk.elevation.id()) {
+            let image = images
+                .get(chunk.elevation.id())
+                .expect("Image should have loaded by now");
 
-    info!("Terrain size in meters: {size_meters:?}");
+            let world_rect = chunk.get_lat_lon_area();
+            let chunk_lat_lon_to_meters = chunk.lat_lon_to_meters();
+            let size_meters = world_rect.size() * chunk_lat_lon_to_meters;
 
-    let vertex_count = IVec2::splat(
-        *(size_meters / meters_per_elevation)
-            .as_ivec2()
-            .to_array()
-            .iter()
-            .max()
-            .unwrap(),
-    );
-    let material = MeshMaterial3d(materials.add(StandardMaterial {
-        base_color: GREEN.into(),
-        reflectance: 0.01,
-        ..Default::default()
-    }));
+            info!("Terrain size in meters: {size_meters:?}");
+            info!("Terrain size in lat, lon: {world_rect:?}");
 
-    let coords = iterate_mesh_vertices(vertex_count, world_rect)
-        .map(|(x_local, y_local, lat, lon)| {
-            (
-                Vec2::new(lat as f32, lon as f32),
-                IVec2::new(x_local, y_local),
-            )
-        })
-        .collect();
+            let heights = iterate_mesh_vertices(IVec2::splat(vertex_count), world_rect)
+                .map(|(x_local, y_local, ..)| {
+                    (
+                        (x_local, y_local),
+                        elevation_color_to_height_meters(
+                            image
+                                .get_color_at(
+                                    // Clamp to border
+                                    x_local.max(0).min(vertex_count - 1) as u32,
+                                    y_local.max(0).min(vertex_count - 1) as u32,
+                                )
+                                .unwrap(),
+                        ),
+                    )
+                })
+                .collect::<HeightMap>();
 
-    let mesh_3d = Mesh3d(meshes.add(build_mesh_data(
-        get_elevation_for_coords(location, coords),
-        vertex_count,
-    )));
+            let mesh_3d = Mesh3d(meshes.add(build_mesh_data(heights, IVec2::splat(512))));
 
-    commands.spawn((
-        mesh_3d.clone(),
-        Transform::from_scale(Vec3::new(size_meters.y, 1.0, size_meters.x)),
-        material.clone(),
-        NoFrustumCulling,
-    ));
+            commands.spawn((
+                mesh_3d.clone(),
+                Transform::from_scale(Vec3::new(size_meters.y, 1.0, size_meters.x)),
+                MeshMaterial3d(materials.add(StandardMaterial {
+                    base_color_texture: Some(chunk.raster.clone()),
+                    ..Default::default()
+                })),
+            ));
+            commands.entity(entity).insert(ChunkLoaded);
+        }
+    });
 }

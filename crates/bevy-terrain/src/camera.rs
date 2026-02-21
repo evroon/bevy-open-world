@@ -24,7 +24,13 @@ pub fn setup_lighting_for_open_world(mut commands: Commands) {
         },
         Transform::from_xyz(0.0, 0.2, -1.0).looking_at(Vec3::ZERO, Vec3::Y),
         VolumetricLight,
-        CascadeShadowConfigBuilder::default().build(),
+        (CascadeShadowConfigBuilder {
+            minimum_distance: 1.0,
+            maximum_distance: 1e4,
+            first_cascade_far_bound: 10.0,
+            ..Default::default()
+        })
+        .build(),
     ));
 }
 

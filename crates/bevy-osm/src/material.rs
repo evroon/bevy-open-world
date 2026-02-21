@@ -24,7 +24,6 @@ impl MaterialForBuilding for BuildingClass {
 }
 
 #[derive(Resource)]
-#[expect(dead_code)]
 pub struct MapMaterialHandle {
     pub roof: Handle<StandardMaterial>,
     pub roofs: HashMap<BuildingClass, Handle<StandardMaterial>>,
@@ -34,19 +33,6 @@ pub struct MapMaterialHandle {
     pub unknown_building_roof: Handle<StandardMaterial>,
     // pub road: HashMap<RoadClass, Handle<StandardMaterial>>,
 }
-
-#[derive(Resource)]
-pub struct OSMConfig {
-    #[expect(dead_code)]
-    pub seed: u32,
-}
-
-impl Default for OSMConfig {
-    fn default() -> Self {
-        Self { seed: 96 }
-    }
-}
-
 impl FromWorld for MapMaterialHandle {
     fn from_world(world: &mut World) -> Self {
         let mut standard_materials = world.resource_mut::<Assets<StandardMaterial>>();
