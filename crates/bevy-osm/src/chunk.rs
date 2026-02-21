@@ -144,7 +144,7 @@ mod tests {
     use super::*;
 
     fn assert_float_eq(v1: f64, v2: f64) {
-        assert!((v1 - v2).abs() < 1e-5 "{v1} - {v2} >= 1e-5");
+        assert!((v1 - v2).abs() < 1e-5, "{v1} - {v2} >= 1e-5");
     }
 
     fn get_chunk_with_coordinates() -> (Chunk, (f64, f64)) {
