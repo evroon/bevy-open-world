@@ -37,12 +37,14 @@ pub fn build_mesh_data(heights: HeightMap, vertex_count: IVec2) -> Mesh {
 
     let mut positions = vec![[0., 0., 0.]; triangle_count];
     let mut normals = vec![[0., 0., 0.]; triangle_count];
-    let mut tex_coords = vec![[0., 0.]; triangle_count];
+    let mut uv_coords = vec![[0., 0.]; triangle_count];
     let mut indices = vec![0; triangle_count];
 
     let vertex_spacing_x = 1.0 / vertex_count.x as f32;
     let vertex_spacing_z = 1.0 / vertex_count.y as f32;
 
+    let get_uv_coord =
+        |x: i32, z: i32| [(x as f32) * vertex_spacing_x, (z as f32) * vertex_spacing_z];
     let get_vertex = |x: i32, z: i32| {
         let x_pos = (x as f32) * vertex_spacing_x - 0.5;
         let z_pos = (z as f32) * vertex_spacing_z - 0.5;
@@ -71,12 +73,12 @@ pub fn build_mesh_data(heights: HeightMap, vertex_count: IVec2) -> Mesh {
             normals[i * 6 + 4] = get_normal(x + 1, z);
             normals[i * 6 + 5] = get_normal(x, z + 1);
 
-            tex_coords[i * 6] = [0.0, 0.0];
-            tex_coords[i * 6 + 1] = [0.0, 1.0];
-            tex_coords[i * 6 + 2] = [1.0, 0.0];
-            tex_coords[i * 6 + 3] = [1.0, 1.0];
-            tex_coords[i * 6 + 4] = [1.0, 0.0];
-            tex_coords[i * 6 + 5] = [0.0, 1.0];
+            uv_coords[i * 6] = get_uv_coord(x, z);
+            uv_coords[i * 6 + 1] = get_uv_coord(x, z + 1);
+            uv_coords[i * 6 + 2] = get_uv_coord(x + 1, z);
+            uv_coords[i * 6 + 3] = get_uv_coord(x + 1, z + 1);
+            uv_coords[i * 6 + 4] = get_uv_coord(x + 1, z);
+            uv_coords[i * 6 + 5] = get_uv_coord(x, z + 1);
 
             let slice = &[
                 i_32 * 6,
@@ -92,7 +94,7 @@ pub fn build_mesh_data(heights: HeightMap, vertex_count: IVec2) -> Mesh {
 
     mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, positions);
     mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normals);
-    mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, tex_coords);
+    mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, uv_coords);
     mesh.insert_indices(Indices::U32(indices));
     mesh
 }

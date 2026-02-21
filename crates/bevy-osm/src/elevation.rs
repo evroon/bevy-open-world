@@ -1,6 +1,6 @@
 use std::{fs::File, io::Write, path::Path};
 
-use bevy::{color::palettes::css::GREEN, log::info};
+use bevy::log::info;
 use bevy_terrain::mesh::{HeightMap, build_mesh_data, iterate_mesh_vertices};
 
 use crate::{
@@ -66,16 +66,22 @@ pub fn spawn_elevation_meshes(
             let world_rect = chunk.get_lat_lon_area();
             let chunk_lat_lon_to_meters = chunk.lat_lon_to_meters();
             let size_meters = world_rect.size() * chunk_lat_lon_to_meters;
+            let (z, x, y) = (chunk.z, chunk.x, chunk.y);
 
             info!("Terrain size in meters: {size_meters:?}");
             info!("Terrain size in lat, lon: {world_rect:?}");
+            info!("https://tile.openstreetmap.org/{z}/{x}/{y}.png");
 
-            let material: MeshMaterial3d<StandardMaterial> =
-                MeshMaterial3d(materials.add(StandardMaterial {
-                    base_color: GREEN.into(),
+            let material: MeshMaterial3d<StandardMaterial> = MeshMaterial3d(
+                materials.add(StandardMaterial {
+                    base_color_texture: Some(
+                        asset_server
+                            .load(format!("https://tile.openstreetmap.org/{z}/{x}/{y}.png")),
+                    ),
                     reflectance: 0.01,
                     ..Default::default()
-                }));
+                }),
+            );
 
             let heights = iterate_mesh_vertices(IVec2::splat(vertex_count), world_rect)
                 .map(|(x_local, y_local, ..)| {

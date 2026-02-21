@@ -141,7 +141,7 @@ mod tests {
         };
 
         let (lat, lon) = get_lat_lon(chunk.x as f32, chunk.y as f32, chunk.z);
-        assert_eq!((lat, lon), (41.899208, 12.505188));
+        assert_eq!((lat, lon), (41.89921, 12.505188));
         assert_eq!(get_chunk_for_coord(lat as f64, lon as f64, chunk.z), chunk);
     }
 }
