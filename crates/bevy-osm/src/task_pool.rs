@@ -1,6 +1,10 @@
 use crate::{
-    building::spawn_building, chunk::Chunk, elevation::load_elevation_for_chunk,
-    material::MapMaterialHandle, mesh::Shape, tile::build_tile,
+    building::spawn_building,
+    chunk::Chunk,
+    elevation::{cache_elevation_for_chunk, cache_raster_tile_for_chunk},
+    material::MapMaterialHandle,
+    mesh::Shape,
+    tile::build_tile,
 };
 use bevy::{
     ecs::{system::SystemState, world::CommandQueue},
@@ -22,7 +26,11 @@ pub fn load_chunk(
     let light_material: Handle<StandardMaterial> = map_materials.light.clone();
     let entity = commands.spawn_empty().id();
 
-    chunk.elevation = load_elevation_for_chunk(chunk.clone(), asset_server);
+    cache_elevation_for_chunk(chunk.clone());
+    cache_raster_tile_for_chunk(chunk.clone());
+
+    chunk.elevation = asset_server.load(chunk.get_elevation_cache_path_bevy());
+    chunk.raster = asset_server.load(chunk.get_osm_raster_cache_path_bevy());
 
     commands.spawn(chunk.clone());
 

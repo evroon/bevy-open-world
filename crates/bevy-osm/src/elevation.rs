@@ -10,54 +10,49 @@ use crate::{
 use bevy::prelude::*;
 
 const ELEVATION_BASE_URL: &str = "https://tiles.mapterhorn.com";
+const RASTER_BASE_URL: &str = "https://tile.openstreetmap.org";
 const HEIGHT_OFFSET: f32 = 130.0;
 
-pub fn load_elevation_for_chunk(chunk: Chunk, asset_server: Res<AssetServer>) -> Handle<Image> {
+pub fn cache_elevation_for_chunk(chunk: Chunk) {
     chunk.ensure_cache_dirs_exist();
 
     let path_str = chunk.get_elevation_cache_path();
     let path = Path::new(&path_str);
 
     if !path.exists() {
-        info!("Downloading elevation data for {chunk:?}");
+        info!("Downloading elevation tile for {chunk:?}");
 
         let (z, x, y) = (chunk.z, chunk.x, chunk.y);
         let request = ehttp::Request::get(format!("{ELEVATION_BASE_URL}/{z}/{x}/{y}.webp"));
 
-        let response_raw = ehttp::fetch_blocking(&request);
         File::create(path)
             .unwrap()
-            .write_all(&response_raw.unwrap().bytes)
+            .write_all(&ehttp::fetch_blocking(&request).unwrap().bytes)
             .expect("Could not write to tile cache");
 
-        info!("Finished downloading elevation data for {chunk:?}");
+        info!("Finished downloading elevation tile for {chunk:?}");
     }
-
-    asset_server.load(chunk.get_elevation_cache_path_bevy())
 }
 
-pub fn load_raster_tile_for_chunk(chunk: Chunk, asset_server: Res<AssetServer>) -> Handle<Image> {
+pub fn cache_raster_tile_for_chunk(chunk: Chunk) {
     chunk.ensure_cache_dirs_exist();
 
     let path_str = chunk.get_osm_raster_cache_path();
     let path = Path::new(&path_str);
 
     if !path.exists() {
-        info!("Downloading elevation data for {chunk:?}");
+        info!("Downloading raster tile for {chunk:?}");
 
         let (z, x, y) = (chunk.z, chunk.x, chunk.y);
-        let request = ehttp::Request::get(format!("{ELEVATION_BASE_URL}/{z}/{x}/{y}.webp"));
+        let request = ehttp::Request::get(format!("{RASTER_BASE_URL}/{z}/{x}/{y}.png"));
 
-        let response_raw = ehttp::fetch_blocking(&request);
         File::create(path)
             .unwrap()
-            .write_all(&response_raw.unwrap().bytes)
+            .write_all(&ehttp::fetch_blocking(&request).unwrap().bytes)
             .expect("Could not write to tile cache");
 
-        info!("Finished downloading elevation data for {chunk:?}");
+        info!("Finished downloading raster tile for {chunk:?}");
     }
-
-    asset_server.load(chunk.get_elevation_cache_path_bevy())
 }
 
 fn elevation_color_to_height_meters(c: Color) -> f32 {
@@ -72,7 +67,6 @@ pub fn spawn_elevation_meshes(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     asset_server: Res<AssetServer>,
-    config: Res<OSMConfig>,
     images: Res<Assets<Image>>,
     chunks_to_load: Query<(Entity, &Chunk), Without<ChunkLoaded>>,
 ) {
@@ -80,32 +74,16 @@ pub fn spawn_elevation_meshes(
 
     chunks_to_load.iter().for_each(|(entity, chunk)| {
         if asset_server.is_loaded(chunk.elevation.id()) {
-            debug!("Generating elevation tile");
-
             let image = images
                 .get(chunk.elevation.id())
                 .expect("Image should have loaded by now");
 
-            let chunk = config.location.clone().get_chunk();
             let world_rect = chunk.get_lat_lon_area();
             let chunk_lat_lon_to_meters = chunk.lat_lon_to_meters();
             let size_meters = world_rect.size() * chunk_lat_lon_to_meters;
-            let (z, x, y) = (chunk.z, chunk.x, chunk.y);
 
             info!("Terrain size in meters: {size_meters:?}");
             info!("Terrain size in lat, lon: {world_rect:?}");
-            info!("https://tile.openstreetmap.org/{z}/{x}/{y}.png");
-
-            let material: MeshMaterial3d<StandardMaterial> = MeshMaterial3d(
-                materials.add(StandardMaterial {
-                    base_color_texture: Some(
-                        asset_server
-                            .load(format!("https://tile.openstreetmap.org/{z}/{x}/{y}.png")),
-                    ),
-                    reflectance: 0.01,
-                    ..Default::default()
-                }),
-            );
 
             let heights = iterate_mesh_vertices(IVec2::splat(vertex_count), world_rect)
                 .map(|(x_local, y_local, ..)| {
@@ -129,7 +107,10 @@ pub fn spawn_elevation_meshes(
             commands.spawn((
                 mesh_3d.clone(),
                 Transform::from_scale(Vec3::new(size_meters.y, 1.0, size_meters.x)),
-                material.clone(),
+                MeshMaterial3d(materials.add(StandardMaterial {
+                    base_color_texture: Some(chunk.raster.clone()),
+                    ..Default::default()
+                })),
             ));
             commands.entity(entity).insert(ChunkLoaded);
         }

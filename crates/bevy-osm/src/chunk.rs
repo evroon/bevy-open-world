@@ -29,7 +29,7 @@ pub struct Chunk {
     pub y: i32,
     pub z: i8,
     pub elevation: Handle<Image>,
-    // pub mesh: Option<Handle<Mesh>>,
+    pub raster: Handle<Image>,
 }
 impl Chunk {
     pub fn ensure_cache_dirs_exist(&self) {
@@ -44,7 +44,11 @@ impl Chunk {
     }
     pub fn get_osm_raster_cache_path(&self) -> String {
         let (z, x, y) = (self.z, self.x, self.y);
-        format!("assets/osm-raster/v1/{z}/{x}/{y}.osm")
+        format!("assets/osm-raster/v1/{z}/{x}/{y}.png")
+    }
+    pub fn get_osm_raster_cache_path_bevy(&self) -> String {
+        let (z, x, y) = (self.z, self.x, self.y);
+        format!("osm-raster/v1/{z}/{x}/{y}.png")
     }
     pub fn get_osm_cache_path(&self) -> String {
         let (z, x, y) = (self.z, self.x, self.y);
@@ -97,6 +101,7 @@ pub fn get_chunk_for_coord(lat_deg: f64, lon_deg: f64, zoom: i8) -> Chunk {
         y: y_tile,
         z: zoom,
         elevation: Handle::default(),
+        raster: Handle::default(),
     }
 }
 
@@ -145,6 +150,7 @@ mod tests {
                 y: 97411,
                 z: 18,
                 elevation: Handle::default(),
+                raster: Handle::default(),
             },
             (41.89921, 12.505188),
         )

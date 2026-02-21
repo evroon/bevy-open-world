@@ -4,7 +4,7 @@ description = "A plugin for Bevy that renders openstreetmap geometry"
 edition = "2024"
 
 [dependencies]
-bevy = { workspace = true, features = ["bevy_mesh", "webp", "https"] }
+bevy = { workspace = true, features = ["bevy_mesh", "webp"] }
 osm-xml = "0.6.2"
 lyon = "1.0.1"
 lyon_tessellation = "1.0.15"
