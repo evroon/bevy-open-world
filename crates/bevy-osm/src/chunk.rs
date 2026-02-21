@@ -33,14 +33,18 @@ pub struct Chunk {
 }
 impl Chunk {
     pub fn ensure_cache_dirs_exist(&self) {
-        fs::create_dir_all(
-            Path::new(&self.get_elevation_cache_path())
-                .parent()
-                .unwrap(),
-        )
-        .expect("Could not create elevation cache directory");
-        fs::create_dir_all(Path::new(&self.get_osm_cache_path()).parent().unwrap())
-            .expect("Could not create OSM cache directory");
+        for p in [
+            &self.get_elevation_cache_path(),
+            &self.get_osm_cache_path(),
+            &self.get_osm_raster_cache_path(),
+        ] {
+            fs::create_dir_all(Path::new(p).parent().unwrap())
+                .expect("Could not create cache directory");
+        }
+    }
+    pub fn get_osm_raster_cache_path(&self) -> String {
+        let (z, x, y) = (self.z, self.x, self.y);
+        format!("assets/osm-raster/v1/{z}/{x}/{y}.osm")
     }
     pub fn get_osm_cache_path(&self) -> String {
         let (z, x, y) = (self.z, self.x, self.y);
@@ -57,7 +61,10 @@ impl Chunk {
     pub fn get_lat_lon_area(&self) -> Rect {
         let p0 = get_lat_lon(self.x as f32, self.y as f32, self.z);
         let p1 = get_lat_lon(1.0 + self.x as f32, 1.0 + self.y as f32, self.z);
-        Rect::from_corners(Vec2::new(p0.0, p0.1), Vec2::new(p1.0, p1.1))
+        Rect::from_corners(
+            Vec2::new(p0.0 as f32, p0.1 as f32),
+            Vec2::new(p1.0 as f32, p1.1 as f32),
+        )
     }
     pub fn lat_lon_to_meters(&self) -> Vec2 {
         // Assume at equator
@@ -93,10 +100,10 @@ pub fn get_chunk_for_coord(lat_deg: f64, lon_deg: f64, zoom: i8) -> Chunk {
     }
 }
 
-pub fn get_lat_lon(x: f32, y: f32, zoom: i8) -> (f32, f32) {
+pub fn get_lat_lon(x: f32, y: f32, zoom: i8) -> (f64, f64) {
     (
-        atan(sinh(PI - y / powf(2.0, zoom as f32) * 2.0 * PI)) * 180.0 / PI,
-        x / powf(2.0, zoom as f32) * 360.0 - 180.0,
+        (atan(sinh(PI - y / powf(2.0, zoom as f32) * 2.0 * PI)) * 180.0 / PI) as f64,
+        (x / powf(2.0, zoom as f32) * 360.0 - 180.0) as f64,
     )
 }
 
@@ -131,17 +138,28 @@ pub fn get_osm_for_chunk(chunk: Chunk) -> OSM {
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_lat_lon_chunk_conversion() {
-        let chunk = Chunk {
-            x: 140178,
-            y: 97411,
-            z: 18,
-            elevation: Handle::default(),
-        };
+    fn get_chunk_with_coordinates() -> (Chunk, (f64, f64)) {
+        (
+            Chunk {
+                x: 140178,
+                y: 97411,
+                z: 18,
+                elevation: Handle::default(),
+            },
+            (41.89921, 12.505188),
+        )
+    }
 
+    #[test]
+    fn test_chunk_to_lat_lon_conversion() {
+        let (chunk, coords) = get_chunk_with_coordinates();
         let (lat, lon) = get_lat_lon(chunk.x as f32, chunk.y as f32, chunk.z);
-        assert_eq!((lat, lon), (41.89921, 12.505188));
-        assert_eq!(get_chunk_for_coord(lat as f64, lon as f64, chunk.z), chunk);
+        assert_eq!((lat, lon), coords);
+    }
+
+    #[test]
+    fn test_lat_lon_to_chunk_conversion() {
+        let (chunk, (lat, lon)) = get_chunk_with_coordinates();
+        assert_eq!(get_chunk_for_coord(lat, lon, chunk.z), chunk);
     }
 }

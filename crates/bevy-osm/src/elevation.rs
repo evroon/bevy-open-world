@@ -36,6 +36,30 @@ pub fn load_elevation_for_chunk(chunk: Chunk, asset_server: Res<AssetServer>) ->
     asset_server.load(chunk.get_elevation_cache_path_bevy())
 }
 
+pub fn load_raster_tile_for_chunk(chunk: Chunk, asset_server: Res<AssetServer>) -> Handle<Image> {
+    chunk.ensure_cache_dirs_exist();
+
+    let path_str = chunk.get_osm_raster_cache_path();
+    let path = Path::new(&path_str);
+
+    if !path.exists() {
+        info!("Downloading elevation data for {chunk:?}");
+
+        let (z, x, y) = (chunk.z, chunk.x, chunk.y);
+        let request = ehttp::Request::get(format!("{ELEVATION_BASE_URL}/{z}/{x}/{y}.webp"));
+
+        let response_raw = ehttp::fetch_blocking(&request);
+        File::create(path)
+            .unwrap()
+            .write_all(&response_raw.unwrap().bytes)
+            .expect("Could not write to tile cache");
+
+        info!("Finished downloading elevation data for {chunk:?}");
+    }
+
+    asset_server.load(chunk.get_elevation_cache_path_bevy())
+}
+
 fn elevation_color_to_height_meters(c: Color) -> f32 {
     let lin_color = c.to_srgba();
     (lin_color.red * 256.0 * 256.0 + lin_color.green * 256.0 + lin_color.blue)
