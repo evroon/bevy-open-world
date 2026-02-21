@@ -94,7 +94,7 @@ pub fn spawn_elevation_meshes(
                                     x_local.max(0).min(vertex_count - 1) as u32,
                                     y_local.max(0).min(vertex_count - 1) as u32,
                                 )
-                                .unwrap_or(Color::BLACK),
+                                .unwrap(),
                         ),
                     )
                 })
