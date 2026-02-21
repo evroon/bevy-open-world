@@ -152,9 +152,9 @@ mod tests {
 
     #[test]
     fn test_chunk_to_lat_lon_conversion() {
-        let (chunk, coords) = get_chunk_with_coordinates();
+        let (chunk, expected_lat_lon) = get_chunk_with_coordinates();
         let (lat, lon) = get_lat_lon(chunk.x as f32, chunk.y as f32, chunk.z);
-        assert_eq!((lat, lon), coords);
+        assert_eq!((lat, lon), expected_lat_lon);
     }
 
     #[test]
