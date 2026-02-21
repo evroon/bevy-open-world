@@ -29,12 +29,13 @@ pub fn polygon_building(
     polygon: Vec<Point<f32>>,
     rng: &mut ThreadRng,
 ) -> Building {
+    let origin = polygon[0];
     let mut polygon = Polygon::new(
         LineString::from(
             polygon
                 .iter()
                 .rev()
-                .map(|v| (v.x, v.y))
+                .map(|v| (v.x - origin.x, v.y - origin.y))
                 .collect::<Vec<(f32, f32)>>(),
         ),
         vec![],
@@ -63,14 +64,14 @@ pub fn polygon_building(
     };
     Building {
         _class: building_instruction.class,
-        translate: [0.0, 0.0],
+        translate: [origin.x, origin.y],
         height,
         _levels: building_instruction.levels,
         line,
         vertices: triangles
             .vertices
             .chunks(2)
-            .map(|i| [(i[0]), 0., (i[1])])
+            .map(|i| [i[0], 0., i[1]])
             .collect(),
         triangle_indices: triangles
             .triangle_indices
@@ -104,7 +105,7 @@ pub fn spawn_building(building: &Building) -> Vec<(Mesh, Transform)> {
     let transform = Transform::from_translation(translate);
     result.push((mesh, transform));
 
-    // ROOF
+    // Roof
     let mut roof = Mesh::new(
         PrimitiveTopology::TriangleList,
         RenderAssetUsages::MAIN_WORLD | RenderAssetUsages::RENDER_WORLD,
@@ -171,7 +172,6 @@ impl Wall {
         let points_len = wall.points.len();
 
         for (i, p) in wall.points.iter().enumerate() {
-            // println!("{:?}", &point);
             let last: bool = i + 1 == points_len;
             let ix2: u32 = i as u32 * 4;
             if !last {
@@ -180,7 +180,6 @@ impl Wall {
                 wall.indices.extend(i2);
                 let point_next = wall.points[i + 1];
                 let dir: Vec3 = (point_next - *p).normalize();
-                // println!("{:?}", &dir);
                 let norm = Quat::from_rotation_y(-FRAC_PI_2).mul_vec3(dir); // Yto-Z
                 wall.norm.push(norm);
                 let i_next: usize = if last { 0 } else { i + 1 };

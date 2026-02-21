@@ -62,9 +62,15 @@ impl Chunk {
             Vec2::new(p1.0 as f32, p1.1 as f32),
         )
     }
+    pub fn get_area_in_meters(&self) -> Rect {
+        Rect::from_center_size(self.get_lat_lon_area().center(), self.get_size_in_meters())
+    }
     pub fn lat_lon_to_meters(&self) -> Vec2 {
         // Assume at equator
         Vec2::splat(1.1e5)
+    }
+    pub fn get_size_in_meters(&self) -> Vec2 {
+        self.get_lat_lon_area().size() * self.lat_lon_to_meters()
     }
     #[inline]
     /// The area of the location in lat, lon coordinates (degrees)
@@ -119,10 +125,19 @@ pub fn get_osm_for_chunk(chunk: Chunk) -> OSM {
         ));
         let response = ehttp::fetch_blocking(&request);
 
-        File::create_new(path)
-            .unwrap()
-            .write_all(&response.expect("failed to query Overpass API").bytes)
-            .expect("failed to write Overpass data");
+        if let Ok(response) = response {
+            let response_text = response.text().unwrap();
+            if response_text.contains("The server is probably too busy to handle your request") {
+                panic!("failed to query Overpass API");
+            }
+
+            File::create_new(path)
+                .unwrap()
+                .write_all(&response.bytes)
+                .expect("failed to write Overpass data");
+        } else {
+            error!("failed to query Overpass API");
+        }
 
         info!("Finished downloading OSM data for {chunk:?}");
     }
