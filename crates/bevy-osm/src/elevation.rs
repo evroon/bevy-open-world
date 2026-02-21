@@ -3,10 +3,7 @@ use std::{fs::File, io::Write, path::Path};
 use bevy::log::info;
 use bevy_terrain::mesh::{HeightMap, build_mesh_data, iterate_mesh_vertices};
 
-use crate::{
-    chunk::{Chunk, ChunkLoaded},
-    config::OSMConfig,
-};
+use crate::chunk::{Chunk, ChunkLoaded};
 use bevy::prelude::*;
 
 const ELEVATION_BASE_URL: &str = "https://tiles.mapterhorn.com";
