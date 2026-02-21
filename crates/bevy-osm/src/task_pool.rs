@@ -1,6 +1,6 @@
 use crate::{
-    building::spawn_building, config::OSMConfig, material::MapMaterialHandle, mesh::Shape,
-    tile::build_tile,
+    building::spawn_building, chunk::Chunk, elevation::load_elevation_for_chunk,
+    material::MapMaterialHandle, mesh::Shape, tile::build_tile,
 };
 use bevy::{
     ecs::{system::SystemState, world::CommandQueue},
@@ -11,19 +11,23 @@ use bevy::{
 #[derive(Component)]
 pub struct ComputeTransform(pub Task<CommandQueue>);
 
-pub fn spawn_task(
+pub fn load_chunk(
     mut commands: Commands,
     map_materials: Res<MapMaterialHandle>,
-    config: Res<OSMConfig>,
+    asset_server: Res<AssetServer>,
+    mut chunk: Chunk,
 ) {
     let thread_pool = AsyncComputeTaskPool::get();
     let building_material: Handle<StandardMaterial> = map_materials.unknown_building.clone();
     let light_material: Handle<StandardMaterial> = map_materials.light.clone();
     let entity = commands.spawn_empty().id();
-    let location = config.location.clone();
+
+    chunk.elevation = load_elevation_for_chunk(chunk.clone(), asset_server);
+
+    commands.spawn(chunk.clone());
 
     let task = thread_pool.spawn(async move {
-        let (buildings, strokes, lights) = build_tile(location);
+        let (buildings, strokes, lights) = build_tile(chunk);
 
         let mut command_queue = CommandQueue::default();
 

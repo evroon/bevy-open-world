@@ -5,8 +5,9 @@ use bevy_egui::EguiPlugin;
 use bevy_flight_sim::runway::spawn_aircraft;
 use bevy_osm::OSMPlugin;
 use bevy_osm::config::OSMConfig;
-use bevy_osm::elevation::spawn_elevation_mesh;
 use bevy_osm::location::Location;
+use bevy_osm::material::MapMaterialHandle;
+use bevy_osm::task_pool::load_chunk;
 use bevy_terrain::WaterPlugin;
 use bevy_terrain::camera::{
     get_camera_bundle_for_open_world, rotate_sun, setup_lighting_for_open_world,
@@ -38,12 +39,25 @@ fn main() {
                 spawn_camera,
                 spawn_gizmo,
                 spawn_water,
+                load_chunk_monaco,
                 spawn_aircraft,
-                spawn_elevation_mesh,
             ),
         )
         .add_systems(Update, rotate_sun)
         .run();
+}
+
+pub fn load_chunk_monaco(
+    commands: Commands,
+    map_materials: Res<MapMaterialHandle>,
+    asset_server: Res<AssetServer>,
+) {
+    load_chunk(
+        commands,
+        map_materials,
+        asset_server,
+        Location::MonacoCenter.get_chunk(),
+    );
 }
 
 fn spawn_camera(mut commands: Commands, scattering_mediums: ResMut<Assets<ScatteringMedium>>) {
@@ -65,19 +79,19 @@ fn spawn_gizmo(
     let length = 50.0;
 
     commands.spawn((
-        Mesh3d(meshes.add(Cuboid::from_size(length * Vec3::new(10.0, 1.0, 1.0)))),
+        Mesh3d(meshes.add(Cuboid::from_size(length * Vec3::X * 10.0))),
         MeshMaterial3d(standard_materials.add(StandardMaterial {
             emissive: LinearRgba::rgb(100.0, 10.0, 10.0),
             ..default()
         })),
-        Transform::from_translation(Vec3::new(length * 5.0, 0.0, 3e3)),
+        Transform::from_translation(Vec3::new(length * 5.0, 0.0, 0.0)),
     ));
     commands.spawn((
-        Mesh3d(meshes.add(Cuboid::from_size(length * Vec3::new(1.0, 1.0, 10.0)))),
+        Mesh3d(meshes.add(Cuboid::from_size(length * Vec3::Z * 10.0))),
         MeshMaterial3d(standard_materials.add(StandardMaterial {
             emissive: LinearRgba::rgb(10.0, 10.0, 100.0),
             ..default()
         })),
-        Transform::from_translation(Vec3::new(0.0, 0.0, 3e3 + length * 5.0)),
+        Transform::from_translation(Vec3::new(0.0, 0.0, length * 5.0)),
     ));
 }

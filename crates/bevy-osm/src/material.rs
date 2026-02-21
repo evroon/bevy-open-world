@@ -24,7 +24,6 @@ impl MaterialForBuilding for BuildingClass {
 }
 
 #[derive(Resource)]
-#[expect(dead_code)]
 pub struct MapMaterialHandle {
     pub roof: Handle<StandardMaterial>,
     pub roofs: HashMap<BuildingClass, Handle<StandardMaterial>>,

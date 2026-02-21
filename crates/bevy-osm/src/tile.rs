@@ -1,26 +1,26 @@
 extern crate osm_xml as osm;
 use crate::{
     building::{Building, polygon_building},
-    location::{Location, get_osm_for_location},
+    chunk::{Chunk, get_osm_for_chunk},
     mesh::{BuildInstruction, LightInstruction, spawn_fill_mesh, spawn_stroke_mesh},
     theme::get_way_build_instruction,
 };
 use bevy::prelude::*;
 use lyon::math::point;
 
-pub fn build_tile(location: Location) -> (Vec<Building>, Vec<Mesh>, Vec<LightInstruction>) {
+pub fn build_tile(chunk: Chunk) -> (Vec<Building>, Vec<Mesh>, Vec<LightInstruction>) {
     let mut buildings = Vec::new();
     let mut meshes = Vec::new();
     let mut lights = Vec::new();
     let mut rng = rand::rng();
 
-    let doc = get_osm_for_location(location.clone());
+    let doc = get_osm_for_chunk(chunk.clone());
 
     for way in doc.ways.values() {
         let mut points = Vec::new();
         for n in &way.nodes {
             if let osm::Reference::Node(node) = doc.resolve_reference(n) {
-                let (x, z) = location.lat_lon_to_world(node.lat, node.lon);
+                let (x, z) = chunk.lat_lon_to_world(node.lat, node.lon);
                 points.push(point(x as f32, z as f32));
             }
         }

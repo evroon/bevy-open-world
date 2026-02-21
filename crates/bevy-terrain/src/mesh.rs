@@ -15,6 +15,8 @@ pub struct MeshCache {
     pub material: MeshMaterial3d<StandardMaterial>,
 }
 
+pub type HeightMap = HashMap<(i32, i32), f32>;
+
 /// Builds a mesh of size 1.0 x 1.0, with vertex_count number of cells within in both
 /// dimensions.
 ///
@@ -24,7 +26,7 @@ pub struct MeshCache {
 ///
 /// [`heights`] must include values in a range of -1..vertex_count+2 (inclusive) in both
 /// dimensions.
-pub fn build_mesh_data(heights: HashMap<(i32, i32), f32>, vertex_count: IVec2) -> Mesh {
+pub fn build_mesh_data(heights: HeightMap, vertex_count: IVec2) -> Mesh {
     let mut mesh = Mesh::new(
         PrimitiveTopology::TriangleList,
         RenderAssetUsages::MAIN_WORLD | RenderAssetUsages::RENDER_WORLD,
