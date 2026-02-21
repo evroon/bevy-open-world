@@ -72,8 +72,8 @@ pub fn load_chunk(
     let building_material: Handle<StandardMaterial> = map_materials.unknown_building.clone();
     let light_material: Handle<StandardMaterial> = map_materials.light.clone();
     let entity = commands.spawn_empty().id();
-    let area = chunk.get_lat_lon_area();
-    let size_meters = area.size() * chunk.lat_lon_to_meters();
+    let size_meters = chunk.get_size_in_meters();
+    let area_meters = chunk.get_area_in_meters();
 
     let task = thread_pool.spawn(async move {
         let (buildings, strokes, lights) = build_tile(chunk);
@@ -91,27 +91,51 @@ pub fn load_chunk(
                 .flat_map(|building| {
                     spawn_building(building)
                         .into_iter()
-                        .map(|(mesh, mut transform)| {
+                        .filter_map(|(mesh, mut transform)| {
                             let translation = transform.translation;
+                            if !area_meters.contains(translation.zx()) {
+                                return None;
+                            }
                             let elevation = get_elevation_local(
                                 image,
-                                ((translation.x / size_meters.y + 0.5) * TILE_VERTEX_COUNT as f32)
+                                (((translation.x - area_meters.center().y) / size_meters.y + 0.5)
+                                    * TILE_VERTEX_COUNT as f32)
                                     as i32,
-                                ((translation.z / size_meters.x + 0.5) * TILE_VERTEX_COUNT as f32)
+                                (((translation.z - area_meters.center().x) / size_meters.x + 0.5)
+                                    * TILE_VERTEX_COUNT as f32)
                                     as i32,
                             );
                             transform.translation += Vec3::Y * elevation;
-                            (mesh, transform)
+                            Some((mesh, transform))
                         })
                         .collect::<Vec<_>>()
                 })
                 .collect::<Vec<(Mesh, Transform)>>();
 
+            let light_transforms = lights
+                .into_iter()
+                .filter_map(|light| {
+                    let mut translation = light.trans;
+                    if !area_meters.contains(translation.zx()) {
+                        return None;
+                    }
+                    let (x, y) = (
+                        (((translation.x - area_meters.center().y) / size_meters.y + 0.5)
+                            * TILE_VERTEX_COUNT as f32) as i32,
+                        (((translation.z - area_meters.center().x) / size_meters.x + 0.5)
+                            * TILE_VERTEX_COUNT as f32) as i32,
+                    );
+                    let elevation = get_elevation_local(image, x, y);
+                    translation += Vec3::Y * elevation;
+                    Some(Transform::from_translation(translation).with_scale(Vec3::splat(5.0)))
+                })
+                .collect::<Vec<Transform>>();
+
             let mut meshes = SystemState::<ResMut<Assets<Mesh>>>::new(world).get_mut(world);
 
             let mesh3ds = building_meshes
                 .into_iter()
-                .map(|(bm, t)| (Mesh3d(meshes.add(bm)), t))
+                .map(|(mesh, t)| (Mesh3d(meshes.add(mesh)), t))
                 .collect::<Vec<(Mesh3d, Transform)>>();
 
             let light_mesh = meshes.add(Cuboid::from_size(Vec3::splat(1.0)));
@@ -131,11 +155,11 @@ pub fn load_chunk(
                 world.spawn((mesh, MeshMaterial3d(building_material.clone()), trans));
             }
 
-            for light in lights {
+            for transform in light_transforms {
                 world.spawn((
                     Mesh3d(light_mesh.clone()),
                     MeshMaterial3d(light_material.clone()),
-                    Transform::from_translation(light.trans).with_scale(Vec3::splat(5.0)),
+                    transform,
                 ));
             }
 

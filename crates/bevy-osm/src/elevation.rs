@@ -60,9 +60,6 @@ pub fn elevation_color_to_height_meters(c: Color) -> f32 {
         - HEIGHT_OFFSET
 }
 
-// pub fn get_elevation_lat_lon(chunk_area: Rect, image: Image, lat: f32, lon: f32) -> f32 {
-//     get_elevation_local(image, 0, 0)
-// }
 pub fn get_elevation_local(image: &Image, x_local: i32, y_local: i32) -> f32 {
     elevation_color_to_height_meters(
         image
@@ -84,7 +81,8 @@ pub fn spawn_elevation_meshes(
     chunk: Chunk,
 ) {
     let world_rect = chunk.get_lat_lon_area();
-    let size_meters = world_rect.size() * chunk.lat_lon_to_meters();
+    let size_meters = chunk.get_size_in_meters();
+    let origin_meters = chunk.get_lat_lon_area().center();
 
     info!("Terrain size in meters: {size_meters:?}");
     info!("Terrain size in lat, lon: {world_rect:?}");
@@ -100,7 +98,8 @@ pub fn spawn_elevation_meshes(
 
     commands.spawn((
         Mesh3d(meshes.add(build_mesh_data(heights, IVec2::splat(TILE_VERTEX_COUNT)))),
-        Transform::from_scale(Vec3::new(size_meters.y, 1.0, size_meters.x)),
+        Transform::from_scale(Vec3::new(size_meters.y, 1.0, size_meters.x))
+            .with_translation(Vec3::new(origin_meters.y, 0.0, origin_meters.x)),
         MeshMaterial3d(materials.add(StandardMaterial {
             base_color_texture: Some(chunk.raster),
             ..Default::default()
