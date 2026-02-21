@@ -6,16 +6,8 @@ use std::{
     path::Path,
 };
 
-use bevy::{
-    asset::Handle,
-    ecs::component::Component,
-    image::Image,
-    log::info,
-    math::{
-        Rect, Vec2,
-        ops::{atan, powf, sinh},
-    },
-};
+use bevy::math::ops::{atan, powf, sinh};
+use bevy::prelude::*;
 use osm::OSM;
 
 const OVERPASS_BASE_URL: &str = "https://overpass-api.de/api/map";
@@ -44,23 +36,23 @@ impl Chunk {
     }
     pub fn get_osm_raster_cache_path(&self) -> String {
         let (z, x, y) = (self.z, self.x, self.y);
-        format!("assets/osm-raster/v1/{z}/{x}/{y}.png")
+        format!("assets/cache/osm-raster/v1/{z}/{x}/{y}.png")
     }
     pub fn get_osm_raster_cache_path_bevy(&self) -> String {
         let (z, x, y) = (self.z, self.x, self.y);
-        format!("osm-raster/v1/{z}/{x}/{y}.png")
+        format!("cache/osm-raster/v1/{z}/{x}/{y}.png")
     }
     pub fn get_osm_cache_path(&self) -> String {
         let (z, x, y) = (self.z, self.x, self.y);
-        format!("assets/osm/v1/{z}/{x}/{y}.osm")
+        format!("assets/cache/osm/v1/{z}/{x}/{y}.osm")
     }
     pub fn get_elevation_cache_path(&self) -> String {
         let (z, x, y) = (self.z, self.x, self.y);
-        format!("assets/elevation/v1/{z}/{x}/{y}.webp")
+        format!("assets/cache/elevation/v1/{z}/{x}/{y}.webp")
     }
     pub fn get_elevation_cache_path_bevy(&self) -> String {
         let (z, x, y) = (self.z, self.x, self.y);
-        format!("elevation/v1/{z}/{x}/{y}.webp")
+        format!("cache/elevation/v1/{z}/{x}/{y}.webp")
     }
     pub fn get_lat_lon_area(&self) -> Rect {
         let p0 = get_lat_lon(self.x as f32, self.y as f32, self.z);
