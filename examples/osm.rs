@@ -6,8 +6,6 @@ use bevy_flight_sim::runway::spawn_aircraft;
 use bevy_osm::OSMPlugin;
 use bevy_osm::config::OSMConfig;
 use bevy_osm::location::Location;
-use bevy_osm::material::MapMaterialHandle;
-use bevy_osm::task_pool::load_chunk;
 use bevy_terrain::WaterPlugin;
 use bevy_terrain::camera::{
     get_camera_bundle_for_open_world, rotate_sun, setup_lighting_for_open_world,
@@ -39,7 +37,6 @@ fn main() {
                 spawn_camera,
                 spawn_gizmo,
                 spawn_water,
-                load_chunk_monaco,
                 spawn_aircraft,
             ),
         )
@@ -47,26 +44,13 @@ fn main() {
         .run();
 }
 
-pub fn load_chunk_monaco(
-    commands: Commands,
-    map_materials: Res<MapMaterialHandle>,
-    asset_server: Res<AssetServer>,
-) {
-    load_chunk(
-        commands,
-        map_materials,
-        asset_server,
-        Location::MonacoCenter.get_chunk(),
-    );
-}
-
 fn spawn_camera(mut commands: Commands, scattering_mediums: ResMut<Assets<ScatteringMedium>>) {
     let mut camera = commands.spawn(get_camera_bundle_for_open_world(scattering_mediums));
     camera.insert(FlyCam);
     camera.insert(WhereWasI::from_name("osm_camera"));
     camera.insert(Projection::Perspective(PerspectiveProjection {
-        near: 0.001,
-        far: 10.0,
+        near: 0.1,
+        far: 100.0,
         ..default()
     }));
 }

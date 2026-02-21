@@ -8,6 +8,7 @@ use bevy::prelude::*;
 
 const ELEVATION_BASE_URL: &str = "https://tiles.mapterhorn.com";
 const RASTER_BASE_URL: &str = "https://tile.openstreetmap.org";
+pub const TILE_VERTEX_COUNT: i32 = 512;
 const HEIGHT_OFFSET: f32 = 130.0;
 
 pub fn cache_elevation_for_chunk(chunk: Chunk) {
@@ -52,64 +53,58 @@ pub fn cache_raster_tile_for_chunk(chunk: Chunk) {
     }
 }
 
-fn elevation_color_to_height_meters(c: Color) -> f32 {
+pub fn elevation_color_to_height_meters(c: Color) -> f32 {
     let lin_color = c.to_srgba();
     (lin_color.red * 256.0 * 256.0 + lin_color.green * 256.0 + lin_color.blue)
         - 32768.0
         - HEIGHT_OFFSET
 }
 
+// pub fn get_elevation_lat_lon(chunk_area: Rect, image: Image, lat: f32, lon: f32) -> f32 {
+//     get_elevation_local(image, 0, 0)
+// }
+pub fn get_elevation_local(image: &Image, x_local: i32, y_local: i32) -> f32 {
+    elevation_color_to_height_meters(
+        image
+            .get_color_at(
+                // Clamp to border
+                x_local.clamp(0, TILE_VERTEX_COUNT - 1) as u32,
+                y_local.clamp(0, TILE_VERTEX_COUNT - 1) as u32,
+            )
+            .unwrap(),
+    )
+}
+
 pub fn spawn_elevation_meshes(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-    asset_server: Res<AssetServer>,
-    images: Res<Assets<Image>>,
-    chunks_to_load: Query<(Entity, &Chunk), Without<ChunkLoaded>>,
+    commands: &mut Commands,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    materials: &mut ResMut<Assets<StandardMaterial>>,
+    image: &Image,
+    entity: Entity,
+    chunk: Chunk,
 ) {
-    let vertex_count = 512;
+    let world_rect = chunk.get_lat_lon_area();
+    let size_meters = world_rect.size() * chunk.lat_lon_to_meters();
 
-    chunks_to_load.iter().for_each(|(entity, chunk)| {
-        if asset_server.is_loaded(chunk.elevation.id()) {
-            let image = images
-                .get(chunk.elevation.id())
-                .expect("Image should have loaded by now");
+    info!("Terrain size in meters: {size_meters:?}");
+    info!("Terrain size in lat, lon: {world_rect:?}");
 
-            let world_rect = chunk.get_lat_lon_area();
-            let chunk_lat_lon_to_meters = chunk.lat_lon_to_meters();
-            let size_meters = world_rect.size() * chunk_lat_lon_to_meters;
+    let heights = iterate_mesh_vertices(IVec2::splat(TILE_VERTEX_COUNT), world_rect)
+        .map(|(x_local, y_local, ..)| {
+            (
+                (x_local, y_local),
+                get_elevation_local(image, x_local, y_local),
+            )
+        })
+        .collect::<HeightMap>();
 
-            info!("Terrain size in meters: {size_meters:?}");
-            info!("Terrain size in lat, lon: {world_rect:?}");
-
-            let heights = iterate_mesh_vertices(IVec2::splat(vertex_count), world_rect)
-                .map(|(x_local, y_local, ..)| {
-                    (
-                        (x_local, y_local),
-                        elevation_color_to_height_meters(
-                            image
-                                .get_color_at(
-                                    // Clamp to border
-                                    x_local.max(0).min(vertex_count - 1) as u32,
-                                    y_local.max(0).min(vertex_count - 1) as u32,
-                                )
-                                .unwrap(),
-                        ),
-                    )
-                })
-                .collect::<HeightMap>();
-
-            let mesh_3d = Mesh3d(meshes.add(build_mesh_data(heights, IVec2::splat(512))));
-
-            commands.spawn((
-                mesh_3d.clone(),
-                Transform::from_scale(Vec3::new(size_meters.y, 1.0, size_meters.x)),
-                MeshMaterial3d(materials.add(StandardMaterial {
-                    base_color_texture: Some(chunk.raster.clone()),
-                    ..Default::default()
-                })),
-            ));
-            commands.entity(entity).insert(ChunkLoaded);
-        }
-    });
+    commands.spawn((
+        Mesh3d(meshes.add(build_mesh_data(heights, IVec2::splat(TILE_VERTEX_COUNT)))),
+        Transform::from_scale(Vec3::new(size_meters.y, 1.0, size_meters.x)),
+        MeshMaterial3d(materials.add(StandardMaterial {
+            base_color_texture: Some(chunk.raster),
+            ..Default::default()
+        })),
+    ));
+    commands.entity(entity).insert(ChunkLoaded);
 }
