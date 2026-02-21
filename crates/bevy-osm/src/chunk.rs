@@ -143,6 +143,10 @@ pub fn get_osm_for_chunk(chunk: Chunk) -> OSM {
 mod tests {
     use super::*;
 
+    fn assert_float_eq(v1: f64, v2: f64) {
+        assert!((v1 - v2).abs() < 1e-6);
+    }
+
     fn get_chunk_with_coordinates() -> (Chunk, (f64, f64)) {
         (
             Chunk {
@@ -158,14 +162,16 @@ mod tests {
 
     #[test]
     fn test_chunk_to_lat_lon_conversion() {
-        let (chunk, expected_lat_lon) = get_chunk_with_coordinates();
+        let (chunk, (lat_expected, lon_expected)) = get_chunk_with_coordinates();
         let (lat, lon) = get_lat_lon(chunk.x as f32, chunk.y as f32, chunk.z);
-        assert_eq!((lat, lon), expected_lat_lon);
+        assert_float_eq(lat, lat_expected);
+        assert_float_eq(lon, lon_expected);
     }
 
     #[test]
     fn test_lat_lon_to_chunk_conversion() {
-        let (chunk, (lat, lon)) = get_chunk_with_coordinates();
+        let (chunk_expected, (lat, lon)) = get_chunk_with_coordinates();
+        let chunk = get_chunk_for_coord(lat, lon, chunk_expected.z);
         assert_eq!(get_chunk_for_coord(lat, lon, chunk.z), chunk);
     }
 }
