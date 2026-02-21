@@ -80,7 +80,7 @@ pub fn spawn_elevation_meshes(
 
     chunks_to_load.iter().for_each(|(entity, chunk)| {
         if asset_server.is_loaded(chunk.elevation.id()) {
-            error!("Generating elevation tile");
+            debug!("Generating elevation tile");
 
             let image = images
                 .get(chunk.elevation.id())
