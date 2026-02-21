@@ -82,7 +82,7 @@ pub fn load_chunk(
 
         command_queue.push(move |world: &mut World| {
             let images = SystemState::<Res<Assets<Image>>>::new(world).get(world);
-            let image = images
+            let heightmap = images
                 .get(elevation)
                 .expect("Image should have loaded by now");
 
@@ -97,7 +97,7 @@ pub fn load_chunk(
                                 return None;
                             }
                             let elevation = get_elevation_local(
-                                image,
+                                heightmap,
                                 (((translation.x - area_meters.center().y) / size_meters.y + 0.5)
                                     * TILE_VERTEX_COUNT as f32)
                                     as i32,
@@ -125,7 +125,7 @@ pub fn load_chunk(
                         (((translation.z - area_meters.center().x) / size_meters.x + 0.5)
                             * TILE_VERTEX_COUNT as f32) as i32,
                     );
-                    let elevation = get_elevation_local(image, x, y);
+                    let elevation = get_elevation_local(heightmap, x, y);
                     translation += Vec3::Y * elevation;
                     Some(Transform::from_translation(translation).with_scale(Vec3::splat(5.0)))
                 })
