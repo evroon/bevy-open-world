@@ -493,8 +493,6 @@ dependencies = [
  "bevy-terrain",
  "csv",
  "ehttp",
- "event-listener 5.4.1",
- "futures-lite",
  "geo",
  "geo-types",
  "lyon",

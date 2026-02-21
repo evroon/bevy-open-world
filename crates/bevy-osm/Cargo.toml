@@ -19,8 +19,6 @@ bevy-terrain = { path = "../bevy-terrain" }
 csv = "1.4.0"
 serde_json = "1.0.149"
 serde = "1.0.228"
-futures-lite = "2.6.1"
-event-listener = "5.3.0"
 
 [dev-dependencies]
 bevy = { workspace = true }
