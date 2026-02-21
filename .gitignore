@@ -9,6 +9,7 @@ dist
 
 assets/saves
 assets/osm
+assets/elevation
 
 crates/bevy-adsb/clickhouse/data
 crates/bevy-adsb/clickhouse/logs
