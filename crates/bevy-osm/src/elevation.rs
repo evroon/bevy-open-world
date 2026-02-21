@@ -3,7 +3,10 @@ use std::{fs::File, io::Write, path::Path};
 use bevy::log::info;
 use bevy_terrain::mesh::{HeightMap, build_mesh_data, iterate_mesh_vertices};
 
-use crate::chunk::{Chunk, ChunkLoaded};
+use crate::{
+    chunk::{Chunk, ChunkLoaded},
+    config::OSMConfig,
+};
 use bevy::prelude::*;
 
 const ELEVATION_BASE_URL: &str = "https://tiles.mapterhorn.com";
@@ -79,10 +82,12 @@ pub fn spawn_elevation_meshes(
     image: &Image,
     entity: Entity,
     chunk: Chunk,
+    config: &Res<OSMConfig>,
 ) {
     let world_rect = chunk.get_lat_lon_area();
-    let size_meters = chunk.get_size_in_meters();
-    let origin_meters = chunk.get_lat_lon_area().center();
+    let area_meters = chunk.get_area_in_meters(config.location.get_world_center());
+    let origin_meters = area_meters.center();
+    let size_meters = area_meters.size();
 
     info!("Terrain size in meters: {size_meters:?}");
     info!("Terrain size in lat, lon: {world_rect:?}");
@@ -98,8 +103,8 @@ pub fn spawn_elevation_meshes(
 
     commands.spawn((
         Mesh3d(meshes.add(build_mesh_data(heights, IVec2::splat(TILE_VERTEX_COUNT)))),
-        Transform::from_scale(Vec3::new(size_meters.y, 1.0, size_meters.x))
-            .with_translation(Vec3::new(origin_meters.y, 0.0, origin_meters.x)),
+        Transform::from_scale(Vec3::new(size_meters.x, 1.0, size_meters.y))
+            .with_translation(Vec3::new(origin_meters.x, 0.0, origin_meters.y)),
         MeshMaterial3d(materials.add(StandardMaterial {
             base_color_texture: Some(chunk.raster),
             ..Default::default()

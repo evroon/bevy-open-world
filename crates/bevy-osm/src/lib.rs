@@ -12,6 +12,7 @@ mod tile;
 
 extern crate osm_xml as osm;
 use crate::{
+    chunk::Chunk,
     config::OSMConfig,
     material::MapMaterialHandle,
     task_pool::{handle_tasks, load_unloaded_chunks, preload_chunk},
@@ -29,10 +30,60 @@ impl Plugin for OSMPlugin {
     }
 }
 
-pub fn load_chunk_monaco(
-    commands: Commands,
-    asset_server: Res<AssetServer>,
-    config: Res<OSMConfig>,
-) {
-    preload_chunk(commands, asset_server, config.location.get_chunk());
+pub fn load_chunk_monaco(mut commands: Commands, asset_server: Res<AssetServer>) {
+    preload_chunk(
+        &mut commands,
+        &asset_server,
+        Chunk {
+            x: 4265,
+            y: 2986,
+            z: 13,
+            elevation: Handle::default(),
+            raster: Handle::default(),
+        },
+    );
+    preload_chunk(
+        &mut commands,
+        &asset_server,
+        Chunk {
+            x: 4264,
+            y: 2987,
+            z: 13,
+            elevation: Handle::default(),
+            raster: Handle::default(),
+        },
+    );
+    preload_chunk(
+        &mut commands,
+        &asset_server,
+        Chunk {
+            x: 4263,
+            y: 2987,
+            z: 13,
+            elevation: Handle::default(),
+            raster: Handle::default(),
+        },
+    );
+    preload_chunk(
+        &mut commands,
+        &asset_server,
+        Chunk {
+            x: 4264,
+            y: 2986,
+            z: 13,
+            elevation: Handle::default(),
+            raster: Handle::default(),
+        },
+    );
+    preload_chunk(
+        &mut commands,
+        &asset_server,
+        Chunk {
+            x: 4263,
+            y: 2986,
+            z: 13,
+            elevation: Handle::default(),
+            raster: Handle::default(),
+        },
+    );
 }

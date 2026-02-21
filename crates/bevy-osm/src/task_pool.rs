@@ -1,6 +1,7 @@
 use crate::{
     building::spawn_building,
     chunk::{Chunk, ChunkLoaded},
+    config::OSMConfig,
     elevation::{
         TILE_VERTEX_COUNT, cache_elevation_for_chunk, cache_raster_tile_for_chunk,
         get_elevation_local, spawn_elevation_meshes,
@@ -18,7 +19,7 @@ use bevy::{
 #[derive(Component)]
 pub struct ComputeTransform(pub Task<CommandQueue>);
 
-pub fn preload_chunk(mut commands: Commands, asset_server: Res<AssetServer>, mut chunk: Chunk) {
+pub fn preload_chunk(commands: &mut Commands, asset_server: &Res<AssetServer>, mut chunk: Chunk) {
     cache_elevation_for_chunk(chunk.clone());
     cache_raster_tile_for_chunk(chunk.clone());
 
@@ -28,6 +29,7 @@ pub fn preload_chunk(mut commands: Commands, asset_server: Res<AssetServer>, mut
     commands.spawn(chunk.clone());
 }
 
+#[expect(clippy::too_many_arguments)]
 pub fn load_unloaded_chunks(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -36,6 +38,7 @@ pub fn load_unloaded_chunks(
     chunks_to_load: Query<(Entity, &Chunk), Without<ChunkLoaded>>,
     asset_server: Res<AssetServer>,
     images: Res<Assets<Image>>,
+    config: Res<OSMConfig>,
 ) {
     chunks_to_load.iter().for_each(|(entity, chunk)| {
         if asset_server.is_loaded(chunk.elevation.id()) {
@@ -45,6 +48,7 @@ pub fn load_unloaded_chunks(
                 &mut materials,
                 &map_materials,
                 &images,
+                &config,
                 entity,
                 chunk.clone(),
             )
@@ -52,12 +56,14 @@ pub fn load_unloaded_chunks(
     });
 }
 
+#[expect(clippy::too_many_arguments)]
 pub fn load_chunk(
     commands: &mut Commands,
     meshes2: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<StandardMaterial>>,
     map_materials: &Res<MapMaterialHandle>,
     images: &Res<Assets<Image>>,
+    config: &Res<OSMConfig>,
     entity: Entity,
     chunk: Chunk,
 ) {
@@ -66,17 +72,27 @@ pub fn load_chunk(
         .get(elevation)
         .expect("Image should have loaded by now");
 
-    spawn_elevation_meshes(commands, meshes2, materials, image, entity, chunk.clone());
+    spawn_elevation_meshes(
+        commands,
+        meshes2,
+        materials,
+        image,
+        entity,
+        chunk.clone(),
+        config,
+    );
 
     let thread_pool = AsyncComputeTaskPool::get();
     let building_material: Handle<StandardMaterial> = map_materials.unknown_building.clone();
     let light_material: Handle<StandardMaterial> = map_materials.light.clone();
     let entity = commands.spawn_empty().id();
-    let size_meters = chunk.get_size_in_meters();
-    let area_meters = chunk.get_area_in_meters();
+    let lat_lon_origin = config.location.get_world_center();
+    let area_meters = chunk.get_area_in_meters(config.location.get_world_center());
+    let origin_meters = area_meters.center();
+    let size_meters = area_meters.size();
 
     let task = thread_pool.spawn(async move {
-        let (buildings, strokes, lights) = build_tile(chunk);
+        let (buildings, strokes, lights) = build_tile(chunk, lat_lon_origin);
 
         let mut command_queue = CommandQueue::default();
 
@@ -93,15 +109,15 @@ pub fn load_chunk(
                         .into_iter()
                         .filter_map(|(mesh, mut transform)| {
                             let translation = transform.translation;
-                            if !area_meters.contains(translation.zx()) {
+                            if !area_meters.contains(translation.xz()) {
                                 return None;
                             }
                             let elevation = get_elevation_local(
                                 heightmap,
-                                (((translation.x - area_meters.center().y) / size_meters.y + 0.5)
+                                (((translation.x - origin_meters.x) / size_meters.x + 0.5)
                                     * TILE_VERTEX_COUNT as f32)
                                     as i32,
-                                (((translation.z - area_meters.center().x) / size_meters.x + 0.5)
+                                (((translation.z - origin_meters.y) / size_meters.y + 0.5)
                                     * TILE_VERTEX_COUNT as f32)
                                     as i32,
                             );
@@ -116,13 +132,13 @@ pub fn load_chunk(
                 .into_iter()
                 .filter_map(|light| {
                     let mut translation = light.trans;
-                    if !area_meters.contains(translation.zx()) {
+                    if !area_meters.contains(translation.xz()) {
                         return None;
                     }
                     let (x, y) = (
-                        (((translation.x - area_meters.center().y) / size_meters.y + 0.5)
+                        (((translation.x - origin_meters.x) / size_meters.x + 0.5)
                             * TILE_VERTEX_COUNT as f32) as i32,
-                        (((translation.z - area_meters.center().x) / size_meters.x + 0.5)
+                        (((translation.z - origin_meters.y) / size_meters.y + 0.5)
                             * TILE_VERTEX_COUNT as f32) as i32,
                     );
                     let elevation = get_elevation_local(heightmap, x, y);

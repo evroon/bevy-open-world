@@ -10,6 +10,8 @@ use bevy::math::ops::{atan, powf, sinh};
 use bevy::prelude::*;
 use osm::OSM;
 
+// Assume at equator (110 km = 1 degree of longitude)
+const LAT_LON_TO_METERS_CONVERSION: Vec2 = Vec2::splat(1.1e5);
 const OVERPASS_BASE_URL: &str = "https://overpass-api.de/api/map";
 
 #[derive(Component)]
@@ -62,26 +64,23 @@ impl Chunk {
             Vec2::new(p1.0 as f32, p1.1 as f32),
         )
     }
-    pub fn get_area_in_meters(&self) -> Rect {
-        Rect::from_center_size(self.get_lat_lon_area().center(), self.get_size_in_meters())
-    }
-    pub fn lat_lon_to_meters(&self) -> Vec2 {
-        // Assume at equator
-        Vec2::splat(1.1e5)
-    }
-    pub fn get_size_in_meters(&self) -> Vec2 {
-        self.get_lat_lon_area().size() * self.lat_lon_to_meters()
+    pub fn get_area_in_meters(&self, lat_lon_origin: Vec2) -> Rect {
+        let origin = self.lat_lon_to_world(self.get_lat_lon_area().center(), lat_lon_origin);
+        Rect::from_center_size(
+            Vec2::new(origin.0 as f32, origin.1 as f32),
+            self.get_lat_lon_area().size().yx() * LAT_LON_TO_METERS_CONVERSION,
+        )
     }
     #[inline]
     /// The area of the location in lat, lon coordinates (degrees)
-    pub fn lat_lon_to_world(&self, lat: f64, lon: f64) -> (f64, f64) {
-        // 1. We need to switch (lat, lon) to (lon, lat)
-        // 2. We need to invert the lat coordinates on z-axis because Bevy's coordinate
-        //    system has the Z-axis pointed downwards (instead of upwards) when X-axis
-        //    points to the right.
+    pub fn lat_lon_to_world(&self, lat_lon: Vec2, lat_lon_origin: Vec2) -> (f64, f64) {
         (
-            (lon - self.get_lat_lon_area().center().y as f64) * self.lat_lon_to_meters().y as f64,
-            -(lat - self.get_lat_lon_area().center().x as f64) * self.lat_lon_to_meters().x as f64,
+            // 1. We need to switch (lat, lon) to (lon, lat)
+            // 2. We need to invert the lat coordinates on z-axis because Bevy's coordinate
+            //    system has the Z-axis pointed downwards (instead of upwards) when X-axis
+            //    points to the right.
+            (lat_lon.y as f64 - lat_lon_origin.y as f64) * LAT_LON_TO_METERS_CONVERSION.y as f64,
+            -(lat_lon.x as f64 - lat_lon_origin.x as f64) * LAT_LON_TO_METERS_CONVERSION.x as f64,
         )
     }
 }
