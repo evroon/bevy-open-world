@@ -2,7 +2,6 @@ use std::collections::HashMap;
 
 use bevy::{
     asset::RenderAssetUsages,
-    camera::visibility::NoFrustumCulling,
     color::palettes::css::GREEN,
     mesh::{Indices, PrimitiveTopology, triangle_normal},
     pbr::OpaqueRendererMethod,
@@ -170,13 +169,10 @@ pub fn spawn_mesh(
         })
         .collect();
 
-    let mesh_3d = Mesh3d(meshes.add(build_mesh_data(heights, vertex_count)));
-
     let entity = commands.spawn((
-        mesh_3d.clone(),
+        Mesh3d(meshes.add(build_mesh_data(heights, vertex_count))),
         rect_to_transform(world_rect),
         mesh_cache.material.clone(),
-        NoFrustumCulling,
     ));
     let eid = entity.id();
     commands.entity(*root_entity).add_child(eid);

@@ -7,7 +7,6 @@ use bevy_flight_sim::runway::{spawn_aircraft, spawn_runway};
 use bevy_terrain::camera::{
     get_camera_bundle_for_open_world, rotate_sun, setup_lighting_for_open_world,
 };
-use bevy_terrain::system::update_terrain_quadtree;
 use bevy_terrain::water::spawn_water;
 use bevy_terrain::{TerrainPlugin, WaterPlugin};
 use bevy_volumetric_clouds::fly_camera::{FlyCam, FlyCameraPlugin, MovementSettings};
@@ -53,7 +52,7 @@ fn main() {
                 spawn_aircraft,
             ),
         )
-        .add_systems(Update, (update_terrain_quadtree, rotate_sun))
+        .add_systems(Update, rotate_sun)
         .run();
 }
 

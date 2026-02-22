@@ -25,13 +25,19 @@ pub fn cache_elevation_for_chunk(chunk: Chunk) {
 
         let (z, x, y) = (chunk.z, chunk.x, chunk.y);
         let request = ehttp::Request::get(format!("{ELEVATION_BASE_URL}/{z}/{x}/{y}.webp"));
+        let response = ehttp::fetch_blocking(&request).unwrap();
 
-        File::create(path)
-            .unwrap()
-            .write_all(&ehttp::fetch_blocking(&request).unwrap().bytes)
-            .expect("Could not write to tile cache");
-
-        info!("Finished downloading elevation tile for {chunk:?}");
+        if response.ok {
+            File::create(path)
+                .unwrap()
+                .write_all(&response.bytes)
+                .expect("Could not write to tile cache");
+        } else {
+            File::create(path)
+                .unwrap()
+                .write_all(include_bytes!("../../../assets/osm/empty-tile.webp"))
+                .expect("Could not write to tile cache");
+        }
     }
 }
 
@@ -46,13 +52,14 @@ pub fn cache_raster_tile_for_chunk(chunk: Chunk) {
 
         let (z, x, y) = (chunk.z, chunk.x, chunk.y);
         let request = ehttp::Request::get(format!("{RASTER_BASE_URL}/{z}/{x}/{y}.png"));
+        let response = ehttp::fetch_blocking(&request).unwrap();
 
-        File::create(path)
-            .unwrap()
-            .write_all(&ehttp::fetch_blocking(&request).unwrap().bytes)
-            .expect("Could not write to tile cache");
-
-        info!("Finished downloading raster tile for {chunk:?}");
+        if response.ok {
+            File::create(path)
+                .unwrap()
+                .write_all(&response.bytes)
+                .expect("Could not write to tile cache");
+        }
     }
 }
 
@@ -63,13 +70,13 @@ pub fn elevation_color_to_height_meters(c: Color) -> f32 {
         - HEIGHT_OFFSET
 }
 
-pub fn get_elevation_local(image: &Image, x_local: i32, y_local: i32) -> f32 {
+pub fn get_elevation_local(image: &Image, local_coords: IVec2) -> f32 {
     elevation_color_to_height_meters(
         image
             .get_color_at(
                 // Clamp to border
-                x_local.clamp(0, TILE_VERTEX_COUNT - 1) as u32,
-                y_local.clamp(0, TILE_VERTEX_COUNT - 1) as u32,
+                local_coords.x.clamp(0, TILE_VERTEX_COUNT - 1) as u32,
+                local_coords.y.clamp(0, TILE_VERTEX_COUNT - 1) as u32,
             )
             .unwrap(),
     )
@@ -89,26 +96,26 @@ pub fn spawn_elevation_meshes(
     let origin_meters = area_meters.center();
     let size_meters = area_meters.size();
 
-    info!("Terrain size in meters: {size_meters:?}");
-    info!("Terrain size in lat, lon: {world_rect:?}");
-
     let heights = iterate_mesh_vertices(IVec2::splat(TILE_VERTEX_COUNT), world_rect)
         .map(|(x_local, y_local, ..)| {
             (
                 (x_local, y_local),
-                get_elevation_local(image, x_local, y_local),
+                get_elevation_local(image, IVec2::new(x_local, y_local)),
             )
         })
         .collect::<HeightMap>();
 
-    commands.spawn((
-        Mesh3d(meshes.add(build_mesh_data(heights, IVec2::splat(TILE_VERTEX_COUNT)))),
-        Transform::from_scale(Vec3::new(size_meters.x, 1.0, size_meters.y))
-            .with_translation(Vec3::new(origin_meters.x, 0.0, origin_meters.y)),
-        MeshMaterial3d(materials.add(StandardMaterial {
-            base_color_texture: Some(chunk.raster),
-            ..Default::default()
-        })),
-    ));
+    let mesh = commands
+        .spawn((
+            Mesh3d(meshes.add(build_mesh_data(heights, IVec2::splat(TILE_VERTEX_COUNT)))),
+            Transform::from_scale(Vec3::new(size_meters.x, 1.0, size_meters.y))
+                .with_translation(Vec3::new(origin_meters.x, 0.0, origin_meters.y)),
+            MeshMaterial3d(materials.add(StandardMaterial {
+                base_color_texture: Some(chunk.raster),
+                ..Default::default()
+            })),
+        ))
+        .id();
     commands.entity(entity).insert(ChunkLoaded);
+    commands.entity(entity).add_child(mesh);
 }

@@ -15,9 +15,10 @@ use crate::{
     chunk::Chunk,
     config::OSMConfig,
     material::MapMaterialHandle,
-    task_pool::{handle_tasks, load_unloaded_chunks, preload_chunk},
+    task_pool::{handle_tasks, load_unloaded_chunks, preload_chunks},
 };
 use bevy::prelude::*;
+use bevy_terrain::quadtree::{MeshPool, QuadTree, QuadTreeConfig, QuadTreeNode};
 
 pub struct OSMPlugin;
 
@@ -25,65 +26,37 @@ impl Plugin for OSMPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<MapMaterialHandle>()
             .init_resource::<OSMConfig>()
-            .add_systems(Startup, load_chunk_monaco)
-            .add_systems(Update, (handle_tasks, load_unloaded_chunks));
+            .add_systems(Startup, build_terrain_tile)
+            .add_systems(Update, (handle_tasks, load_unloaded_chunks, preload_chunks));
     }
 }
 
-pub fn load_chunk_monaco(mut commands: Commands, asset_server: Res<AssetServer>) {
-    preload_chunk(
-        &mut commands,
-        &asset_server,
-        Chunk {
-            x: 4265,
-            y: 2986,
-            z: 13,
-            elevation: Handle::default(),
-            raster: Handle::default(),
-        },
-    );
-    preload_chunk(
-        &mut commands,
-        &asset_server,
-        Chunk {
-            x: 4264,
-            y: 2987,
-            z: 13,
-            elevation: Handle::default(),
-            raster: Handle::default(),
-        },
-    );
-    preload_chunk(
-        &mut commands,
-        &asset_server,
-        Chunk {
-            x: 4263,
-            y: 2987,
-            z: 13,
-            elevation: Handle::default(),
-            raster: Handle::default(),
-        },
-    );
-    preload_chunk(
-        &mut commands,
-        &asset_server,
-        Chunk {
-            x: 4264,
-            y: 2986,
-            z: 13,
-            elevation: Handle::default(),
-            raster: Handle::default(),
-        },
-    );
-    preload_chunk(
-        &mut commands,
-        &asset_server,
-        Chunk {
-            x: 4263,
-            y: 2986,
-            z: 13,
-            elevation: Handle::default(),
-            raster: Handle::default(),
-        },
-    );
+pub fn build_terrain_tile(mut commands: Commands, osm_config: Res<OSMConfig>) {
+    commands.spawn(MeshPool::new());
+
+    let chunk = Chunk {
+        x: 4264,
+        y: 2987,
+        z: 13,
+        elevation: Handle::default(),
+        raster: Handle::default(),
+    };
+
+    let config = QuadTreeConfig {
+        k: 1.1,
+        min_lod: 0,
+        max_lod: 3,
+        size: chunk.get_size_in_meters().x,
+    };
+    let area_meters = chunk.get_area_in_meters(osm_config.location.get_world_center());
+    let quadtree = QuadTree {
+        root: QuadTreeNode::new(area_meters.center(), area_meters.size(), chunk.x, chunk.y),
+    };
+
+    commands.spawn((
+        Transform::IDENTITY,
+        quadtree.clone(),
+        config.clone(),
+        Visibility::Inherited,
+    ));
 }

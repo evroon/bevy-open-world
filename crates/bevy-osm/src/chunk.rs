@@ -68,8 +68,11 @@ impl Chunk {
         let origin = self.lat_lon_to_world(self.get_lat_lon_area().center(), lat_lon_origin);
         Rect::from_center_size(
             Vec2::new(origin.0 as f32, origin.1 as f32),
-            self.get_lat_lon_area().size().yx() * LAT_LON_TO_METERS_CONVERSION,
+            self.get_size_in_meters(),
         )
+    }
+    pub fn get_size_in_meters(&self) -> Vec2 {
+        self.get_lat_lon_area().size().yx() * LAT_LON_TO_METERS_CONVERSION
     }
     #[inline]
     /// The area of the location in lat, lon coordinates (degrees)
