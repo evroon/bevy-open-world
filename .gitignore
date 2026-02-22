@@ -14,4 +14,4 @@ crates/bevy-adsb/clickhouse/data
 crates/bevy-adsb/clickhouse/logs
 crates/bevy-adsb/clickhouse/debug.csv
 
-rust-ice.*
+rustc-ice.*
