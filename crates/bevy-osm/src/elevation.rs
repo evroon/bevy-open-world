@@ -86,7 +86,7 @@ pub fn spawn_elevation_meshes(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<StandardMaterial>>,
-    image: &Image,
+    heightmap: &Image,
     entity: Entity,
     chunk: Chunk,
     config: &Res<OSMConfig>,
@@ -100,7 +100,7 @@ pub fn spawn_elevation_meshes(
         .map(|(x_local, y_local, ..)| {
             (
                 (x_local, y_local),
-                get_elevation_local(image, IVec2::new(x_local, y_local)),
+                get_elevation_local(heightmap, IVec2::new(x_local, y_local)),
             )
         })
         .collect::<HeightMap>();

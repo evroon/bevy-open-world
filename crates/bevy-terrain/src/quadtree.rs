@@ -50,6 +50,7 @@ pub struct QuadTreeNodeComponent {
     pub x: i32,
     pub y: i32,
     pub lod: u8,
+    pub rect: Rect,
 }
 
 /// subdivide based on non-euclidian max(dx, dy, dz) distance from camera
@@ -84,6 +85,7 @@ impl MeshPool {
                 x: node.x,
                 y: node.y,
                 lod: node.lod,
+                rect: node.rect,
             },
         ));
         let eid = entity.id();

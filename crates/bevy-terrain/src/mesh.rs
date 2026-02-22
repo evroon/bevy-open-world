@@ -122,8 +122,8 @@ pub fn build_mesh_cache(
 }
 
 pub fn rect_to_transform(rect: Rect) -> Transform {
-    Transform::from_translation(Vec3::new(rect.center().x, 0.0, rect.center().y))
-        .with_scale(Vec3::new(rect.width(), 1.0, rect.height()))
+    Transform::from_translation(Vec3::new(rect.center().y, 1.0, -rect.center().x))
+        .with_scale(Vec3::new(rect.width() * 1.0, 1.0, rect.height() * 1.0))
 }
 
 pub fn iterate_mesh_vertices(
