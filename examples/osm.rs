@@ -9,6 +9,7 @@ use bevy_osm::location::Location;
 use bevy_terrain::camera::{
     get_camera_bundle_for_open_world, rotate_sun, setup_lighting_for_open_world,
 };
+use bevy_terrain::water::spawn_water;
 use bevy_terrain::{TerrainPlugin, WaterPlugin};
 use bevy_volumetric_clouds::fly_camera::{FlyCam, FlyCameraPlugin, MovementSettings};
 use bevy_where_was_i::{WhereWasI, WhereWasIPlugin};
@@ -36,7 +37,7 @@ fn main() {
                 setup_lighting_for_open_world,
                 spawn_camera,
                 spawn_gizmo,
-                // spawn_water,
+                spawn_water,
                 spawn_aircraft,
             ),
         )
@@ -60,7 +61,7 @@ fn spawn_gizmo(
     mut meshes: ResMut<Assets<Mesh>>,
     mut standard_materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    let length = 50.0;
+    let length = 5000.0;
 
     commands.spawn((
         Mesh3d(meshes.add(Cuboid::from_size(length * Vec3::X * 10.0))),

@@ -29,7 +29,7 @@ pub fn preload_chunks(
         let mut chunk = Chunk {
             x: node.x,
             y: node.y,
-            z: node.lod as i8 + 11,
+            z: node.lod as i8,
             elevation: Handle::default(),
             raster: Handle::default(),
         };
@@ -101,7 +101,7 @@ pub fn load_chunk(
     let light_material: Handle<StandardMaterial> = map_materials.light.clone();
     let entity = commands.spawn_empty().id();
     let lat_lon_origin = config.location.get_world_center();
-    let area_meters = chunk.get_area_in_meters(config.location.get_world_center());
+    let area_meters = chunk.get_area_in_meters(lat_lon_origin);
     let origin_meters = area_meters.center();
     let size_meters = area_meters.size();
 
