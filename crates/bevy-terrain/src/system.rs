@@ -97,7 +97,11 @@ pub fn update_terrain_quadtree(
             &entity,
             &mut mesh_pool,
             &mut commands,
-            camera.translation - transform.translation,
+            Vec3::new(
+                -camera.translation.z,
+                camera.translation.y,
+                camera.translation.x,
+            ) - transform.translation,
         );
     }
 }

@@ -23,13 +23,14 @@ pub fn cache_elevation_for_chunk(chunk: Chunk) {
     let path = Path::new(&path_str);
 
     if !path.exists() {
-        info!("Downloading elevation tile for {chunk:?}");
-
         let (z, x, y) = (chunk.z, chunk.x, chunk.y);
-        let request = ehttp::Request::get(format!("{ELEVATION_BASE_URL}/{z}/{x}/{y}.webp"));
-        let response = ehttp::fetch_blocking(&request).unwrap();
+        let url = format!("{ELEVATION_BASE_URL}/{z}/{x}/{y}.webp");
+        let request = ehttp::Request::get(url.clone());
+        info!("Downloading elevation tile for {url}");
 
-        if response.ok {
+        if let Ok(response) = ehttp::fetch_blocking(&request)
+            && response.ok
+        {
             File::create(path)
                 .unwrap()
                 .write_all(&response.bytes)
@@ -50,13 +51,14 @@ pub fn cache_raster_tile_for_chunk(chunk: Chunk) {
     let path = Path::new(&path_str);
 
     if !path.exists() {
-        info!("Downloading raster tile for {chunk:?}");
-
         let (z, x, y) = (chunk.z, chunk.x, chunk.y);
-        let request = ehttp::Request::get(format!("{RASTER_BASE_URL}/{z}/{x}/{y}.png"));
-        let response = ehttp::fetch_blocking(&request).unwrap();
+        let url = format!("{RASTER_BASE_URL}/{z}/{x}/{y}.png");
+        let request = ehttp::Request::get(url.clone());
+        info!("Downloading raster tile for {url}");
 
-        if response.ok {
+        if let Ok(response) = ehttp::fetch_blocking(&request)
+            && response.ok
+        {
             File::create(path)
                 .unwrap()
                 .write_all(&response.bytes)
@@ -78,8 +80,8 @@ pub fn get_elevation_local(image: &Image, local_coords: IVec2) -> f32 {
         image
             .get_color_at(
                 // Clamp to border
-                (DOWNSAMPLE_FACTOR * local_coords.x).clamp(0, TILE_PIXEL_COUNT - 1) as u32,
                 (DOWNSAMPLE_FACTOR * local_coords.y).clamp(0, TILE_PIXEL_COUNT - 1) as u32,
+                (512 - DOWNSAMPLE_FACTOR * local_coords.x).clamp(0, TILE_PIXEL_COUNT - 1) as u32,
             )
             .unwrap(),
     )
@@ -92,14 +94,9 @@ pub fn spawn_elevation_meshes(
     heightmap: &Image,
     entity: Entity,
     chunk: Chunk,
-    config: &Res<OSMConfig>,
+    _config: &Res<OSMConfig>,
 ) {
-    let world_rect = chunk.get_lat_lon_area();
-    let area_meters = chunk.get_area_in_meters(config.location.get_world_center());
-    let origin_meters = area_meters.center();
-    let size_meters = area_meters.size();
-
-    let heights = iterate_mesh_vertices(IVec2::splat(TILE_VERTEX_COUNT), world_rect)
+    let heights = iterate_mesh_vertices(IVec2::splat(TILE_VERTEX_COUNT), Rect::EMPTY)
         .map(|(x_local, y_local, ..)| {
             (
                 (x_local, y_local),
@@ -111,12 +108,25 @@ pub fn spawn_elevation_meshes(
     let mesh = commands
         .spawn((
             Mesh3d(meshes.add(build_mesh_data(heights, IVec2::splat(TILE_VERTEX_COUNT)))),
-            Transform::from_scale(Vec3::new(size_meters.x, 1.0, size_meters.y))
-                .with_translation(Vec3::new(origin_meters.x, 0.0, origin_meters.y)),
+            // Transform::from_scale(Vec3::new(size_meters.x, 1.0, size_meters.y))
+            //     .with_translation(Vec3::new(origin_meters.x, 0.0, origin_meters.y)),
+            Transform::IDENTITY,
             MeshMaterial3d(materials.add(StandardMaterial {
                 base_color_texture: Some(chunk.raster),
                 ..Default::default()
             })),
+            // MeshMaterial3d(materials.add(StandardMaterial {
+            //     base_color: match chunk.z {
+            //         11 => TEAL.into(),
+            //         12 => FUCHSIA.into(),
+            //         13 => RED.into(),
+            //         14 => GREEN.into(),
+            //         15 => BLUE.into(),
+            //         16 => INDIGO.into(),
+            //         _ => WHITE.into(),
+            //     },
+            //     ..Default::default()
+            // })),
         ))
         .id();
     commands.entity(entity).insert(ChunkLoaded);

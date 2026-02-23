@@ -29,7 +29,7 @@ pub fn preload_chunks(
         let mut chunk = Chunk {
             x: node.x,
             y: node.y,
-            z: node.lod as i8 + 13,
+            z: node.lod as i8 + 11,
             elevation: Handle::default(),
             raster: Handle::default(),
         };
@@ -39,33 +39,7 @@ pub fn preload_chunks(
         chunk.elevation = asset_server.load(chunk.get_elevation_cache_path_bevy());
         chunk.raster = asset_server.load(chunk.get_osm_raster_cache_path_bevy());
 
-        commands.entity(entity).insert((Transform::IDENTITY, chunk));
-        // let area_meters = chunk.get_area_in_meters(config.location.get_world_center());
-        // commands.entity(entity).insert((
-        //     Mesh3d(meshes.add(Plane3d::new(Vec3::Y, Vec2::splat(1.0)))),
-        //     // Transform::from_scale(Vec3::new(
-        //     //     area_meters.width() / 2.0,
-        //     //     1.0,
-        //     //     area_meters.height() / 2.0,
-        //     // ))
-        //     // .with_translation(Vec3::new(
-        //     //     area_meters.center().x,
-        //     //     1.0,
-        //     //     area_meters.center().y,
-        //     // )),
-        //     rect_to_transform(node.rect),
-        //     MeshMaterial3d(materials.add(StandardMaterial {
-        //         base_color: match chunk.z {
-        //             13 => RED.into(),
-        //             14 => GREEN.into(),
-        //             15 => BLUE.into(),
-        //             16 => PURPLE.into(),
-        //             17 => INDIGO.into(),
-        //             _ => WHITE.into(),
-        //         },
-        //         ..Default::default()
-        //     })),
-        // ));
+        commands.entity(entity).insert(chunk);
     });
 }
 
