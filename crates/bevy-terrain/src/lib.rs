@@ -9,7 +9,7 @@ use bevy::{pbr::ExtendedMaterial, prelude::*};
 
 use quadtree::{MeshPool, QuadTree, QuadTreeConfig, QuadTreeNode};
 
-use crate::{mesh::build_mesh_cache, water::Water};
+use crate::{mesh::build_mesh_cache, system::update_terrain_quadtree, water::Water};
 
 pub struct WaterPlugin;
 
@@ -22,7 +22,8 @@ pub struct TerrainPlugin;
 
 impl Plugin for TerrainPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, (build_mesh_cache, build_terrain_tile));
+        app.add_systems(Startup, build_mesh_cache)
+            .add_systems(Update, update_terrain_quadtree);
     }
 }
 
@@ -37,13 +38,13 @@ pub fn build_terrain_tile(mut commands: Commands) {
         size,
     };
     let quadtree = QuadTree {
-        root: QuadTreeNode::new(Vec2::ZERO, Vec2::splat(size)),
+        root: QuadTreeNode::new(Vec2::ZERO, Vec2::splat(size), 0, 0),
     };
 
     commands.spawn((
         Transform::from_translation(Vec3::new(0.0, 1.0, 0.0)),
-        quadtree.clone(),
-        config.clone(),
+        quadtree,
+        config,
         Visibility::Inherited,
     ));
 }

@@ -1,7 +1,7 @@
 extern crate osm_xml as osm;
 use crate::{
     building::{Building, polygon_building},
-    chunk::{Chunk, get_osm_for_chunk},
+    chunk::{Chunk, get_osm_for_chunk, lat_lon_to_world},
     mesh::{BuildInstruction, LightInstruction, spawn_stroke_mesh},
     theme::get_way_build_instruction,
 };
@@ -23,8 +23,8 @@ pub fn build_tile(
         let mut points = Vec::new();
         for n in &way.nodes {
             if let osm::Reference::Node(node) = doc.resolve_reference(n) {
-                let (x, z) = chunk
-                    .lat_lon_to_world(Vec2::new(node.lat as f32, node.lon as f32), lat_lon_origin);
+                let (x, z) =
+                    lat_lon_to_world(Vec2::new(node.lat as f32, node.lon as f32), lat_lon_origin);
                 points.push(point(x as f32, z as f32));
             }
         }

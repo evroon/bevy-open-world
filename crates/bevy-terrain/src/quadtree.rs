@@ -2,7 +2,7 @@ use std::collections::VecDeque;
 
 use bevy::prelude::*;
 
-use super::mesh::{MeshCache, spawn_mesh};
+use crate::mesh::rect_to_transform;
 
 #[derive(Component, Debug, Default)]
 pub struct MeshPool(pub VecDeque<Entity>);
@@ -11,8 +11,8 @@ pub struct MeshPool(pub VecDeque<Entity>);
 pub struct QuadTreeConfig {
     /// determines tesselation sensitivity, should be larger than 1.0
     pub k: f32,
-    pub max_lod: u32,
-    pub min_lod: u32,
+    pub max_lod: u8,
+    pub min_lod: u8,
     /// We assume a world where:
     ///   - 1 unit = 1 meter
     ///   - earth with a circumference of 40_000_000 meter
@@ -33,15 +33,25 @@ pub struct QuadTree {
 #[derive(Debug, Default, Clone)]
 pub struct QuadTreeNode {
     pub entity: Option<Entity>,
-    pub lod: u32,
     pub rect: Rect,
     pub north_east: Option<Box<QuadTreeNode>>,
     pub north_west: Option<Box<QuadTreeNode>>,
     pub south_east: Option<Box<QuadTreeNode>>,
     pub south_west: Option<Box<QuadTreeNode>>,
+    pub x: i32,
+    pub y: i32,
+    pub lod: u8,
 }
 
 pub const QUADTREE_SIZE: f32 = 40.0;
+
+#[derive(Component)]
+pub struct QuadTreeNodeComponent {
+    pub x: i32,
+    pub y: i32,
+    pub lod: u8,
+    pub rect: Rect,
+}
 
 /// subdivide based on non-euclidian max(dx, dy, dz) distance from camera
 ///
@@ -66,25 +76,21 @@ impl MeshPool {
     pub fn get_mesh(
         &mut self,
         commands: &mut Commands,
-        meshes: &mut ResMut<'_, Assets<Mesh>>,
         root_entity: &Entity,
-        mesh_cache: &Res<MeshCache>,
-        rect: Rect,
+        node: &QuadTreeNode,
     ) -> Entity {
-        // if let Some(el) = self.0.pop_front() {
-        //     let mut root_entity = commands.get_entity(*root_entity).unwrap();
-        //     root_entity.add_child(el);
-
-        //     if let Ok(mut entity) = commands.get_entity(el) {
-        //         entity.remove::<Visibility>();
-        //         entity.insert(Visibility::Visible);
-
-        //         entity.remove::<Transform>();
-        //         entity.insert(rect_to_transform(rect));
-        //     }
-        //     return el;
-        // }
-        spawn_mesh(commands, meshes, root_entity, mesh_cache, rect)
+        let entity = commands.spawn((
+            rect_to_transform(node.rect),
+            QuadTreeNodeComponent {
+                x: node.x,
+                y: node.y,
+                lod: node.lod,
+                rect: node.rect,
+            },
+        ));
+        let eid = entity.id();
+        commands.entity(*root_entity).add_child(eid);
+        eid
     }
 
     fn despawn_mesh(&mut self, commands: &mut Commands, entity_id: Entity) {
@@ -99,11 +105,11 @@ impl MeshPool {
 }
 
 impl QuadTreeNode {
-    pub fn new(origin: Vec2, size: Vec2) -> Self {
-        Self::new_tree_segment(&origin, &size, 0)
+    pub fn new(origin: Vec2, size: Vec2, x: i32, y: i32) -> Self {
+        Self::new_tree_segment(&origin, &size, 0, x, y)
     }
 
-    fn new_tree_segment(origin: &Vec2, half_size: &Vec2, lod: u32) -> QuadTreeNode {
+    fn new_tree_segment(origin: &Vec2, half_size: &Vec2, lod: u8, x: i32, y: i32) -> QuadTreeNode {
         Self {
             rect: Rect::from_center_size(*origin, *half_size),
             lod,
@@ -112,6 +118,8 @@ impl QuadTreeNode {
             north_west: None,
             south_east: None,
             south_west: None,
+            x,
+            y,
         }
     }
 
@@ -134,15 +142,15 @@ impl QuadTreeNode {
         let sw_origin = Vec2::new(x + (w / 2.0), y - (h / 2.0));
 
         // create new tree segments
-        let build_child_segment = |origin: &Vec2| {
-            let seg = Self::new_tree_segment(origin, &size, self.lod + 1);
+        let build_child_segment = |origin: &Vec2, x: i32, y: i32| {
+            let seg = Self::new_tree_segment(origin, &size, self.lod + 1, x, y);
             Some(Box::new(seg))
         };
 
-        self.north_east = build_child_segment(&ne_origin);
-        self.north_west = build_child_segment(&nw_origin);
-        self.south_east = build_child_segment(&se_origin);
-        self.south_west = build_child_segment(&sw_origin);
+        self.north_east = build_child_segment(&ne_origin, 2 * self.x + 1, 2 * self.y);
+        self.north_west = build_child_segment(&nw_origin, 2 * self.x, 2 * self.y);
+        self.south_east = build_child_segment(&se_origin, 2 * self.x + 1, 2 * self.y + 1);
+        self.south_west = build_child_segment(&sw_origin, 2 * self.x, 2 * self.y + 1);
     }
 
     pub fn destruct(
@@ -177,20 +185,17 @@ impl QuadTreeNode {
         }
     }
 
-    #[expect(clippy::too_many_arguments)]
     pub fn build_around_point(
         &mut self,
         config: &QuadTreeConfig,
-        meshes: &mut ResMut<'_, Assets<Mesh>>,
         root_entity: &Entity,
         mesh_pool: &mut MeshPool,
         commands: &mut Commands,
-        mesh_cache: &Res<MeshCache>,
         ref_point: Vec3,
     ) {
-        let _should_subdivide = should_subdivide(self.rect, ref_point, config.k);
-        let increase_lod =
-            (_should_subdivide && self.lod < config.max_lod) || self.lod < config.min_lod;
+        let increase_lod = (should_subdivide(self.rect, ref_point, config.k)
+            && self.lod < config.max_lod)
+            || self.lod < config.min_lod;
 
         if increase_lod {
             if let Some(prev_en) = self.entity {
@@ -204,38 +209,30 @@ impl QuadTreeNode {
 
             self.north_east.as_mut().unwrap().build_around_point(
                 config,
-                meshes,
                 root_entity,
                 mesh_pool,
                 commands,
-                mesh_cache,
                 ref_point,
             );
             self.north_west.as_mut().unwrap().build_around_point(
                 config,
-                meshes,
                 root_entity,
                 mesh_pool,
                 commands,
-                mesh_cache,
                 ref_point,
             );
             self.south_east.as_mut().unwrap().build_around_point(
                 config,
-                meshes,
                 root_entity,
                 mesh_pool,
                 commands,
-                mesh_cache,
                 ref_point,
             );
             self.south_west.as_mut().unwrap().build_around_point(
                 config,
-                meshes,
                 root_entity,
                 mesh_pool,
                 commands,
-                mesh_cache,
                 ref_point,
             );
         } else {
@@ -256,8 +253,7 @@ impl QuadTreeNode {
             }
 
             if self.entity.is_none() {
-                self.entity =
-                    Some(mesh_pool.get_mesh(commands, meshes, root_entity, mesh_cache, self.rect));
+                self.entity = Some(mesh_pool.get_mesh(commands, root_entity, self));
             }
         }
     }

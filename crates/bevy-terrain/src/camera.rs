@@ -22,7 +22,7 @@ pub fn setup_lighting_for_open_world(mut commands: Commands) {
             illuminance: lux::RAW_SUNLIGHT,
             ..default()
         },
-        Transform::from_xyz(0.0, 0.2, -1.0).looking_at(Vec3::ZERO, Vec3::Y),
+        Transform::from_xyz(0.0, 0.2, 1.0).looking_at(Vec3::ZERO, Vec3::Y),
         VolumetricLight,
         (CascadeShadowConfigBuilder {
             minimum_distance: 1.0,

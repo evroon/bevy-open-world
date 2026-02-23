@@ -15,18 +15,32 @@ use bevy::{
     prelude::*,
     tasks::{AsyncComputeTaskPool, Task, block_on, futures_lite::future},
 };
+use bevy_terrain::quadtree::QuadTreeNodeComponent;
 
 #[derive(Component)]
 pub struct ComputeTransform(pub Task<CommandQueue>);
 
-pub fn preload_chunk(commands: &mut Commands, asset_server: &Res<AssetServer>, mut chunk: Chunk) {
-    cache_elevation_for_chunk(chunk.clone());
-    cache_raster_tile_for_chunk(chunk.clone());
+pub fn preload_chunks(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    nodes_to_load: Query<(Entity, &QuadTreeNodeComponent), Without<Chunk>>,
+) {
+    nodes_to_load.iter().for_each(|(entity, node)| {
+        let mut chunk = Chunk {
+            x: node.x,
+            y: node.y,
+            z: node.lod as i8 + 11,
+            elevation: Handle::default(),
+            raster: Handle::default(),
+        };
+        cache_elevation_for_chunk(chunk.clone());
+        cache_raster_tile_for_chunk(chunk.clone());
 
-    chunk.elevation = asset_server.load(chunk.get_elevation_cache_path_bevy());
-    chunk.raster = asset_server.load(chunk.get_osm_raster_cache_path_bevy());
+        chunk.elevation = asset_server.load(chunk.get_elevation_cache_path_bevy());
+        chunk.raster = asset_server.load(chunk.get_osm_raster_cache_path_bevy());
 
-    commands.spawn(chunk.clone());
+        commands.entity(entity).insert(chunk);
+    });
 }
 
 #[expect(clippy::too_many_arguments)]
@@ -59,25 +73,25 @@ pub fn load_unloaded_chunks(
 #[expect(clippy::too_many_arguments)]
 pub fn load_chunk(
     commands: &mut Commands,
-    meshes2: &mut ResMut<Assets<Mesh>>,
+    meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<StandardMaterial>>,
     map_materials: &Res<MapMaterialHandle>,
     images: &Res<Assets<Image>>,
     config: &Res<OSMConfig>,
-    entity: Entity,
+    chunk_entity: Entity,
     chunk: Chunk,
 ) {
     let elevation = chunk.elevation.id();
-    let image = images
+    let heightmap = images
         .get(elevation)
         .expect("Image should have loaded by now");
 
     spawn_elevation_meshes(
         commands,
-        meshes2,
+        meshes,
         materials,
-        image,
-        entity,
+        heightmap,
+        chunk_entity,
         chunk.clone(),
         config,
     );
@@ -91,7 +105,17 @@ pub fn load_chunk(
     let origin_meters = area_meters.center();
     let size_meters = area_meters.size();
 
-    let task = thread_pool.spawn(async move {
+    let get_elevation = move |translation: Vec3, heightmap: &Image| {
+        if !area_meters.contains(translation.xz()) {
+            return None;
+        }
+        let local_coords = (((translation.xz() - origin_meters) / size_meters + Vec2::splat(0.5))
+            * TILE_VERTEX_COUNT as f32)
+            .as_ivec2();
+        Some(get_elevation_local(heightmap, local_coords))
+    };
+
+    let _task = thread_pool.spawn(async move {
         let (buildings, strokes, lights) = build_tile(chunk, lat_lon_origin);
 
         let mut command_queue = CommandQueue::default();
@@ -109,20 +133,11 @@ pub fn load_chunk(
                         .into_iter()
                         .filter_map(|(mesh, mut transform)| {
                             let translation = transform.translation;
-                            if !area_meters.contains(translation.xz()) {
-                                return None;
+                            if let Some(elevation) = get_elevation(translation, heightmap) {
+                                transform.translation += Vec3::Y * elevation;
+                                return Some((mesh, transform));
                             }
-                            let elevation = get_elevation_local(
-                                heightmap,
-                                (((translation.x - origin_meters.x) / size_meters.x + 0.5)
-                                    * TILE_VERTEX_COUNT as f32)
-                                    as i32,
-                                (((translation.z - origin_meters.y) / size_meters.y + 0.5)
-                                    * TILE_VERTEX_COUNT as f32)
-                                    as i32,
-                            );
-                            transform.translation += Vec3::Y * elevation;
-                            Some((mesh, transform))
+                            None
                         })
                         .collect::<Vec<_>>()
                 })
@@ -132,18 +147,13 @@ pub fn load_chunk(
                 .into_iter()
                 .filter_map(|light| {
                     let mut translation = light.trans;
-                    if !area_meters.contains(translation.xz()) {
-                        return None;
+                    if let Some(elevation) = get_elevation(translation, heightmap) {
+                        translation += Vec3::Y * elevation;
+                        return Some(
+                            Transform::from_translation(translation).with_scale(Vec3::splat(5.0)),
+                        );
                     }
-                    let (x, y) = (
-                        (((translation.x - origin_meters.x) / size_meters.x + 0.5)
-                            * TILE_VERTEX_COUNT as f32) as i32,
-                        (((translation.z - origin_meters.y) / size_meters.y + 0.5)
-                            * TILE_VERTEX_COUNT as f32) as i32,
-                    );
-                    let elevation = get_elevation_local(heightmap, x, y);
-                    translation += Vec3::Y * elevation;
-                    Some(Transform::from_translation(translation).with_scale(Vec3::splat(5.0)))
+                    None
                 })
                 .collect::<Vec<Transform>>();
 
@@ -160,23 +170,32 @@ pub fn load_chunk(
                 strokes.iter().map(|s| meshes.add(s.clone())).collect();
 
             for mesh in stroke_meshes {
-                world.spawn((
-                    Mesh3d(mesh),
-                    MeshMaterial3d(building_material.clone()),
-                    Shape,
-                ));
+                let stroke = world
+                    .spawn((
+                        Mesh3d(mesh),
+                        MeshMaterial3d(building_material.clone()),
+                        Shape,
+                    ))
+                    .id();
+                world.entity_mut(chunk_entity).add_child(stroke);
             }
 
             for (mesh, trans) in mesh3ds {
-                world.spawn((mesh, MeshMaterial3d(building_material.clone()), trans));
+                let bm = world
+                    .spawn((mesh, MeshMaterial3d(building_material.clone()), trans))
+                    .id();
+                world.entity_mut(chunk_entity).add_child(bm);
             }
 
             for transform in light_transforms {
-                world.spawn((
-                    Mesh3d(light_mesh.clone()),
-                    MeshMaterial3d(light_material.clone()),
-                    transform,
-                ));
+                let l = world
+                    .spawn((
+                        Mesh3d(light_mesh.clone()),
+                        MeshMaterial3d(light_material.clone()),
+                        transform,
+                    ))
+                    .id();
+                world.entity_mut(chunk_entity).add_child(l);
             }
 
             world.entity_mut(entity).remove::<ComputeTransform>();
@@ -185,7 +204,7 @@ pub fn load_chunk(
         command_queue
     });
 
-    commands.entity(entity).insert(ComputeTransform(task));
+    // commands.entity(entity).insert(ComputeTransform(task));
 }
 
 pub fn handle_tasks(mut commands: Commands, mut transform_tasks: Query<&mut ComputeTransform>) {
