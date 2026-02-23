@@ -11,12 +11,11 @@ use crate::{
     tile::build_tile,
 };
 use bevy::{
-    color::palettes::css::{BLUE, GREEN, INDIGO, PURPLE, RED, WHITE},
     ecs::{system::SystemState, world::CommandQueue},
     prelude::*,
     tasks::{AsyncComputeTaskPool, Task, block_on, futures_lite::future},
 };
-use bevy_terrain::{mesh::rect_to_transform, quadtree::QuadTreeNodeComponent};
+use bevy_terrain::quadtree::QuadTreeNodeComponent;
 
 #[derive(Component)]
 pub struct ComputeTransform(pub Task<CommandQueue>);
@@ -24,10 +23,7 @@ pub struct ComputeTransform(pub Task<CommandQueue>);
 pub fn preload_chunks(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    mut meshes: ResMut<Assets<Mesh>>,
     nodes_to_load: Query<(Entity, &QuadTreeNodeComponent), Without<Chunk>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-    config: Res<OSMConfig>,
 ) {
     nodes_to_load.iter().for_each(|(entity, node)| {
         let mut chunk = Chunk {
@@ -42,9 +38,9 @@ pub fn preload_chunks(
 
         chunk.elevation = asset_server.load(chunk.get_elevation_cache_path_bevy());
         chunk.raster = asset_server.load(chunk.get_osm_raster_cache_path_bevy());
-        let area_meters = chunk.get_area_in_meters(config.location.get_world_center());
 
         commands.entity(entity).insert((Transform::IDENTITY, chunk));
+        // let area_meters = chunk.get_area_in_meters(config.location.get_world_center());
         // commands.entity(entity).insert((
         //     Mesh3d(meshes.add(Plane3d::new(Vec3::Y, Vec2::splat(1.0)))),
         //     // Transform::from_scale(Vec3::new(
@@ -145,7 +141,7 @@ pub fn load_chunk(
         Some(get_elevation_local(heightmap, local_coords))
     };
 
-    let task = thread_pool.spawn(async move {
+    let _task = thread_pool.spawn(async move {
         let (buildings, strokes, lights) = build_tile(chunk, lat_lon_origin);
 
         let mut command_queue = CommandQueue::default();

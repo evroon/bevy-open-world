@@ -11,8 +11,10 @@ use bevy::prelude::*;
 
 const ELEVATION_BASE_URL: &str = "https://tiles.mapterhorn.com";
 const RASTER_BASE_URL: &str = "https://tile.openstreetmap.org";
-pub const TILE_VERTEX_COUNT: i32 = 512;
 const HEIGHT_OFFSET: f32 = 130.0;
+pub const TILE_VERTEX_COUNT: i32 = 64;
+pub const TILE_PIXEL_COUNT: i32 = 512;
+const DOWNSAMPLE_FACTOR: i32 = TILE_PIXEL_COUNT / TILE_VERTEX_COUNT;
 
 pub fn cache_elevation_for_chunk(chunk: Chunk) {
     chunk.ensure_cache_dirs_exist();
@@ -63,6 +65,7 @@ pub fn cache_raster_tile_for_chunk(chunk: Chunk) {
     }
 }
 
+/// Source: https://github.com/tilezen/joerd/blob/master/docs/formats.md
 pub fn elevation_color_to_height_meters(c: Color) -> f32 {
     let lin_color = c.to_srgba();
     (lin_color.red * 256.0 * 256.0 + lin_color.green * 256.0 + lin_color.blue)
@@ -75,8 +78,8 @@ pub fn get_elevation_local(image: &Image, local_coords: IVec2) -> f32 {
         image
             .get_color_at(
                 // Clamp to border
-                local_coords.x.clamp(0, TILE_VERTEX_COUNT - 1) as u32,
-                local_coords.y.clamp(0, TILE_VERTEX_COUNT - 1) as u32,
+                (DOWNSAMPLE_FACTOR * local_coords.x).clamp(0, TILE_PIXEL_COUNT - 1) as u32,
+                (DOWNSAMPLE_FACTOR * local_coords.y).clamp(0, TILE_PIXEL_COUNT - 1) as u32,
             )
             .unwrap(),
     )

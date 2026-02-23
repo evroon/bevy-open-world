@@ -45,7 +45,7 @@ pub fn build_terrain_tile(mut commands: Commands, osm_config: Res<OSMConfig>) {
     let config = QuadTreeConfig {
         k: 1.1,
         min_lod: 0,
-        max_lod: 3,
+        max_lod: 4,
         size: chunk.get_size_in_meters().x,
     };
     let area_meters = chunk.get_area_in_meters(osm_config.location.get_world_center());
