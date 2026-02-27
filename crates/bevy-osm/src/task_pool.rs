@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use crate::{
     building::spawn_building,
     chunk::{Chunk, ChunkLoaded},
@@ -22,22 +24,18 @@ pub struct ComputeTransform(pub Task<CommandQueue>);
 
 pub fn preload_chunks(
     mut commands: Commands,
-    asset_server: Res<AssetServer>,
     nodes_to_load: Query<(Entity, &QuadTreeNodeComponent), Without<Chunk>>,
 ) {
     nodes_to_load.iter().for_each(|(entity, node)| {
-        let mut chunk = Chunk {
+        let chunk = Chunk {
             x: node.x,
             y: node.y,
             z: node.lod as i8 + 11,
             elevation: Handle::default(),
             raster: Handle::default(),
         };
-        cache_elevation_for_chunk(chunk.clone());
-        cache_raster_tile_for_chunk(chunk.clone());
-
-        chunk.elevation = asset_server.load(chunk.get_elevation_cache_path_bevy());
-        chunk.raster = asset_server.load(chunk.get_osm_raster_cache_path_bevy());
+        cache_elevation_for_chunk(&chunk);
+        cache_raster_tile_for_chunk(&chunk);
 
         commands.entity(entity).insert(chunk);
     });
@@ -49,23 +47,33 @@ pub fn load_unloaded_chunks(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     map_materials: Res<MapMaterialHandle>,
-    chunks_to_load: Query<(Entity, &Chunk), Without<ChunkLoaded>>,
+    mut chunks_to_load: Query<(Entity, &mut Chunk), Without<ChunkLoaded>>,
     asset_server: Res<AssetServer>,
     images: Res<Assets<Image>>,
     config: Res<OSMConfig>,
 ) {
-    chunks_to_load.iter().for_each(|(entity, chunk)| {
-        if asset_server.is_loaded(chunk.elevation.id()) {
-            load_chunk(
-                &mut commands,
-                &mut meshes,
-                &mut materials,
-                &map_materials,
-                &images,
-                &config,
-                entity,
-                chunk.clone(),
-            )
+    chunks_to_load.iter_mut().for_each(|(entity, mut chunk)| {
+        let elevation_path_str = chunk.get_elevation_cache_path();
+        let elevation_path = Path::new(&elevation_path_str);
+        let osm_raster_path_str = chunk.get_osm_raster_cache_path();
+        let osm_raster_path = Path::new(&osm_raster_path_str);
+
+        if elevation_path.exists() && osm_raster_path.exists() {
+            chunk.elevation = asset_server.load(chunk.get_elevation_cache_path_bevy());
+            chunk.raster = asset_server.load(chunk.get_osm_raster_cache_path_bevy());
+
+            if asset_server.is_loaded(chunk.elevation.id()) {
+                load_chunk(
+                    &mut commands,
+                    &mut meshes,
+                    &mut materials,
+                    &map_materials,
+                    &images,
+                    &config,
+                    entity,
+                    chunk.clone(),
+                )
+            }
         }
     });
 }
