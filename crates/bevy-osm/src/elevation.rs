@@ -16,7 +16,7 @@ pub const TILE_VERTEX_COUNT: i32 = 64;
 pub const TILE_PIXEL_COUNT: i32 = 512;
 const DOWNSAMPLE_FACTOR: i32 = TILE_PIXEL_COUNT / TILE_VERTEX_COUNT;
 
-pub fn cache_elevation_for_chunk(chunk: Chunk) {
+pub fn cache_elevation_for_chunk(chunk: &Chunk) {
     chunk.ensure_cache_dirs_exist();
 
     let path_str = chunk.get_elevation_cache_path();
@@ -28,23 +28,26 @@ pub fn cache_elevation_for_chunk(chunk: Chunk) {
         let request = ehttp::Request::get(url.clone());
         info!("Downloading elevation tile for {url}");
 
-        if let Ok(response) = ehttp::fetch_blocking(&request)
-            && response.ok
-        {
-            File::create(path)
-                .unwrap()
-                .write_all(&response.bytes)
-                .expect("Could not write to tile cache");
-        } else {
-            File::create(path)
-                .unwrap()
-                .write_all(include_bytes!("../../../assets/osm/empty-tile.webp"))
-                .expect("Could not write to tile cache");
-        }
+        ehttp::fetch(request, move |response| {
+            let path = Path::new(&path_str);
+            if let Ok(response) = response
+                && response.ok
+            {
+                File::create(path)
+                    .unwrap()
+                    .write_all(&response.bytes)
+                    .expect("Could not write to tile cache");
+            } else {
+                File::create(path)
+                    .unwrap()
+                    .write_all(include_bytes!("../../../assets/osm/empty-tile.webp"))
+                    .expect("Could not write to tile cache");
+            }
+        });
     }
 }
 
-pub fn cache_raster_tile_for_chunk(chunk: Chunk) {
+pub fn cache_raster_tile_for_chunk(chunk: &Chunk) {
     chunk.ensure_cache_dirs_exist();
 
     let path_str = chunk.get_osm_raster_cache_path();
@@ -56,14 +59,17 @@ pub fn cache_raster_tile_for_chunk(chunk: Chunk) {
         let request = ehttp::Request::get(url.clone());
         info!("Downloading raster tile for {url}");
 
-        if let Ok(response) = ehttp::fetch_blocking(&request)
-            && response.ok
-        {
-            File::create(path)
-                .unwrap()
-                .write_all(&response.bytes)
-                .expect("Could not write to tile cache");
-        }
+        ehttp::fetch(request, move |response| {
+            let path = Path::new(&path_str);
+            if let Ok(response) = response
+                && response.ok
+            {
+                File::create(path)
+                    .unwrap()
+                    .write_all(&response.bytes)
+                    .expect("Could not write to tile cache");
+            }
+        });
     }
 }
 
