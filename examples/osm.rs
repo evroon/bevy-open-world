@@ -37,7 +37,7 @@ fn main() {
                 setup_lighting_for_open_world,
                 spawn_camera,
                 spawn_gizmo,
-                spawn_water,
+                // spawn_water,
                 spawn_aircraft,
             ),
         )
@@ -62,21 +62,22 @@ fn spawn_gizmo(
     mut standard_materials: ResMut<Assets<StandardMaterial>>,
 ) {
     let length = 50.0;
+    let size = 100.0;
 
     commands.spawn((
-        Mesh3d(meshes.add(Cuboid::from_size(length * Vec3::X * 10.0))),
+        Mesh3d(meshes.add(Cuboid::from_size(length * Vec3::X * size))),
         MeshMaterial3d(standard_materials.add(StandardMaterial {
-            emissive: LinearRgba::rgb(100.0, 10.0, 10.0),
+            base_color: Color::LinearRgba(LinearRgba::rgb(100.0, 10.0, 10.0)),
             ..default()
         })),
-        Transform::from_translation(Vec3::new(length * 5.0, 0.0, 0.0)),
+        Transform::from_translation(Vec3::new(length * size * 0.5, 0.0, 0.0)),
     ));
     commands.spawn((
-        Mesh3d(meshes.add(Cuboid::from_size(length * Vec3::Z * 10.0))),
+        Mesh3d(meshes.add(Cuboid::from_size(length * Vec3::Z * size))),
         MeshMaterial3d(standard_materials.add(StandardMaterial {
-            emissive: LinearRgba::rgb(10.0, 10.0, 100.0),
+            base_color: Color::LinearRgba(LinearRgba::rgb(10.0, 10.0, 100.0)),
             ..default()
         })),
-        Transform::from_translation(Vec3::new(0.0, 0.0, length * 5.0)),
+        Transform::from_translation(Vec3::new(0.0, 0.0, length * size * 0.5)),
     ));
 }

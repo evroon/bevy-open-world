@@ -2,7 +2,7 @@ use std::path::Path;
 
 use crate::{
     building::spawn_building,
-    chunk::{Chunk, ChunkLoaded},
+    chunk::Chunk,
     config::OSMConfig,
     elevation::{
         TILE_VERTEX_COUNT, cache_elevation_for_chunk, cache_raster_tile_for_chunk,
@@ -17,14 +17,49 @@ use bevy::{
     prelude::*,
     tasks::{AsyncComputeTaskPool, Task, block_on, futures_lite::future},
 };
-use bevy_terrain::quadtree::QuadTreeNodeComponent;
+use bevy_terrain::quadtree::{ChunkLoaded, DecreaseLOD, IncreaseLOD, QuadTreeNode};
 
 #[derive(Component)]
 pub struct ComputeTransform(pub Task<CommandQueue>);
 
+pub fn handle_decreased_lods(
+    mut commands: Commands,
+    nodes_to_load: Query<(Entity, &QuadTreeNode), With<DecreaseLOD>>,
+) {
+    nodes_to_load.iter().for_each(|(entity, _)| {
+        commands.entity(entity).remove::<Chunk>();
+        commands.entity(entity).remove::<ChunkLoaded>();
+        commands.entity(entity).remove::<DecreaseLOD>();
+        commands.entity(entity).despawn_children();
+    });
+}
+
+pub fn handle_increased_lods(
+    mut commands: Commands,
+    nodes_to_load: Query<(Entity, &Children, &QuadTreeNode), With<IncreaseLOD>>,
+    attached_meshes: Query<Entity, Without<QuadTreeNode>>,
+) {
+    nodes_to_load
+        .iter()
+        .for_each(|(entity, child_entities, _)| {
+            // println!(
+            //     "{}",
+            //     child_entities
+            //         .iter()
+            //         .filter_map(|c| attached_meshes.get(c).ok())
+            //         .count()
+            // );
+            // child_entities
+            //     .iter()
+            //     .filter_map(|c| attached_meshes.get(c).ok())
+            //     .for_each(|x| commands.entity(x).despawn());
+            commands.entity(entity).remove::<IncreaseLOD>();
+        });
+}
+
 pub fn preload_chunks(
     mut commands: Commands,
-    nodes_to_load: Query<(Entity, &QuadTreeNodeComponent), Without<Chunk>>,
+    nodes_to_load: Query<(Entity, &QuadTreeNode), Without<Chunk>>,
 ) {
     nodes_to_load.iter().for_each(|(entity, node)| {
         let chunk = Chunk {
@@ -101,7 +136,6 @@ pub fn load_chunk(
         heightmap,
         chunk_entity,
         chunk.clone(),
-        config,
     );
 
     let thread_pool = AsyncComputeTaskPool::get();

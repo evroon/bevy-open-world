@@ -1,11 +1,6 @@
-use std::collections::VecDeque;
-
 use bevy::prelude::*;
 
 use crate::mesh::rect_to_transform;
-
-#[derive(Component, Debug, Default)]
-pub struct MeshPool(pub VecDeque<Entity>);
 
 #[derive(Component, Debug, Default, Clone)]
 pub struct QuadTreeConfig {
@@ -26,18 +21,12 @@ pub struct QuadTreeConfig {
 }
 
 #[derive(Component, Debug, Default, Clone)]
-pub struct QuadTree {
-    pub root: QuadTreeNode,
-}
+pub struct QuadTree;
 
-#[derive(Debug, Default, Clone)]
+#[derive(Component, Debug, Default, Clone)]
 pub struct QuadTreeNode {
-    pub entity: Option<Entity>,
-    pub rect: Rect,
-    pub north_east: Option<Box<QuadTreeNode>>,
-    pub north_west: Option<Box<QuadTreeNode>>,
-    pub south_east: Option<Box<QuadTreeNode>>,
-    pub south_west: Option<Box<QuadTreeNode>>,
+    pub world_rect: Rect,
+    pub local_rect: Rect,
     pub x: i32,
     pub y: i32,
     pub lod: u8,
@@ -46,12 +35,12 @@ pub struct QuadTreeNode {
 pub const QUADTREE_SIZE: f32 = 40.0;
 
 #[derive(Component)]
-pub struct QuadTreeNodeComponent {
-    pub x: i32,
-    pub y: i32,
-    pub lod: u8,
-    pub rect: Rect,
-}
+pub struct IncreaseLOD;
+
+#[derive(Component)]
+pub struct DecreaseLOD;
+#[derive(Component)]
+pub struct ChunkLoaded;
 
 /// subdivide based on non-euclidian max(dx, dy, dz) distance from camera
 ///
@@ -68,193 +57,107 @@ fn should_subdivide(object_rect: Rect, camera_position: Vec3, k: f32) -> bool {
     d < k * object_rect.width()
 }
 
-impl MeshPool {
-    pub fn new() -> Self {
-        Self(VecDeque::new())
-    }
-
-    pub fn get_mesh(
-        &mut self,
-        commands: &mut Commands,
-        root_entity: &Entity,
-        node: &QuadTreeNode,
-    ) -> Entity {
-        let entity = commands.spawn((
-            rect_to_transform(node.rect),
-            QuadTreeNodeComponent {
-                x: node.x,
-                y: node.y,
-                lod: node.lod,
-                rect: node.rect,
-            },
-        ));
-        let eid = entity.id();
-        commands.entity(*root_entity).add_child(eid);
-        eid
-    }
-
-    fn despawn_mesh(&mut self, commands: &mut Commands, entity_id: Entity) {
-        if let Ok(mut entity) = commands.get_entity(entity_id) {
-            // entity.insert(Visibility::Hidden);
-            entity.despawn();
-            // self.0.push_back(entity_id);
-        } else {
-            panic!("could not despawn mesh");
-        }
-    }
-}
+// pub fn get_mesh(commands: &mut Commands, root_entity: &Entity, node: QuadTreeNode) -> Entity {
+//     let entity = commands.spawn((rect_to_transform(node.rect), node));
+//     let eid = entity.id();
+//     commands.entity(*root_entity).add_child(eid);
+//     eid
+// }
 
 impl QuadTreeNode {
-    pub fn new(origin: Vec2, size: Vec2, x: i32, y: i32) -> Self {
-        Self::new_tree_segment(&origin, &size, 0, x, y)
-    }
-
-    fn new_tree_segment(origin: &Vec2, half_size: &Vec2, lod: u8, x: i32, y: i32) -> QuadTreeNode {
-        Self {
-            rect: Rect::from_center_size(*origin, *half_size),
-            lod,
-            entity: None,
-            north_east: None,
-            north_west: None,
-            south_east: None,
-            south_west: None,
-            x,
-            y,
-        }
-    }
-
-    fn subdivide(&mut self) {
-        assert!(self.north_east.is_none());
-
+    fn subdivide(&self, commands: &mut Commands, entity: Entity) {
         // calculate size of new segment by getting a half of the parent size
-        let h = self.rect.height() / 2.0;
-        let w = self.rect.width() / 2.0;
-        let size = Vec2::new(w, h);
+        let h = self.world_rect.height() / 2.0;
+        let w = self.world_rect.width() / 2.0;
+        let size_world = Vec2::new(w, h);
 
         // parent origin
-        let x = self.rect.center().x;
-        let y = self.rect.center().y;
+        let x = self.world_rect.center().x;
+        let y = self.world_rect.center().y;
 
-        // calculate origin point for each new section
-        let ne_origin = Vec2::new(x - (w / 2.0), y + (h / 2.0));
-        let nw_origin = Vec2::new(x + (w / 2.0), y + (h / 2.0));
-        let se_origin = Vec2::new(x - (w / 2.0), y - (h / 2.0));
-        let sw_origin = Vec2::new(x + (w / 2.0), y - (h / 2.0));
-
-        // create new tree segments
-        let build_child_segment = |origin: &Vec2, x: i32, y: i32| {
-            let seg = Self::new_tree_segment(origin, &size, self.lod + 1, x, y);
-            Some(Box::new(seg))
-        };
-
-        self.north_east = build_child_segment(&ne_origin, 2 * self.x + 1, 2 * self.y);
-        self.north_west = build_child_segment(&nw_origin, 2 * self.x, 2 * self.y);
-        self.south_east = build_child_segment(&se_origin, 2 * self.x + 1, 2 * self.y + 1);
-        self.south_west = build_child_segment(&sw_origin, 2 * self.x, 2 * self.y + 1);
-    }
-
-    pub fn destruct(
-        &mut self,
-        mesh_pool: &mut MeshPool,
-        root_entity: &Entity,
-        commands: &mut Commands,
-    ) {
-        if let Some(entity_id) = self.entity {
-            mesh_pool.despawn_mesh(commands, entity_id);
-            commands
-                .get_entity(*root_entity)
-                .unwrap()
-                .detach_child(entity_id);
-            self.entity = None;
-        }
-
-        if let Some(north_east) = &mut self.north_east {
-            north_east.destruct(mesh_pool, root_entity, commands);
-            self.north_west
-                .as_mut()
-                .unwrap()
-                .destruct(mesh_pool, root_entity, commands);
-            self.south_east
-                .as_mut()
-                .unwrap()
-                .destruct(mesh_pool, root_entity, commands);
-            self.south_west
-                .as_mut()
-                .unwrap()
-                .destruct(mesh_pool, root_entity, commands);
+        for (origin_world, origin_local, x, y) in [
+            (
+                Vec2::new(x + (w / 2.0), y - (h / 2.0)),
+                Vec2::new(0.25, -0.25),
+                2 * self.x + 1,
+                2 * self.y,
+            ),
+            (
+                Vec2::new(x - (w / 2.0), y - (h / 2.0)),
+                Vec2::new(-0.25, -0.25),
+                2 * self.x,
+                2 * self.y,
+            ),
+            (
+                Vec2::new(x + (w / 2.0), y + (h / 2.0)),
+                Vec2::new(0.25, 0.25),
+                2 * self.x + 1,
+                2 * self.y + 1,
+            ),
+            (
+                Vec2::new(x - (w / 2.0), y + (h / 2.0)),
+                Vec2::new(-0.25, 0.25),
+                2 * self.x,
+                2 * self.y + 1,
+            ),
+        ] {
+            let local_rect = Rect::from_center_size(origin_local, Vec2::splat(0.5));
+            let new = commands
+                .spawn((
+                    rect_to_transform(local_rect),
+                    QuadTreeNode {
+                        world_rect: Rect::from_center_size(origin_world, size_world),
+                        local_rect,
+                        lod: self.lod + 1,
+                        x,
+                        y,
+                    },
+                ))
+                .id();
+            commands.get_entity(entity).unwrap().add_child(new);
         }
     }
 
+    #[expect(clippy::type_complexity)]
     pub fn build_around_point(
-        &mut self,
+        &self,
         config: &QuadTreeConfig,
-        root_entity: &Entity,
-        mesh_pool: &mut MeshPool,
+        entity: Entity,
         commands: &mut Commands,
+        nodes: &Query<(
+            Entity,
+            &mut QuadTreeNode,
+            Option<&Children>,
+            Option<&ChunkLoaded>,
+            Option<&DecreaseLOD>,
+            Option<&IncreaseLOD>,
+        )>,
         ref_point: Vec3,
     ) {
-        let increase_lod = (should_subdivide(self.rect, ref_point, config.k)
+        let increase_lod = (should_subdivide(self.world_rect, ref_point, config.k)
             && self.lod < config.max_lod)
             || self.lod < config.min_lod;
 
+        let mut ent_cmd = commands.get_entity(entity).unwrap();
+
+        let children_default = Children::default();
+        let child_entities = nodes.get(entity).unwrap().2.unwrap_or(&children_default);
+
         if increase_lod {
-            if let Some(prev_en) = self.entity {
-                mesh_pool.despawn_mesh(commands, prev_en);
-                self.entity = None;
-            }
+            ent_cmd.insert_if_new(IncreaseLOD);
 
-            if self.north_east.is_none() {
-                self.subdivide();
+            if child_entities.is_empty() {
+                self.subdivide(commands, entity);
+                for ce in child_entities {
+                    if let Ok(cc) = nodes.get(*ce) {
+                        cc.1.build_around_point(config, *ce, commands, nodes, ref_point);
+                    } else {
+                        commands.entity(*ce).despawn();
+                    }
+                }
             }
-
-            self.north_east.as_mut().unwrap().build_around_point(
-                config,
-                root_entity,
-                mesh_pool,
-                commands,
-                ref_point,
-            );
-            self.north_west.as_mut().unwrap().build_around_point(
-                config,
-                root_entity,
-                mesh_pool,
-                commands,
-                ref_point,
-            );
-            self.south_east.as_mut().unwrap().build_around_point(
-                config,
-                root_entity,
-                mesh_pool,
-                commands,
-                ref_point,
-            );
-            self.south_west.as_mut().unwrap().build_around_point(
-                config,
-                root_entity,
-                mesh_pool,
-                commands,
-                ref_point,
-            );
         } else {
-            if let Some(north_east) = &mut self.north_east {
-                north_east.destruct(mesh_pool, root_entity, commands);
-                self.north_west
-                    .as_mut()
-                    .unwrap()
-                    .destruct(mesh_pool, root_entity, commands);
-                self.south_east
-                    .as_mut()
-                    .unwrap()
-                    .destruct(mesh_pool, root_entity, commands);
-                self.south_west
-                    .as_mut()
-                    .unwrap()
-                    .destruct(mesh_pool, root_entity, commands);
-            }
-
-            if self.entity.is_none() {
-                self.entity = Some(mesh_pool.get_mesh(commands, root_entity, self));
-            }
+            ent_cmd.insert_if_new(DecreaseLOD);
         }
     }
 }

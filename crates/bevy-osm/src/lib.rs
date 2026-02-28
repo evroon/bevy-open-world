@@ -15,10 +15,16 @@ use crate::{
     chunk::Chunk,
     config::OSMConfig,
     material::MapMaterialHandle,
-    task_pool::{handle_tasks, load_unloaded_chunks, preload_chunks},
+    task_pool::{
+        handle_decreased_lods, handle_increased_lods, handle_tasks, load_unloaded_chunks,
+        preload_chunks,
+    },
 };
 use bevy::prelude::*;
-use bevy_terrain::quadtree::{MeshPool, QuadTree, QuadTreeConfig, QuadTreeNode};
+use bevy_terrain::{
+    quadtree::{QuadTree, QuadTreeConfig, QuadTreeNode},
+    system::update_terrain_quadtree,
+};
 
 pub struct OSMPlugin;
 
@@ -27,13 +33,20 @@ impl Plugin for OSMPlugin {
         app.init_resource::<MapMaterialHandle>()
             .init_resource::<OSMConfig>()
             .add_systems(Startup, build_terrain_tile)
-            .add_systems(Update, (handle_tasks, load_unloaded_chunks, preload_chunks));
+            .add_systems(
+                Update,
+                (
+                    handle_tasks,
+                    load_unloaded_chunks,
+                    preload_chunks.after(update_terrain_quadtree),
+                    handle_decreased_lods,
+                    handle_increased_lods,
+                ),
+            );
     }
 }
 
 pub fn build_terrain_tile(mut commands: Commands, osm_config: Res<OSMConfig>) {
-    commands.spawn(MeshPool::new());
-
     let chunk = Chunk {
         x: 1066,
         y: 746,
@@ -49,14 +62,27 @@ pub fn build_terrain_tile(mut commands: Commands, osm_config: Res<OSMConfig>) {
         size: chunk.get_size_in_meters().x,
     };
     let area_meters = chunk.get_area_in_meters(osm_config.location.get_world_center());
-    let quadtree = QuadTree {
-        root: QuadTreeNode::new(Vec2::ZERO, area_meters.size(), chunk.x, chunk.y),
-    };
 
-    commands.spawn((
-        Transform::IDENTITY,
-        quadtree.clone(),
-        config.clone(),
-        Visibility::Inherited,
-    ));
+    let quadtree = commands
+        .spawn((
+            Transform::from_scale(Vec3::new(area_meters.width(), 1.0, area_meters.height())),
+            QuadTree,
+            config.clone(),
+            Visibility::Visible,
+        ))
+        .id();
+
+    let root = commands
+        .spawn((
+            QuadTreeNode {
+                local_rect: Rect::from_center_size(Vec2::ZERO, Vec2::ONE),
+                world_rect: Rect::from_center_size(Vec2::ZERO, chunk.get_size_in_meters()),
+                x: chunk.x,
+                y: chunk.y,
+                lod: 0,
+            },
+            Transform::IDENTITY,
+        ))
+        .id();
+    commands.entity(quadtree).add_child(root);
 }
