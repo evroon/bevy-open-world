@@ -48,11 +48,6 @@ pub struct QuadTreeNodeComponent {
     pub rect: Rect,
 }
 #[derive(Component)]
-pub struct IncreaseLOD;
-
-#[derive(Component)]
-pub struct DecreaseLOD;
-#[derive(Component)]
 pub struct ChunkLoaded;
 
 /// subdivide based on non-euclidian max(dx, dy, dz) distance from camera
@@ -156,21 +151,13 @@ impl QuadTreeNode {
         }
     }
 
-    #[expect(clippy::type_complexity)]
     pub fn build_around_point(
         &mut self,
         config: &QuadTreeConfig,
         root_entity: &Entity,
         commands: &mut Commands,
         ref_point: Vec3,
-        nodes_query: &Query<(
-            Entity,
-            &mut QuadTreeNodeComponent,
-            Option<&Children>,
-            Option<&ChunkLoaded>,
-            Option<&DecreaseLOD>,
-            Option<&IncreaseLOD>,
-        )>,
+        nodes_query: &Query<(Entity, Option<&Children>, Option<&ChunkLoaded>)>,
     ) {
         let increase_lod = (should_subdivide(self.rect, ref_point, config.k)
             && self.lod < config.max_lod)
@@ -179,19 +166,23 @@ impl QuadTreeNode {
         if increase_lod {
             if self.north_east.is_none() {
                 self.subdivide();
-            } else if let Some(ent) = self.entity {
-                let children = nodes_query.get(ent).unwrap().2.unwrap();
-                let all_loaded = children
-                    .iter()
-                    .map(|c| nodes_query.get(c).ok()?.3)
-                    .all(|x| x.is_some());
+            } else {
+                let all_loaded = [
+                    self.north_east.as_ref().unwrap(),
+                    self.north_west.as_ref().unwrap(),
+                    self.south_east.as_ref().unwrap(),
+                    self.south_west.as_ref().unwrap(),
+                ]
+                .iter()
+                .all(|c| {
+                    c.entity.is_none() || nodes_query.get(c.entity.unwrap()).unwrap().2.is_some()
+                });
 
-                if all_loaded {
-                    commands.get_entity(ent).unwrap().despawn();
+                if all_loaded && self.entity.is_some() {
+                    commands.get_entity(self.entity.unwrap()).unwrap().despawn();
                     self.entity = None;
                 }
             }
-
             for child in [
                 self.north_east.as_mut().unwrap(),
                 self.north_west.as_mut().unwrap(),
@@ -201,18 +192,14 @@ impl QuadTreeNode {
                 child.build_around_point(config, root_entity, commands, ref_point, nodes_query);
             }
         } else if let Some(ent) = self.entity {
-            let loaded = nodes_query.get(ent).unwrap().3.is_some();
-            if loaded {
-                println!("loaded");
-            }
-            if self.north_east.is_some() {
+            let loaded = nodes_query.get(ent).unwrap().2.is_some();
+            if loaded && self.north_east.is_some() {
                 for child in [
                     self.north_east.as_mut().unwrap(),
                     self.north_west.as_mut().unwrap(),
                     self.south_east.as_mut().unwrap(),
                     self.south_west.as_mut().unwrap(),
                 ] {
-                    println!("destr");
                     child.destruct(root_entity, commands);
                 }
                 self.north_east = None;

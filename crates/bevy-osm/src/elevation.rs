@@ -1,16 +1,15 @@
-use std::{f32::consts::PI, fs::File, io::Write, path::Path};
+use std::{fs::File, io::Write, path::Path};
 
 use bevy::{
     color::palettes::css::{BLUE, FUCHSIA, GREEN, INDIGO, RED, TEAL, WHITE},
     log::info,
-    math::Affine2,
 };
-use bevy_terrain::mesh::{HeightMap, build_mesh_data, iterate_mesh_vertices};
+use bevy_terrain::{
+    mesh::{HeightMap, build_mesh_data, iterate_mesh_vertices},
+    quadtree::ChunkLoaded,
+};
 
-use crate::{
-    chunk::{Chunk, ChunkLoaded},
-    config::OSMConfig,
-};
+use crate::{chunk::Chunk, config::OSMConfig};
 use bevy::prelude::*;
 
 const ELEVATION_BASE_URL: &str = "https://tiles.mapterhorn.com";
