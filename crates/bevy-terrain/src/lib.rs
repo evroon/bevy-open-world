@@ -35,7 +35,7 @@ pub fn build_terrain_tile(mut commands: Commands) {
         k: 1.1,
         max_lod: 24,
         min_lod: 0,
-        size,
+        size: Vec2::splat(size),
     };
     let quadtree = QuadTree {
         root: QuadTreeNode::new(Vec2::ZERO, Vec2::splat(size), 0, 0),

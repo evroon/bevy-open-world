@@ -22,7 +22,7 @@ pub struct QuadTreeConfig {
     ///
     /// Then: 2^18 * 4 / 40_000_000 * 256 == 6.7
     /// So, we'll have 6.7 vertices per meter, or 1 vertex per 15 centimeter at max LOD (LOD 20).
-    pub size: f32,
+    pub size: Vec2,
 }
 
 #[derive(Component, Debug, Default, Clone)]
@@ -42,8 +42,6 @@ pub struct QuadTreeNode {
     pub y: i32,
     pub lod: u8,
 }
-
-pub const QUADTREE_SIZE: f32 = 40.0;
 
 #[derive(Component)]
 pub struct QuadTreeNodeComponent {

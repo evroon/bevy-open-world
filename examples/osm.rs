@@ -61,7 +61,7 @@ fn spawn_gizmo(
     mut meshes: ResMut<Assets<Mesh>>,
     mut standard_materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    let length = 50.0;
+    let length = 5000.0;
 
     commands.spawn((
         Mesh3d(meshes.add(Cuboid::from_size(length * Vec3::X * 10.0))),

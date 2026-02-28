@@ -15,7 +15,7 @@ pub fn build_planet(mut commands: Commands, radius: f32) {
         k: 1.1,
         max_lod: 24,
         min_lod: 2,
-        size: radius,
+        size: Vec2::splat(radius),
     };
     let quadtree = QuadTree {
         root: QuadTreeNode::new(Vec2::ZERO, Vec2::splat(radius), 0, 0),
