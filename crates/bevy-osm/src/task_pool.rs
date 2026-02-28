@@ -94,7 +94,6 @@ pub fn load_chunk(
         .get(elevation)
         .expect("Image should have loaded by now");
 
-    info!("tessssss");
     spawn_elevation_meshes(
         commands,
         meshes,
@@ -102,7 +101,6 @@ pub fn load_chunk(
         heightmap,
         chunk_entity,
         chunk.clone(),
-        config,
     );
 
     let thread_pool = AsyncComputeTaskPool::get();

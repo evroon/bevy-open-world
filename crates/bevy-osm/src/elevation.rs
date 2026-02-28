@@ -6,7 +6,7 @@ use bevy_terrain::{
     quadtree::ChunkLoaded,
 };
 
-use crate::{chunk::Chunk, config::OSMConfig};
+use crate::chunk::Chunk;
 use bevy::prelude::*;
 
 const ELEVATION_BASE_URL: &str = "https://tiles.mapterhorn.com";
@@ -100,7 +100,6 @@ pub fn spawn_elevation_meshes(
     heightmap: &Image,
     entity: Entity,
     chunk: Chunk,
-    _config: &Res<OSMConfig>,
 ) {
     let heights = iterate_mesh_vertices(IVec2::splat(TILE_VERTEX_COUNT), Rect::EMPTY)
         .map(|(x_local, y_local, ..)| {
@@ -114,25 +113,10 @@ pub fn spawn_elevation_meshes(
     let mesh = commands
         .spawn((
             Mesh3d(meshes.add(build_mesh_data(heights, IVec2::splat(TILE_VERTEX_COUNT)))),
-            // Transform::from_scale(Vec3::new(size_meters.x, 1.0, size_meters.y))
-            //     .with_translation(Vec3::new(origin_meters.x, 0.0, origin_meters.y)),
-            Transform::IDENTITY,
             MeshMaterial3d(materials.add(StandardMaterial {
                 base_color_texture: Some(chunk.raster),
                 ..Default::default()
             })),
-            // MeshMaterial3d(materials.add(StandardMaterial {
-            //     base_color: match chunk.z {
-            //         11 => TEAL.into(),
-            //         12 => FUCHSIA.into(),
-            //         13 => RED.into(),
-            //         14 => GREEN.into(),
-            //         15 => BLUE.into(),
-            //         16 => INDIGO.into(),
-            //         _ => WHITE.into(),
-            //     },
-            //     ..Default::default()
-            // })),
         ))
         .id();
     commands.entity(entity).insert(ChunkLoaded);

@@ -50,19 +50,17 @@ pub fn build_terrain_tile(mut commands: Commands, osm_config: Res<OSMConfig>) {
 
     let quadtree = commands
         .spawn((
-            Transform::IDENTITY,
+            Transform::from_scale(Vec3::new(area_meters.width(), 1.0, area_meters.height())),
             QuadTree,
             config.clone(),
-            Visibility::Inherited,
+            Visibility::Visible,
         ))
         .id();
 
     let root = commands
-        .spawn(QuadTreeNode::new(
-            Vec2::ZERO,
-            area_meters.size(),
-            chunk.x,
-            chunk.y,
+        .spawn((
+            QuadTreeNode::new(Vec2::ZERO, Vec2::ONE, chunk.x, chunk.y),
+            Transform::IDENTITY,
         ))
         .id();
     commands.entity(quadtree).add_child(root);

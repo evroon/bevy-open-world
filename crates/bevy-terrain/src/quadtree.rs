@@ -56,8 +56,8 @@ fn should_subdivide(object_rect: Rect, camera_position: Vec3, k: f32) -> bool {
     d < k * object_rect.width()
 }
 
-pub fn get_mesh(commands: &mut Commands, root_entity: &Entity, node: &QuadTreeNode) -> Entity {
-    let entity = commands.spawn((rect_to_transform(node.rect), node.clone()));
+pub fn get_mesh(commands: &mut Commands, root_entity: &Entity, node: QuadTreeNode) -> Entity {
+    let entity = commands.spawn((rect_to_transform(node.rect), node));
     let eid = entity.id();
     commands.entity(*root_entity).add_child(eid);
     eid
@@ -149,9 +149,9 @@ impl QuadTreeNode {
                 if all_loaded {
                     // ent_cmd.despawn();
                 } else {
-                    for c in child_entities {
-                        if let Ok(cc) = nodes.get(*c) {
-                            cc.1.build_around_point(config, *c, commands, nodes, ref_point);
+                    for ce in child_entities {
+                        if let Ok(cc) = nodes.get(*ce) {
+                            cc.1.build_around_point(config, *ce, commands, nodes, ref_point);
                         } else {
                             // println!("test");
                         }

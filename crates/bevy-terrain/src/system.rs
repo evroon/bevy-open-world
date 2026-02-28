@@ -106,6 +106,7 @@ pub fn update_terrain_quadtree(
     )>,
 ) {
     for (_, _, children, config, transform) in quadtrees.iter_mut() {
+        assert!(children.len() == 1);
         nodes.get(children[0]).unwrap().1.build_around_point(
             config,
             children[0],
