@@ -205,7 +205,7 @@ impl QuadTreeNode {
                 self.north_east = None;
                 self.north_west = None;
                 self.south_east = None;
-                self.north_east = None;
+                self.south_west = None;
             }
         } else {
             self.entity = Some(get_mesh(commands, root_entity, self));
