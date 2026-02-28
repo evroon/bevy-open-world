@@ -59,7 +59,7 @@ pub fn build_terrain_tile(mut commands: Commands, osm_config: Res<OSMConfig>) {
 
     let root = commands
         .spawn((
-            QuadTreeNode::new(Vec2::ZERO, Vec2::ONE, chunk.x, chunk.y),
+            QuadTreeNode::new(Vec2::ZERO, chunk.get_size_in_meters(), chunk.x, chunk.y),
             Transform::IDENTITY,
         ))
         .id();
