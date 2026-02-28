@@ -17,10 +17,45 @@ use bevy::{
     prelude::*,
     tasks::{AsyncComputeTaskPool, Task, block_on, futures_lite::future},
 };
-use bevy_terrain::quadtree::{ChunkLoaded, QuadTreeNode};
+use bevy_terrain::quadtree::{ChunkLoaded, DecreaseLOD, IncreaseLOD, QuadTreeNode};
 
 #[derive(Component)]
 pub struct ComputeTransform(pub Task<CommandQueue>);
+
+pub fn handle_decreased_lods(
+    mut commands: Commands,
+    nodes_to_load: Query<(Entity, &QuadTreeNode), With<DecreaseLOD>>,
+) {
+    nodes_to_load.iter().for_each(|(entity, _)| {
+        commands.entity(entity).remove::<Chunk>();
+        commands.entity(entity).remove::<ChunkLoaded>();
+        commands.entity(entity).remove::<DecreaseLOD>();
+        commands.entity(entity).despawn_children();
+    });
+}
+
+pub fn handle_increased_lods(
+    mut commands: Commands,
+    nodes_to_load: Query<(Entity, &Children, &QuadTreeNode), With<IncreaseLOD>>,
+    attached_meshes: Query<Entity, Without<QuadTreeNode>>,
+) {
+    nodes_to_load
+        .iter()
+        .for_each(|(entity, child_entities, _)| {
+            // println!(
+            //     "{}",
+            //     child_entities
+            //         .iter()
+            //         .filter_map(|c| attached_meshes.get(c).ok())
+            //         .count()
+            // );
+            // child_entities
+            //     .iter()
+            //     .filter_map(|c| attached_meshes.get(c).ok())
+            //     .for_each(|x| commands.entity(x).despawn());
+            commands.entity(entity).remove::<IncreaseLOD>();
+        });
+}
 
 pub fn preload_chunks(
     mut commands: Commands,

@@ -15,10 +15,16 @@ use crate::{
     chunk::Chunk,
     config::OSMConfig,
     material::MapMaterialHandle,
-    task_pool::{handle_tasks, load_unloaded_chunks, preload_chunks},
+    task_pool::{
+        handle_decreased_lods, handle_increased_lods, handle_tasks, load_unloaded_chunks,
+        preload_chunks,
+    },
 };
 use bevy::prelude::*;
-use bevy_terrain::quadtree::{QuadTree, QuadTreeConfig, QuadTreeNode};
+use bevy_terrain::{
+    quadtree::{QuadTree, QuadTreeConfig, QuadTreeNode},
+    system::update_terrain_quadtree,
+};
 
 pub struct OSMPlugin;
 
@@ -27,7 +33,16 @@ impl Plugin for OSMPlugin {
         app.init_resource::<MapMaterialHandle>()
             .init_resource::<OSMConfig>()
             .add_systems(Startup, build_terrain_tile)
-            .add_systems(Update, (handle_tasks, load_unloaded_chunks, preload_chunks));
+            .add_systems(
+                Update,
+                (
+                    handle_tasks,
+                    load_unloaded_chunks,
+                    preload_chunks.after(update_terrain_quadtree),
+                    handle_decreased_lods,
+                    handle_increased_lods,
+                ),
+            );
     }
 }
 
@@ -59,7 +74,13 @@ pub fn build_terrain_tile(mut commands: Commands, osm_config: Res<OSMConfig>) {
 
     let root = commands
         .spawn((
-            QuadTreeNode::new(Vec2::ZERO, chunk.get_size_in_meters(), chunk.x, chunk.y),
+            QuadTreeNode {
+                local_rect: Rect::from_center_size(Vec2::ZERO, Vec2::ONE),
+                world_rect: Rect::from_center_size(Vec2::ZERO, chunk.get_size_in_meters()),
+                x: chunk.x,
+                y: chunk.y,
+                lod: 0,
+            },
             Transform::IDENTITY,
         ))
         .id();

@@ -25,7 +25,8 @@ pub struct QuadTree;
 
 #[derive(Component, Debug, Default, Clone)]
 pub struct QuadTreeNode {
-    pub rect: Rect,
+    pub world_rect: Rect,
+    pub local_rect: Rect,
     pub x: i32,
     pub y: i32,
     pub lod: u8,
@@ -64,56 +65,49 @@ fn should_subdivide(object_rect: Rect, camera_position: Vec3, k: f32) -> bool {
 // }
 
 impl QuadTreeNode {
-    pub fn new(origin: Vec2, size: Vec2, x: i32, y: i32) -> Self {
-        QuadTreeNode {
-            rect: Rect::from_center_size(origin, size),
-            lod: 0,
-            x,
-            y,
-        }
-    }
-
     fn subdivide(&self, commands: &mut Commands, entity: Entity) {
         // calculate size of new segment by getting a half of the parent size
-        let h = self.rect.height() / 2.0;
-        let w = self.rect.width() / 2.0;
+        let h = self.world_rect.height() / 2.0;
+        let w = self.world_rect.width() / 2.0;
         let size_world = Vec2::new(w, h);
 
         // parent origin
-        let x = self.rect.center().x;
-        let y = self.rect.center().y;
+        let x = self.world_rect.center().x;
+        let y = self.world_rect.center().y;
 
         for (origin_world, origin_local, x, y) in [
             (
-                Vec2::new(x - (w / 2.0), y + (h / 2.0)),
-                Vec2::new(-0.25, 0.25),
+                Vec2::new(x + (w / 2.0), y - (h / 2.0)),
+                Vec2::new(0.25, -0.25),
                 2 * self.x + 1,
-                2 * self.y,
-            ),
-            (
-                Vec2::new(x + (w / 2.0), y + (h / 2.0)),
-                Vec2::new(0.25, 0.25),
-                2 * self.x,
                 2 * self.y,
             ),
             (
                 Vec2::new(x - (w / 2.0), y - (h / 2.0)),
                 Vec2::new(-0.25, -0.25),
+                2 * self.x,
+                2 * self.y,
+            ),
+            (
+                Vec2::new(x + (w / 2.0), y + (h / 2.0)),
+                Vec2::new(0.25, 0.25),
                 2 * self.x + 1,
                 2 * self.y + 1,
             ),
             (
-                Vec2::new(x + (w / 2.0), y - (h / 2.0)),
-                Vec2::new(0.25, -0.25),
+                Vec2::new(x - (w / 2.0), y + (h / 2.0)),
+                Vec2::new(-0.25, 0.25),
                 2 * self.x,
                 2 * self.y + 1,
             ),
         ] {
+            let local_rect = Rect::from_center_size(origin_local, Vec2::splat(0.5));
             let new = commands
                 .spawn((
-                    rect_to_transform(Rect::from_center_size(origin_local, Vec2::splat(0.5))),
+                    rect_to_transform(local_rect),
                     QuadTreeNode {
-                        rect: Rect::from_center_size(origin_world, size_world),
+                        world_rect: Rect::from_center_size(origin_world, size_world),
+                        local_rect,
                         lod: self.lod + 1,
                         x,
                         y,
@@ -140,7 +134,7 @@ impl QuadTreeNode {
         )>,
         ref_point: Vec3,
     ) {
-        let increase_lod = (should_subdivide(self.rect, ref_point, config.k)
+        let increase_lod = (should_subdivide(self.world_rect, ref_point, config.k)
             && self.lod < config.max_lod)
             || self.lod < config.min_lod;
 
@@ -154,31 +148,16 @@ impl QuadTreeNode {
 
             if child_entities.is_empty() {
                 self.subdivide(commands, entity);
-            } else {
-                let all_loaded = child_entities
-                    .iter()
-                    .map(|c| nodes.get(c).ok()?.3)
-                    .all(|x| x.is_some());
-
-                if all_loaded {
-                    // ent_cmd.despawn();
-                } else {
-                    for ce in child_entities {
-                        if let Ok(cc) = nodes.get(*ce) {
-                            cc.1.build_around_point(config, *ce, commands, nodes, ref_point);
-                        } else {
-                            // println!("test");
-                        }
+                for ce in child_entities {
+                    if let Ok(cc) = nodes.get(*ce) {
+                        cc.1.build_around_point(config, *ce, commands, nodes, ref_point);
+                    } else {
+                        commands.entity(*ce).despawn();
                     }
                 }
             }
-        } else if child_entities.iter().count() > 0 {
-            let (_, _, _, loaded, _, _) = nodes.get(entity).unwrap();
-            if loaded.is_some() {
-                // get_mesh(commands, &entity, self);
-            } else {
-                ent_cmd.insert_if_new(DecreaseLOD);
-            }
+        } else {
+            ent_cmd.insert_if_new(DecreaseLOD);
         }
     }
 }
