@@ -2,7 +2,7 @@ use std::path::Path;
 
 use crate::{
     building::spawn_building,
-    chunk::{Chunk, ChunkLoaded},
+    chunk::Chunk,
     config::OSMConfig,
     elevation::{
         TILE_VERTEX_COUNT, cache_elevation_for_chunk, cache_raster_tile_for_chunk,
@@ -17,14 +17,14 @@ use bevy::{
     prelude::*,
     tasks::{AsyncComputeTaskPool, Task, block_on, futures_lite::future},
 };
-use bevy_terrain::quadtree::QuadTreeNodeComponent;
+use bevy_terrain::quadtree::{ChunkLoaded, QuadTreeNode};
 
 #[derive(Component)]
 pub struct ComputeTransform(pub Task<CommandQueue>);
 
 pub fn preload_chunks(
     mut commands: Commands,
-    nodes_to_load: Query<(Entity, &QuadTreeNodeComponent), Without<Chunk>>,
+    nodes_to_load: Query<(Entity, &QuadTreeNode), Without<Chunk>>,
 ) {
     nodes_to_load.iter().for_each(|(entity, node)| {
         let chunk = Chunk {
@@ -94,6 +94,7 @@ pub fn load_chunk(
         .get(elevation)
         .expect("Image should have loaded by now");
 
+    info!("tessssss");
     spawn_elevation_meshes(
         commands,
         meshes,

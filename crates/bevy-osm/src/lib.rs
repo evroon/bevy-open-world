@@ -18,7 +18,7 @@ use crate::{
     task_pool::{handle_tasks, load_unloaded_chunks, preload_chunks},
 };
 use bevy::prelude::*;
-use bevy_terrain::quadtree::{MeshPool, QuadTree, QuadTreeConfig, QuadTreeNode};
+use bevy_terrain::quadtree::{QuadTree, QuadTreeConfig, QuadTreeNode};
 
 pub struct OSMPlugin;
 
@@ -32,8 +32,6 @@ impl Plugin for OSMPlugin {
 }
 
 pub fn build_terrain_tile(mut commands: Commands, osm_config: Res<OSMConfig>) {
-    commands.spawn(MeshPool::new());
-
     let chunk = Chunk {
         x: 1066,
         y: 746,
@@ -49,14 +47,23 @@ pub fn build_terrain_tile(mut commands: Commands, osm_config: Res<OSMConfig>) {
         size: chunk.get_size_in_meters().x,
     };
     let area_meters = chunk.get_area_in_meters(osm_config.location.get_world_center());
-    let quadtree = QuadTree {
-        root: QuadTreeNode::new(Vec2::ZERO, area_meters.size(), chunk.x, chunk.y),
-    };
 
-    commands.spawn((
-        Transform::IDENTITY,
-        quadtree.clone(),
-        config.clone(),
-        Visibility::Inherited,
-    ));
+    let quadtree = commands
+        .spawn((
+            Transform::IDENTITY,
+            QuadTree,
+            config.clone(),
+            Visibility::Inherited,
+        ))
+        .id();
+
+    let root = commands
+        .spawn(QuadTreeNode::new(
+            Vec2::ZERO,
+            area_meters.size(),
+            chunk.x,
+            chunk.y,
+        ))
+        .id();
+    commands.entity(quadtree).add_child(root);
 }

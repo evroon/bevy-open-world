@@ -2,26 +2,26 @@ use std::f32::consts::PI;
 
 use bevy::prelude::*;
 
-use super::quadtree::{MeshPool, QuadTree, QuadTreeConfig, QuadTreeNode};
+use crate::quadtree::{ChunkLoaded, DecreaseLOD, IncreaseLOD};
+
+use super::quadtree::{QuadTree, QuadTreeConfig, QuadTreeNode};
 
 pub fn build_planets(commands: Commands) {
     build_planet(commands, 40.0);
 }
 
 pub fn build_planet(mut commands: Commands, radius: f32) {
-    commands.spawn(MeshPool::new());
-
     let config = QuadTreeConfig {
         k: 1.1,
         max_lod: 24,
         min_lod: 2,
         size: radius,
     };
-    let quadtree = QuadTree {
-        root: QuadTreeNode::new(Vec2::ZERO, Vec2::splat(radius), 0, 0),
-    };
+    let quadtree = QuadTree {};
 
     // Top
+    // TODO: insert root:
+    // QuadTreeNode::new(Vec2::ZERO, Vec2::splat(radius), 0, 0)
     commands.spawn((
         Transform::from_translation(Vec3::new(0.0, radius * 0.5, 0.0)),
         quadtree.clone(),
@@ -85,18 +85,32 @@ pub fn build_planet(mut commands: Commands, radius: f32) {
     ));
 }
 
+#[expect(clippy::type_complexity)]
 pub fn update_terrain_quadtree(
     mut commands: Commands,
     camera: Single<&Transform, With<Camera>>,
-    mut quadtrees: Query<(Entity, &mut QuadTree, &QuadTreeConfig, &Transform)>,
-    mut mesh_pool: Single<&mut MeshPool>,
+    mut quadtrees: Query<(
+        Entity,
+        &mut QuadTree,
+        &Children,
+        &QuadTreeConfig,
+        &Transform,
+    )>,
+    nodes: Query<(
+        Entity,
+        &mut QuadTreeNode,
+        Option<&Children>,
+        Option<&ChunkLoaded>,
+        Option<&DecreaseLOD>,
+        Option<&IncreaseLOD>,
+    )>,
 ) {
-    for (entity, mut quadtree, config, transform) in quadtrees.iter_mut() {
-        quadtree.root.build_around_point(
+    for (_, _, children, config, transform) in quadtrees.iter_mut() {
+        nodes.get(children[0]).unwrap().1.build_around_point(
             config,
-            &entity,
-            &mut mesh_pool,
+            children[0],
             &mut commands,
+            &nodes,
             Vec3::new(
                 -camera.translation.z,
                 camera.translation.y,

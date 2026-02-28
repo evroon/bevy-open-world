@@ -14,9 +14,6 @@ use osm::OSM;
 pub const LAT_LON_TO_METERS_CONVERSION: Vec2 = Vec2::splat(1.1e5);
 const OVERPASS_BASE_URL: &str = "https://overpass-api.de/api/map";
 
-#[derive(Component)]
-pub struct ChunkLoaded;
-
 #[derive(Debug, PartialEq, Clone, Component)]
 pub struct Chunk {
     pub x: i32,

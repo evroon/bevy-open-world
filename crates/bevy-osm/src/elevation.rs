@@ -1,12 +1,12 @@
 use std::{fs::File, io::Write, path::Path};
 
-use bevy::log::info;
-use bevy_terrain::mesh::{HeightMap, build_mesh_data, iterate_mesh_vertices};
-
-use crate::{
-    chunk::{Chunk, ChunkLoaded},
-    config::OSMConfig,
+use bevy::log::debug;
+use bevy_terrain::{
+    mesh::{HeightMap, build_mesh_data, iterate_mesh_vertices},
+    quadtree::ChunkLoaded,
 };
+
+use crate::{chunk::Chunk, config::OSMConfig};
 use bevy::prelude::*;
 
 const ELEVATION_BASE_URL: &str = "https://tiles.mapterhorn.com";
@@ -26,7 +26,7 @@ pub fn cache_elevation_for_chunk(chunk: &Chunk) {
         let (z, x, y) = (chunk.z, chunk.x, chunk.y);
         let url = format!("{ELEVATION_BASE_URL}/{z}/{x}/{y}.webp");
         let request = ehttp::Request::get(url.clone());
-        info!("Downloading elevation tile for {url}");
+        debug!("Downloading elevation tile for {url}");
 
         ehttp::fetch(request, move |response| {
             let path = Path::new(&path_str);
@@ -57,7 +57,7 @@ pub fn cache_raster_tile_for_chunk(chunk: &Chunk) {
         let (z, x, y) = (chunk.z, chunk.x, chunk.y);
         let url = format!("{RASTER_BASE_URL}/{z}/{x}/{y}.png");
         let request = ehttp::Request::get(url.clone());
-        info!("Downloading raster tile for {url}");
+        debug!("Downloading raster tile for {url}");
 
         ehttp::fetch(request, move |response| {
             let path = Path::new(&path_str);
