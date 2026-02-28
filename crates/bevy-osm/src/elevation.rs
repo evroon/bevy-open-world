@@ -1,6 +1,10 @@
 use std::{f32::consts::PI, fs::File, io::Write, path::Path};
 
-use bevy::{log::info, math::Affine2};
+use bevy::{
+    color::palettes::css::{BLUE, FUCHSIA, GREEN, INDIGO, RED, TEAL, WHITE},
+    log::info,
+    math::Affine2,
+};
 use bevy_terrain::mesh::{HeightMap, build_mesh_data, iterate_mesh_vertices};
 
 use crate::{
@@ -117,23 +121,23 @@ pub fn spawn_elevation_meshes(
             // Transform::from_scale(Vec3::new(size_meters.x, 1.0, size_meters.y))
             //     .with_translation(Vec3::new(origin_meters.x, 0.0, origin_meters.y)),
             Transform::IDENTITY,
-            MeshMaterial3d(materials.add(StandardMaterial {
-                base_color_texture: Some(chunk.raster),
-                uv_transform: Affine2::from_angle_translation(PI * 0.5, Vec2::new(1.0, 0.0)),
-                ..Default::default()
-            })),
             // MeshMaterial3d(materials.add(StandardMaterial {
-            //     base_color: match chunk.z {
-            //         11 => TEAL.into(),
-            //         12 => FUCHSIA.into(),
-            //         13 => RED.into(),
-            //         14 => GREEN.into(),
-            //         15 => BLUE.into(),
-            //         16 => INDIGO.into(),
-            //         _ => WHITE.into(),
-            //     },
+            //     base_color_texture: Some(chunk.raster),
+            //     uv_transform: Affine2::from_angle_translation(PI * 0.5, Vec2::new(1.0, 0.0)),
             //     ..Default::default()
             // })),
+            MeshMaterial3d(materials.add(StandardMaterial {
+                base_color: match chunk.z {
+                    11 => TEAL.into(),
+                    12 => FUCHSIA.into(),
+                    13 => RED.into(),
+                    14 => GREEN.into(),
+                    15 => BLUE.into(),
+                    16 => INDIGO.into(),
+                    _ => WHITE.into(),
+                },
+                ..Default::default()
+            })),
         ))
         .id();
     commands.entity(entity).insert(ChunkLoaded);

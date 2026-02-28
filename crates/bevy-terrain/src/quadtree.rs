@@ -47,6 +47,13 @@ pub struct QuadTreeNodeComponent {
     pub lod: u8,
     pub rect: Rect,
 }
+#[derive(Component)]
+pub struct IncreaseLOD;
+
+#[derive(Component)]
+pub struct DecreaseLOD;
+#[derive(Component)]
+pub struct ChunkLoaded;
 
 /// subdivide based on non-euclidian max(dx, dy, dz) distance from camera
 ///
@@ -76,16 +83,6 @@ pub fn get_mesh(commands: &mut Commands, root_entity: &Entity, node: &QuadTreeNo
     let eid = entity.id();
     commands.entity(*root_entity).add_child(eid);
     eid
-}
-
-fn despawn_mesh(commands: &mut Commands, entity_id: Entity) {
-    if let Ok(mut entity) = commands.get_entity(entity_id) {
-        // entity.insert(Visibility::Hidden);
-        entity.despawn();
-        // self.0.push_back(entity_id);
-    } else {
-        panic!("could not despawn mesh");
-    }
 }
 
 impl QuadTreeNode {
@@ -139,7 +136,7 @@ impl QuadTreeNode {
 
     pub fn destruct(&mut self, root_entity: &Entity, commands: &mut Commands) {
         if let Some(entity_id) = self.entity {
-            despawn_mesh(commands, entity_id);
+            commands.get_entity(entity_id).unwrap().despawn();
             commands
                 .get_entity(*root_entity)
                 .unwrap()
@@ -159,25 +156,40 @@ impl QuadTreeNode {
         }
     }
 
+    #[expect(clippy::type_complexity)]
     pub fn build_around_point(
         &mut self,
         config: &QuadTreeConfig,
         root_entity: &Entity,
         commands: &mut Commands,
         ref_point: Vec3,
+        nodes_query: &Query<(
+            Entity,
+            &mut QuadTreeNodeComponent,
+            Option<&Children>,
+            Option<&ChunkLoaded>,
+            Option<&DecreaseLOD>,
+            Option<&IncreaseLOD>,
+        )>,
     ) {
         let increase_lod = (should_subdivide(self.rect, ref_point, config.k)
             && self.lod < config.max_lod)
             || self.lod < config.min_lod;
 
         if increase_lod {
-            if let Some(prev_en) = self.entity {
-                despawn_mesh(commands, prev_en);
-                self.entity = None;
-            }
-
             if self.north_east.is_none() {
                 self.subdivide();
+            } else if let Some(ent) = self.entity {
+                let children = nodes_query.get(ent).unwrap().2.unwrap();
+                let all_loaded = children
+                    .iter()
+                    .map(|c| nodes_query.get(c).ok()?.3)
+                    .all(|x| x.is_some());
+
+                if all_loaded {
+                    commands.get_entity(ent).unwrap().despawn();
+                    self.entity = None;
+                }
             }
 
             for child in [
@@ -186,25 +198,30 @@ impl QuadTreeNode {
                 self.south_east.as_mut().unwrap(),
                 self.south_west.as_mut().unwrap(),
             ] {
-                child.build_around_point(config, root_entity, commands, ref_point);
+                child.build_around_point(config, root_entity, commands, ref_point, nodes_query);
             }
-        } else {
-            if let Some(north_east) = &mut self.north_east {
-                north_east.destruct(root_entity, commands);
-
+        } else if let Some(ent) = self.entity {
+            let loaded = nodes_query.get(ent).unwrap().3.is_some();
+            if loaded {
+                println!("loaded");
+            }
+            if self.north_east.is_some() {
                 for child in [
                     self.north_east.as_mut().unwrap(),
                     self.north_west.as_mut().unwrap(),
                     self.south_east.as_mut().unwrap(),
                     self.south_west.as_mut().unwrap(),
                 ] {
+                    println!("destr");
                     child.destruct(root_entity, commands);
                 }
+                self.north_east = None;
+                self.north_west = None;
+                self.south_east = None;
+                self.north_east = None;
             }
-
-            if self.entity.is_none() {
-                self.entity = Some(get_mesh(commands, root_entity, self));
-            }
+        } else {
+            self.entity = Some(get_mesh(commands, root_entity, self));
         }
     }
 }

@@ -2,6 +2,8 @@ use std::f32::consts::PI;
 
 use bevy::prelude::*;
 
+use crate::quadtree::{ChunkLoaded, DecreaseLOD, IncreaseLOD, QuadTreeNodeComponent};
+
 use super::quadtree::{QuadTree, QuadTreeConfig, QuadTreeNode};
 
 pub fn build_planets(commands: Commands) {
@@ -83,10 +85,19 @@ pub fn build_planet(mut commands: Commands, radius: f32) {
     ));
 }
 
+#[expect(clippy::type_complexity)]
 pub fn update_terrain_quadtree(
     mut commands: Commands,
     camera: Single<&Transform, With<Camera>>,
     mut quadtrees: Query<(Entity, &mut QuadTree, &QuadTreeConfig, &Transform)>,
+    nodes_query: Query<(
+        Entity,
+        &mut QuadTreeNodeComponent,
+        Option<&Children>,
+        Option<&ChunkLoaded>,
+        Option<&DecreaseLOD>,
+        Option<&IncreaseLOD>,
+    )>,
 ) {
     for (entity, mut quadtree, config, transform) in quadtrees.iter_mut() {
         quadtree.root.build_around_point(
@@ -94,10 +105,11 @@ pub fn update_terrain_quadtree(
             &entity,
             &mut commands,
             Vec3::new(
-                -camera.translation.z,
-                camera.translation.y,
                 camera.translation.x,
+                camera.translation.y,
+                camera.translation.z,
             ) - transform.translation,
+            &nodes_query,
         );
     }
 }
