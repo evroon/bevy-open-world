@@ -1,11 +1,6 @@
-use std::collections::VecDeque;
-
 use bevy::prelude::*;
 
 use crate::mesh::rect_to_transform;
-
-#[derive(Component, Debug, Default)]
-pub struct MeshPool(pub VecDeque<Entity>);
 
 #[derive(Component, Debug, Default, Clone)]
 pub struct QuadTreeConfig {
@@ -68,39 +63,28 @@ fn should_subdivide(object_rect: Rect, camera_position: Vec3, k: f32) -> bool {
     d < k * object_rect.width()
 }
 
-impl MeshPool {
-    pub fn new() -> Self {
-        Self(VecDeque::new())
-    }
+pub fn get_mesh(commands: &mut Commands, root_entity: &Entity, node: &QuadTreeNode) -> Entity {
+    let entity = commands.spawn((
+        rect_to_transform(node.rect),
+        QuadTreeNodeComponent {
+            x: node.x,
+            y: node.y,
+            lod: node.lod,
+            rect: node.rect,
+        },
+    ));
+    let eid = entity.id();
+    commands.entity(*root_entity).add_child(eid);
+    eid
+}
 
-    pub fn get_mesh(
-        &mut self,
-        commands: &mut Commands,
-        root_entity: &Entity,
-        node: &QuadTreeNode,
-    ) -> Entity {
-        let entity = commands.spawn((
-            rect_to_transform(node.rect),
-            QuadTreeNodeComponent {
-                x: node.x,
-                y: node.y,
-                lod: node.lod,
-                rect: node.rect,
-            },
-        ));
-        let eid = entity.id();
-        commands.entity(*root_entity).add_child(eid);
-        eid
-    }
-
-    fn despawn_mesh(&mut self, commands: &mut Commands, entity_id: Entity) {
-        if let Ok(mut entity) = commands.get_entity(entity_id) {
-            // entity.insert(Visibility::Hidden);
-            entity.despawn();
-            // self.0.push_back(entity_id);
-        } else {
-            panic!("could not despawn mesh");
-        }
+fn despawn_mesh(commands: &mut Commands, entity_id: Entity) {
+    if let Ok(mut entity) = commands.get_entity(entity_id) {
+        // entity.insert(Visibility::Hidden);
+        entity.despawn();
+        // self.0.push_back(entity_id);
+    } else {
+        panic!("could not despawn mesh");
     }
 }
 
@@ -135,11 +119,11 @@ impl QuadTreeNode {
         let x = self.rect.center().x;
         let y = self.rect.center().y;
 
-        // calculate origin point for each new section
-        let ne_origin = Vec2::new(x - (w / 2.0), y + (h / 2.0));
-        let nw_origin = Vec2::new(x + (w / 2.0), y + (h / 2.0));
-        let se_origin = Vec2::new(x - (w / 2.0), y - (h / 2.0));
-        let sw_origin = Vec2::new(x + (w / 2.0), y - (h / 2.0));
+        // calculate origin point for each new section (+Y (and therefore +Z) is south, X is east)
+        let ne_origin = Vec2::new(x + (w / 2.0), y - (h / 2.0));
+        let nw_origin = Vec2::new(x - (w / 2.0), y - (h / 2.0));
+        let se_origin = Vec2::new(x + (w / 2.0), y + (h / 2.0));
+        let sw_origin = Vec2::new(x - (w / 2.0), y + (h / 2.0));
 
         // create new tree segments
         let build_child_segment = |origin: &Vec2, x: i32, y: i32| {
@@ -153,14 +137,9 @@ impl QuadTreeNode {
         self.south_west = build_child_segment(&sw_origin, 2 * self.x, 2 * self.y + 1);
     }
 
-    pub fn destruct(
-        &mut self,
-        mesh_pool: &mut MeshPool,
-        root_entity: &Entity,
-        commands: &mut Commands,
-    ) {
+    pub fn destruct(&mut self, root_entity: &Entity, commands: &mut Commands) {
         if let Some(entity_id) = self.entity {
-            mesh_pool.despawn_mesh(commands, entity_id);
+            despawn_mesh(commands, entity_id);
             commands
                 .get_entity(*root_entity)
                 .unwrap()
@@ -168,20 +147,15 @@ impl QuadTreeNode {
             self.entity = None;
         }
 
-        if let Some(north_east) = &mut self.north_east {
-            north_east.destruct(mesh_pool, root_entity, commands);
-            self.north_west
-                .as_mut()
-                .unwrap()
-                .destruct(mesh_pool, root_entity, commands);
-            self.south_east
-                .as_mut()
-                .unwrap()
-                .destruct(mesh_pool, root_entity, commands);
-            self.south_west
-                .as_mut()
-                .unwrap()
-                .destruct(mesh_pool, root_entity, commands);
+        if self.north_east.is_some() {
+            for child in [
+                self.north_east.as_mut().unwrap(),
+                self.north_west.as_mut().unwrap(),
+                self.south_east.as_mut().unwrap(),
+                self.south_west.as_mut().unwrap(),
+            ] {
+                child.destruct(root_entity, commands);
+            }
         }
     }
 
@@ -189,7 +163,6 @@ impl QuadTreeNode {
         &mut self,
         config: &QuadTreeConfig,
         root_entity: &Entity,
-        mesh_pool: &mut MeshPool,
         commands: &mut Commands,
         ref_point: Vec3,
     ) {
@@ -199,7 +172,7 @@ impl QuadTreeNode {
 
         if increase_lod {
             if let Some(prev_en) = self.entity {
-                mesh_pool.despawn_mesh(commands, prev_en);
+                despawn_mesh(commands, prev_en);
                 self.entity = None;
             }
 
@@ -207,53 +180,30 @@ impl QuadTreeNode {
                 self.subdivide();
             }
 
-            self.north_east.as_mut().unwrap().build_around_point(
-                config,
-                root_entity,
-                mesh_pool,
-                commands,
-                ref_point,
-            );
-            self.north_west.as_mut().unwrap().build_around_point(
-                config,
-                root_entity,
-                mesh_pool,
-                commands,
-                ref_point,
-            );
-            self.south_east.as_mut().unwrap().build_around_point(
-                config,
-                root_entity,
-                mesh_pool,
-                commands,
-                ref_point,
-            );
-            self.south_west.as_mut().unwrap().build_around_point(
-                config,
-                root_entity,
-                mesh_pool,
-                commands,
-                ref_point,
-            );
+            for child in [
+                self.north_east.as_mut().unwrap(),
+                self.north_west.as_mut().unwrap(),
+                self.south_east.as_mut().unwrap(),
+                self.south_west.as_mut().unwrap(),
+            ] {
+                child.build_around_point(config, root_entity, commands, ref_point);
+            }
         } else {
             if let Some(north_east) = &mut self.north_east {
-                north_east.destruct(mesh_pool, root_entity, commands);
-                self.north_west
-                    .as_mut()
-                    .unwrap()
-                    .destruct(mesh_pool, root_entity, commands);
-                self.south_east
-                    .as_mut()
-                    .unwrap()
-                    .destruct(mesh_pool, root_entity, commands);
-                self.south_west
-                    .as_mut()
-                    .unwrap()
-                    .destruct(mesh_pool, root_entity, commands);
+                north_east.destruct(root_entity, commands);
+
+                for child in [
+                    self.north_east.as_mut().unwrap(),
+                    self.north_west.as_mut().unwrap(),
+                    self.south_east.as_mut().unwrap(),
+                    self.south_west.as_mut().unwrap(),
+                ] {
+                    child.destruct(root_entity, commands);
+                }
             }
 
             if self.entity.is_none() {
-                self.entity = Some(mesh_pool.get_mesh(commands, root_entity, self));
+                self.entity = Some(get_mesh(commands, root_entity, self));
             }
         }
     }

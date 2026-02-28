@@ -18,7 +18,7 @@ use crate::{
     task_pool::{handle_tasks, load_unloaded_chunks, preload_chunks},
 };
 use bevy::prelude::*;
-use bevy_terrain::quadtree::{MeshPool, QuadTree, QuadTreeConfig, QuadTreeNode};
+use bevy_terrain::quadtree::{QuadTree, QuadTreeConfig, QuadTreeNode};
 
 pub struct OSMPlugin;
 
@@ -32,8 +32,6 @@ impl Plugin for OSMPlugin {
 }
 
 pub fn build_terrain_tile(mut commands: Commands, osm_config: Res<OSMConfig>) {
-    commands.spawn(MeshPool::new());
-
     let chunk = Chunk {
         x: 1066,
         y: 746,

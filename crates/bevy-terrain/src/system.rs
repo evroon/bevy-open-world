@@ -2,15 +2,13 @@ use std::f32::consts::PI;
 
 use bevy::prelude::*;
 
-use super::quadtree::{MeshPool, QuadTree, QuadTreeConfig, QuadTreeNode};
+use super::quadtree::{QuadTree, QuadTreeConfig, QuadTreeNode};
 
 pub fn build_planets(commands: Commands) {
     build_planet(commands, 40.0);
 }
 
 pub fn build_planet(mut commands: Commands, radius: f32) {
-    commands.spawn(MeshPool::new());
-
     let config = QuadTreeConfig {
         k: 1.1,
         max_lod: 24,
@@ -89,13 +87,11 @@ pub fn update_terrain_quadtree(
     mut commands: Commands,
     camera: Single<&Transform, With<Camera>>,
     mut quadtrees: Query<(Entity, &mut QuadTree, &QuadTreeConfig, &Transform)>,
-    mut mesh_pool: Single<&mut MeshPool>,
 ) {
     for (entity, mut quadtree, config, transform) in quadtrees.iter_mut() {
         quadtree.root.build_around_point(
             config,
             &entity,
-            &mut mesh_pool,
             &mut commands,
             Vec3::new(
                 -camera.translation.z,

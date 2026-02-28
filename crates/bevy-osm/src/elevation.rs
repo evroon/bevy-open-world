@@ -1,6 +1,6 @@
-use std::{fs::File, io::Write, path::Path};
+use std::{f32::consts::PI, fs::File, io::Write, path::Path};
 
-use bevy::log::info;
+use bevy::{log::info, math::Affine2};
 use bevy_terrain::mesh::{HeightMap, build_mesh_data, iterate_mesh_vertices};
 
 use crate::{
@@ -86,8 +86,8 @@ pub fn get_elevation_local(image: &Image, local_coords: IVec2) -> f32 {
         image
             .get_color_at(
                 // Clamp to border
+                (DOWNSAMPLE_FACTOR * local_coords.x).clamp(0, TILE_PIXEL_COUNT - 1) as u32,
                 (DOWNSAMPLE_FACTOR * local_coords.y).clamp(0, TILE_PIXEL_COUNT - 1) as u32,
-                (512 - DOWNSAMPLE_FACTOR * local_coords.x).clamp(0, TILE_PIXEL_COUNT - 1) as u32,
             )
             .unwrap(),
     )
@@ -119,6 +119,7 @@ pub fn spawn_elevation_meshes(
             Transform::IDENTITY,
             MeshMaterial3d(materials.add(StandardMaterial {
                 base_color_texture: Some(chunk.raster),
+                uv_transform: Affine2::from_angle_translation(PI * 0.5, Vec2::new(1.0, 0.0)),
                 ..Default::default()
             })),
             // MeshMaterial3d(materials.add(StandardMaterial {

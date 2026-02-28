@@ -7,7 +7,7 @@ pub mod water;
 
 use bevy::{pbr::ExtendedMaterial, prelude::*};
 
-use quadtree::{MeshPool, QuadTree, QuadTreeConfig, QuadTreeNode};
+use quadtree::{QuadTree, QuadTreeConfig, QuadTreeNode};
 
 use crate::{mesh::build_mesh_cache, system::update_terrain_quadtree, water::Water};
 
@@ -29,7 +29,6 @@ impl Plugin for TerrainPlugin {
 
 pub fn build_terrain_tile(mut commands: Commands) {
     let size = 40.0;
-    commands.spawn(MeshPool::new());
 
     let config = QuadTreeConfig {
         k: 1.1,
