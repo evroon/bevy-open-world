@@ -30,7 +30,7 @@ pub fn preload_chunks(
         let chunk = Chunk {
             x: node.x,
             y: node.y,
-            z: node.lod as i8 + 11,
+            z: node.lod as i8 + 9,
             elevation: Handle::default(),
             raster: Handle::default(),
         };

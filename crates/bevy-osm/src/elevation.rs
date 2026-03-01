@@ -136,14 +136,13 @@ pub fn spawn_elevation_meshes(
     let mesh = commands
         .spawn((
             Mesh3d(meshes.add(build_mesh_data(heights, IVec2::splat(TILE_VERTEX_COUNT)))),
-            // Transform::from_scale(Vec3::new(size_meters.x, 1.0, size_meters.y))
-            //     .with_translation(Vec3::new(origin_meters.x, 0.0, origin_meters.y)),
             Transform::IDENTITY,
             MeshMaterial3d(materials.add(StandardMaterial {
                 base_color_texture: Some(chunk.raster),
                 uv_transform: Affine2::from_angle_translation(PI * 0.5, Vec2::new(1.0, 0.0)),
                 ..Default::default()
             })),
+            // _debug_material(materials, &chunk),
         ))
         .id();
     commands.entity(entity).insert(ChunkLoaded);

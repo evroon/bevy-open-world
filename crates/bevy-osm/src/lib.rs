@@ -33,9 +33,9 @@ impl Plugin for OSMPlugin {
 
 pub fn build_terrain_tile(mut commands: Commands, osm_config: Res<OSMConfig>) {
     let chunk = Chunk {
-        x: 1066,
-        y: 746,
-        z: 11,
+        x: 266,
+        y: 186,
+        z: 9,
         elevation: Handle::default(),
         raster: Handle::default(),
     };
@@ -43,7 +43,7 @@ pub fn build_terrain_tile(mut commands: Commands, osm_config: Res<OSMConfig>) {
     let config = QuadTreeConfig {
         k: 1.1,
         min_lod: 0,
-        max_lod: 5,
+        max_lod: 7,
         size: chunk.get_size_in_meters().x,
     };
     let area_meters = chunk.get_area_in_meters(osm_config.location.get_world_center());
