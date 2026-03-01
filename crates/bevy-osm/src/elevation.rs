@@ -97,7 +97,10 @@ pub fn get_elevation_local(image: &Image, local_coords: IVec2) -> f32 {
     )
 }
 
-fn _debug_material() -> MeshMaterial3d {
+fn _debug_material(
+    materials: &mut ResMut<Assets<StandardMaterial>>,
+    chunk: &Chunk,
+) -> MeshMaterial3d<StandardMaterial> {
     MeshMaterial3d(materials.add(StandardMaterial {
         base_color: match chunk.z {
             11 => TEAL.into(),
