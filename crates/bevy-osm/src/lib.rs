@@ -9,6 +9,7 @@ pub mod osm_types;
 pub mod task_pool;
 mod theme;
 mod tile;
+pub mod ui;
 
 extern crate osm_xml as osm;
 use crate::{
@@ -16,8 +17,10 @@ use crate::{
     config::OSMConfig,
     material::MapMaterialHandle,
     task_pool::{handle_tasks, load_unloaded_chunks, preload_chunks},
+    ui::setup_osm_ui,
 };
 use bevy::prelude::*;
+use bevy_egui::EguiPrimaryContextPass;
 use bevy_terrain::quadtree::{QuadTree, QuadTreeConfig, QuadTreeNode};
 
 pub struct OSMPlugin;
@@ -26,6 +29,7 @@ impl Plugin for OSMPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<MapMaterialHandle>()
             .init_resource::<OSMConfig>()
+            .add_systems(EguiPrimaryContextPass, setup_osm_ui)
             .add_systems(Startup, build_terrain_tile)
             .add_systems(Update, (handle_tasks, load_unloaded_chunks, preload_chunks));
     }

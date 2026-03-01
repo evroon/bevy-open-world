@@ -5,7 +5,6 @@ use bevy_egui::EguiPlugin;
 use bevy_flight_sim::runway::spawn_aircraft;
 use bevy_osm::OSMPlugin;
 use bevy_osm::config::OSMConfig;
-use bevy_osm::location::Location;
 use bevy_terrain::camera::{
     get_camera_bundle_for_open_world, rotate_sun, setup_lighting_for_open_world,
 };
@@ -19,9 +18,7 @@ fn main() {
         .insert_resource(ClearColor(Color::linear_rgb(0.4, 0.4, 0.4)))
         .insert_resource(DefaultOpaqueRendererMethod::deferred())
         .insert_resource(MovementSettings { speed: 128.0 })
-        .insert_resource(OSMConfig {
-            location: Location::MonacoCenter,
-        })
+        .insert_resource(OSMConfig::default())
         .add_plugins((
             DefaultPlugins,
             OSMPlugin,
