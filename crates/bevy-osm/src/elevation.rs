@@ -10,7 +10,10 @@ use bevy_terrain::{
     quadtree::ChunkLoaded,
 };
 
-use crate::{chunk::Chunk, config::OSMConfig};
+use crate::{
+    chunk::Chunk,
+    config::{OSMConfig, RasterTileSource},
+};
 use bevy::prelude::*;
 
 const ELEVATION_BASE_URL: &str = "https://tiles.mapterhorn.com";
@@ -97,7 +100,7 @@ pub fn get_elevation_local(image: &Image, local_coords: IVec2) -> f32 {
     )
 }
 
-fn _debug_material(
+fn debug_material(
     materials: &mut ResMut<Assets<StandardMaterial>>,
     chunk: &Chunk,
 ) -> MeshMaterial3d<StandardMaterial> {
@@ -122,7 +125,7 @@ pub fn spawn_elevation_meshes(
     heightmap: &Image,
     entity: Entity,
     chunk: Chunk,
-    _config: &Res<OSMConfig>,
+    config: &Res<OSMConfig>,
 ) {
     let heights = iterate_mesh_vertices(IVec2::splat(TILE_VERTEX_COUNT), Rect::EMPTY)
         .map(|(x_local, y_local, ..)| {
@@ -133,16 +136,21 @@ pub fn spawn_elevation_meshes(
         })
         .collect::<HeightMap>();
 
+    let material = match config.as_ref().raster_tile_source {
+        RasterTileSource::Debug => debug_material(materials, &chunk),
+        RasterTileSource::OSMDefault => MeshMaterial3d(materials.add(StandardMaterial {
+            base_color_texture: Some(chunk.raster),
+            uv_transform: Affine2::from_angle_translation(PI * 0.5, Vec2::new(1.0, 0.0)),
+            ..Default::default()
+        })),
+        RasterTileSource::CesiumGoogle => debug_material(materials, &chunk),
+    };
+
     let mesh = commands
         .spawn((
             Mesh3d(meshes.add(build_mesh_data(heights, IVec2::splat(TILE_VERTEX_COUNT)))),
             Transform::IDENTITY,
-            MeshMaterial3d(materials.add(StandardMaterial {
-                base_color_texture: Some(chunk.raster),
-                uv_transform: Affine2::from_angle_translation(PI * 0.5, Vec2::new(1.0, 0.0)),
-                ..Default::default()
-            })),
-            // _debug_material(materials, &chunk),
+            material,
         ))
         .id();
     commands.entity(entity).insert(ChunkLoaded);

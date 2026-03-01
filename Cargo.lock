@@ -491,6 +491,7 @@ dependencies = [
  "async-std",
  "bevy",
  "bevy-terrain",
+ "bevy_egui",
  "csv",
  "ehttp",
  "geo",
