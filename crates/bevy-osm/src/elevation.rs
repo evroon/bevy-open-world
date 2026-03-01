@@ -1,7 +1,7 @@
 use std::{f32::consts::PI, fs::File, io::Write, path::Path};
 
 use bevy::{
-    // color::palettes::css::{BLUE, FUCHSIA, GREEN, INDIGO, RED, TEAL, WHITE},
+    color::palettes::css::{BLUE, FUCHSIA, GREEN, INDIGO, RED, TEAL, WHITE},
     log::info,
     math::Affine2,
 };
@@ -97,6 +97,21 @@ pub fn get_elevation_local(image: &Image, local_coords: IVec2) -> f32 {
     )
 }
 
+fn _debug_material() -> MeshMaterial3d {
+    MeshMaterial3d(materials.add(StandardMaterial {
+        base_color: match chunk.z {
+            11 => TEAL.into(),
+            12 => FUCHSIA.into(),
+            13 => RED.into(),
+            14 => GREEN.into(),
+            15 => BLUE.into(),
+            16 => INDIGO.into(),
+            _ => WHITE.into(),
+        },
+        ..Default::default()
+    }))
+}
+
 pub fn spawn_elevation_meshes(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
@@ -126,18 +141,6 @@ pub fn spawn_elevation_meshes(
                 uv_transform: Affine2::from_angle_translation(PI * 0.5, Vec2::new(1.0, 0.0)),
                 ..Default::default()
             })),
-            // MeshMaterial3d(materials.add(StandardMaterial {
-            //     base_color: match chunk.z {
-            //         11 => TEAL.into(),
-            //         12 => FUCHSIA.into(),
-            //         13 => RED.into(),
-            //         14 => GREEN.into(),
-            //         15 => BLUE.into(),
-            //         16 => INDIGO.into(),
-            //         _ => WHITE.into(),
-            //     },
-            //     ..Default::default()
-            // })),
         ))
         .id();
     commands.entity(entity).insert(ChunkLoaded);

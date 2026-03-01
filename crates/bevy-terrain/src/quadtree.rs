@@ -29,10 +29,7 @@ pub struct QuadTree {
 pub struct QuadTreeNode {
     pub entity: Option<Entity>,
     pub rect: Rect,
-    pub north_east: Option<Box<QuadTreeNode>>,
-    pub north_west: Option<Box<QuadTreeNode>>,
-    pub south_east: Option<Box<QuadTreeNode>>,
-    pub south_west: Option<Box<QuadTreeNode>>,
+    pub children: Vec<Box<QuadTreeNode>>,
     pub x: i32,
     pub y: i32,
     pub lod: u8,
@@ -90,17 +87,14 @@ impl QuadTreeNode {
             rect: Rect::from_center_size(*origin, *half_size),
             lod,
             entity: None,
-            north_east: None,
-            north_west: None,
-            south_east: None,
-            south_west: None,
+            children: Vec::new(),
             x,
             y,
         }
     }
 
     fn subdivide(&mut self) {
-        assert!(self.north_east.is_none());
+        assert!(self.children.is_empty());
 
         // calculate size of new segment by getting a half of the parent size
         let h = self.rect.height() / 2.0;
@@ -120,13 +114,16 @@ impl QuadTreeNode {
         // create new tree segments
         let build_child_segment = |origin: &Vec2, x: i32, y: i32| {
             let seg = Self::new_tree_segment(origin, &size, self.lod + 1, x, y);
-            Some(Box::new(seg))
+            Box::new(seg)
         };
 
-        self.north_east = build_child_segment(&ne_origin, 2 * self.x + 1, 2 * self.y);
-        self.north_west = build_child_segment(&nw_origin, 2 * self.x, 2 * self.y);
-        self.south_east = build_child_segment(&se_origin, 2 * self.x + 1, 2 * self.y + 1);
-        self.south_west = build_child_segment(&sw_origin, 2 * self.x, 2 * self.y + 1);
+        self.children = [
+            build_child_segment(&ne_origin, 2 * self.x + 1, 2 * self.y),
+            build_child_segment(&nw_origin, 2 * self.x, 2 * self.y),
+            build_child_segment(&se_origin, 2 * self.x + 1, 2 * self.y + 1),
+            build_child_segment(&sw_origin, 2 * self.x, 2 * self.y + 1),
+        ]
+        .into();
     }
 
     pub fn destruct(&mut self, root_entity: &Entity, commands: &mut Commands) {
@@ -139,15 +136,8 @@ impl QuadTreeNode {
             self.entity = None;
         }
 
-        if self.north_east.is_some() {
-            for child in [
-                self.north_east.as_mut().unwrap(),
-                self.north_west.as_mut().unwrap(),
-                self.south_east.as_mut().unwrap(),
-                self.south_west.as_mut().unwrap(),
-            ] {
-                child.destruct(root_entity, commands);
-            }
+        for child in &mut self.children {
+            child.as_mut().destruct(root_entity, commands);
         }
     }
 
@@ -164,17 +154,10 @@ impl QuadTreeNode {
             || self.lod < config.min_lod;
 
         if increase_lod {
-            if self.north_east.is_none() {
+            if self.children.is_empty() {
                 self.subdivide();
             } else {
-                let all_loaded = [
-                    self.north_east.as_ref().unwrap(),
-                    self.north_west.as_ref().unwrap(),
-                    self.south_east.as_ref().unwrap(),
-                    self.south_west.as_ref().unwrap(),
-                ]
-                .iter()
-                .all(|c| {
+                let all_loaded = self.children.iter().all(|c| {
                     c.entity.is_none() || nodes_query.get(c.entity.unwrap()).unwrap().2.is_some()
                 });
 
@@ -183,29 +166,16 @@ impl QuadTreeNode {
                     self.entity = None;
                 }
             }
-            for child in [
-                self.north_east.as_mut().unwrap(),
-                self.north_west.as_mut().unwrap(),
-                self.south_east.as_mut().unwrap(),
-                self.south_west.as_mut().unwrap(),
-            ] {
+            for child in &mut self.children {
                 child.build_around_point(config, root_entity, commands, ref_point, nodes_query);
             }
         } else if let Some(ent) = self.entity {
             let loaded = nodes_query.get(ent).unwrap().2.is_some();
-            if loaded && self.north_east.is_some() {
-                for child in [
-                    self.north_east.as_mut().unwrap(),
-                    self.north_west.as_mut().unwrap(),
-                    self.south_east.as_mut().unwrap(),
-                    self.south_west.as_mut().unwrap(),
-                ] {
+            if loaded && !self.children.is_empty() {
+                for child in &mut self.children {
                     child.destruct(root_entity, commands);
                 }
-                self.north_east = None;
-                self.north_west = None;
-                self.south_east = None;
-                self.south_west = None;
+                self.children = Vec::new();
             }
         } else {
             self.entity = Some(get_mesh(commands, root_entity, self));
