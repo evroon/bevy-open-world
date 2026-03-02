@@ -14,6 +14,10 @@ use osm::OSM;
 pub const LAT_LON_TO_METERS_CONVERSION: Vec2 = Vec2::splat(1.1e5);
 const OVERPASS_BASE_URL: &str = "https://overpass-api.de/api/map";
 
+pub fn ensure_cache_dir_exists(path: &Path) {
+    fs::create_dir_all(Path::new(path).parent().unwrap())
+        .expect("Could not create cache directory");
+}
 #[derive(Debug, PartialEq, Clone, Component)]
 pub struct Chunk {
     pub x: i32,
@@ -23,16 +27,6 @@ pub struct Chunk {
     pub raster: Handle<Image>,
 }
 impl Chunk {
-    pub fn ensure_cache_dirs_exist(&self) {
-        for p in [
-            &self.get_elevation_cache_path(),
-            &self.get_osm_cache_path(),
-            &self.get_osm_raster_cache_path(),
-        ] {
-            fs::create_dir_all(Path::new(p).parent().unwrap())
-                .expect("Could not create cache directory");
-        }
-    }
     pub fn get_osm_raster_cache_path(&self) -> String {
         let (z, x, y) = (self.z, self.x, self.y);
         format!("assets/cache/osm-raster/{z}/{x}/{y}.png")
@@ -109,11 +103,18 @@ pub fn lat_lon_to_world(lat_lon: Vec2, lat_lon_origin: Vec2) -> (f64, f64) {
     )
 }
 
-pub fn get_osm_for_chunk(chunk: Chunk) -> OSM {
-    chunk.ensure_cache_dirs_exist();
+/// The area of the location in lat, lon coordinates (degrees)
+pub fn world_to_lat_lon(pos: Vec3, lat_lon_origin: Vec2) -> (f32, f32) {
+    (
+        -pos.z / LAT_LON_TO_METERS_CONVERSION.x + lat_lon_origin.x,
+        pos.x / LAT_LON_TO_METERS_CONVERSION.y + lat_lon_origin.y,
+    )
+}
 
+pub fn get_osm_for_chunk(chunk: Chunk) -> OSM {
     let osm_path = chunk.get_osm_cache_path();
     let path = Path::new(&osm_path);
+    ensure_cache_dir_exists(path);
 
     if !path.exists() {
         info!("Downloading OSM data for {chunk:?}");
@@ -126,8 +127,10 @@ pub fn get_osm_for_chunk(chunk: Chunk) -> OSM {
 
         if let Ok(response) = response {
             let response_text = response.text().unwrap();
-            if response_text.contains("The server is probably too busy to handle your request") {
-                panic!("failed to query Overpass API");
+            if response_text.contains("The server is probably too busy to handle your request")
+                || response_text.contains("rate_limited")
+            {
+                error!("failed to query Overpass API");
             }
 
             File::create_new(path)

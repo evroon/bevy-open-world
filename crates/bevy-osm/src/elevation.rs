@@ -2,7 +2,7 @@ use std::{f32::consts::PI, fs::File, io::Write, path::Path};
 
 use bevy::{
     color::palettes::css::{BLUE, FUCHSIA, GREEN, INDIGO, RED, TEAL, WHITE},
-    log::info,
+    log::debug,
     math::Affine2,
 };
 use bevy_terrain::{
@@ -11,7 +11,7 @@ use bevy_terrain::{
 };
 
 use crate::{
-    chunk::Chunk,
+    chunk::{Chunk, ensure_cache_dir_exists},
     config::{OSMConfig, RasterTileSource},
 };
 use bevy::prelude::*;
@@ -24,16 +24,15 @@ pub const TILE_PIXEL_COUNT: i32 = 512;
 const DOWNSAMPLE_FACTOR: i32 = TILE_PIXEL_COUNT / TILE_VERTEX_COUNT;
 
 pub fn cache_elevation_for_chunk(chunk: &Chunk) {
-    chunk.ensure_cache_dirs_exist();
-
     let path_str = chunk.get_elevation_cache_path();
     let path = Path::new(&path_str);
+    ensure_cache_dir_exists(path);
 
     if !path.exists() {
         let (z, x, y) = (chunk.z, chunk.x, chunk.y);
         let url = format!("{ELEVATION_BASE_URL}/{z}/{x}/{y}.webp");
         let request = ehttp::Request::get(url.clone());
-        info!("Downloading elevation tile for {url}");
+        debug!("Downloading elevation tile for {url}");
 
         ehttp::fetch(request, move |response| {
             let path = Path::new(&path_str);
@@ -55,16 +54,15 @@ pub fn cache_elevation_for_chunk(chunk: &Chunk) {
 }
 
 pub fn cache_raster_tile_for_chunk(chunk: &Chunk) {
-    chunk.ensure_cache_dirs_exist();
-
     let path_str = chunk.get_osm_raster_cache_path();
     let path = Path::new(&path_str);
+    ensure_cache_dir_exists(path);
 
     if !path.exists() {
         let (z, x, y) = (chunk.z, chunk.x, chunk.y);
         let url = format!("{RASTER_BASE_URL}/{z}/{x}/{y}.png");
         let request = ehttp::Request::get(url.clone());
-        info!("Downloading raster tile for {url}");
+        debug!("Downloading raster tile for {url}");
 
         ehttp::fetch(request, move |response| {
             let path = Path::new(&path_str);

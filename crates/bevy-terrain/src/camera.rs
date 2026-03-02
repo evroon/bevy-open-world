@@ -13,6 +13,7 @@ use bevy::prelude::*;
 use bevy::render::view::Hdr;
 
 use bevy::pbr::ScreenSpaceReflections;
+use bevy_where_was_i::WhereWasI;
 
 pub fn setup_lighting_for_open_world(mut commands: Commands) {
     // Sun
@@ -23,6 +24,7 @@ pub fn setup_lighting_for_open_world(mut commands: Commands) {
             ..default()
         },
         Transform::from_xyz(0.0, 0.2, 1.0).looking_at(Vec3::ZERO, Vec3::Y),
+        WhereWasI::from_name("sun_light"),
         VolumetricLight,
         (CascadeShadowConfigBuilder {
             minimum_distance: 1.0,
@@ -51,6 +53,16 @@ pub fn get_camera_bundle_for_open_world(
         Msaa::Off,
         TemporalAntiAliasing::default(),
         ScreenSpaceReflections::default(),
+        DistanceFog {
+            color: Color::srgba(0.35, 0.48, 0.66, 1.0),
+            directional_light_color: Color::NONE,
+            directional_light_exponent: 80.0,
+            falloff: FogFalloff::from_visibility_colors(
+                5e4,
+                Color::srgb(0.35, 0.5, 0.66),
+                Color::srgb(0.8, 0.844, 1.0),
+            ),
+        },
     )
 }
 

@@ -20,7 +20,7 @@ impl Default for OSMConfig {
         Self {
             location: Location::MonacoCenter,
             ui_visible: true,
-            raster_tile_source: RasterTileSource::Debug,
+            raster_tile_source: RasterTileSource::OSMDefault,
         }
     }
 }
