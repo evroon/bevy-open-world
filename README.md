@@ -11,6 +11,7 @@
 </p>
 
 ![adsb](.github/screenshots/adsb.png)
+![osm](.github/screenshots/osm.png)
 
 This repo contains various crates for open world rendering in Bevy.
 

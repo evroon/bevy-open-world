@@ -6,7 +6,7 @@ pub mod location;
 pub mod material;
 pub mod mesh;
 pub mod osm_types;
-pub mod task_pool;
+pub mod load_data;
 mod theme;
 mod tile;
 pub mod ui;
@@ -16,7 +16,7 @@ use crate::{
     chunk::Chunk,
     config::OSMConfig,
     material::MapMaterialHandle,
-    task_pool::{handle_tasks, load_unloaded_chunks, preload_chunks},
+    load_data::{handle_tasks, load_unloaded_chunks, preload_chunks},
     ui::setup_osm_ui,
 };
 use bevy::prelude::*;

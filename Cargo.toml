@@ -31,6 +31,7 @@ bevy = { version = "0.18.0", features = [
 bevy_panorbit_camera = "0.34.0"
 bevy_egui = "0.39.0"
 big_space = { version = "0.12.0" }
+bevy-where-was-i = "0.4.0"
 
 [dependencies]
 bevy = { workspace = true, features = [
@@ -40,7 +41,7 @@ bevy = { workspace = true, features = [
     "pan_camera",
 ] }
 bevy-volumetric-clouds = { version = "0.2.0", features = ["fly_camera"] }
-bevy-where-was-i = "0.4.0"
+bevy-where-was-i = { workspace = true }
 ehttp = "0.6.0"
 noise = "0.9.0"
 

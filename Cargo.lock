@@ -534,6 +534,7 @@ name = "bevy-terrain"
 version = "0.0.0"
 dependencies = [
  "bevy",
+ "bevy-where-was-i",
  "big_space",
  "noise",
 ]
