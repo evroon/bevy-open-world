@@ -2,11 +2,11 @@ mod building;
 pub mod chunk;
 pub mod config;
 pub mod elevation;
+pub mod load_data;
 pub mod location;
 pub mod material;
 pub mod mesh;
 pub mod osm_types;
-pub mod load_data;
 mod theme;
 mod tile;
 pub mod ui;
@@ -15,8 +15,8 @@ extern crate osm_xml as osm;
 use crate::{
     chunk::Chunk,
     config::OSMConfig,
-    material::MapMaterialHandle,
     load_data::{handle_tasks, load_unloaded_chunks, preload_chunks},
+    material::MapMaterialHandle,
     ui::setup_osm_ui,
 };
 use bevy::prelude::*;
