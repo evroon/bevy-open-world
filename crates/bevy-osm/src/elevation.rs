@@ -1,8 +1,7 @@
-use std::{f32::consts::PI, fs::File, io::Write, path::Path};
+use std::f32::consts::PI;
 
 use bevy::{
     color::palettes::css::{BLUE, FUCHSIA, GREEN, INDIGO, RED, TEAL, WHITE},
-    log::debug,
     math::Affine2,
 };
 use bevy_terrain::{
@@ -11,72 +10,15 @@ use bevy_terrain::{
 };
 
 use crate::{
-    chunk::{Chunk, ensure_cache_dir_exists},
+    chunk::Chunk,
     config::{OSMConfig, RasterTileSource},
 };
 use bevy::prelude::*;
 
-const ELEVATION_BASE_URL: &str = "https://tiles.mapterhorn.com";
-const RASTER_BASE_URL: &str = "https://tile.openstreetmap.org";
 const HEIGHT_OFFSET: f32 = 130.0;
 pub const TILE_VERTEX_COUNT: i32 = 64;
 pub const TILE_PIXEL_COUNT: i32 = 512;
 const DOWNSAMPLE_FACTOR: i32 = TILE_PIXEL_COUNT / TILE_VERTEX_COUNT;
-
-pub fn cache_elevation_for_chunk(chunk: &Chunk) {
-    let path_str = chunk.get_elevation_cache_path();
-    let path = Path::new(&path_str);
-    ensure_cache_dir_exists(path);
-
-    if !path.exists() {
-        let (z, x, y) = (chunk.z, chunk.x, chunk.y);
-        let url = format!("{ELEVATION_BASE_URL}/{z}/{x}/{y}.webp");
-        let request = ehttp::Request::get(url.clone());
-        debug!("Downloading elevation tile for {url}");
-
-        ehttp::fetch(request, move |response| {
-            let path = Path::new(&path_str);
-            if let Ok(response) = response
-                && response.ok
-            {
-                File::create(path)
-                    .unwrap()
-                    .write_all(&response.bytes)
-                    .expect("Could not write to tile cache");
-            } else {
-                File::create(path)
-                    .unwrap()
-                    .write_all(include_bytes!("../../../assets/osm/empty-tile.webp"))
-                    .expect("Could not write to tile cache");
-            }
-        });
-    }
-}
-
-pub fn cache_raster_tile_for_chunk(chunk: &Chunk) {
-    let path_str = chunk.get_osm_raster_cache_path();
-    let path = Path::new(&path_str);
-    ensure_cache_dir_exists(path);
-
-    if !path.exists() {
-        let (z, x, y) = (chunk.z, chunk.x, chunk.y);
-        let url = format!("{RASTER_BASE_URL}/{z}/{x}/{y}.png");
-        let request = ehttp::Request::get(url.clone());
-        debug!("Downloading raster tile for {url}");
-
-        ehttp::fetch(request, move |response| {
-            let path = Path::new(&path_str);
-            if let Ok(response) = response
-                && response.ok
-            {
-                File::create(path)
-                    .unwrap()
-                    .write_all(&response.bytes)
-                    .expect("Could not write to tile cache");
-            }
-        });
-    }
-}
 
 /// Source: https://github.com/tilezen/joerd/blob/master/docs/formats.md
 pub fn elevation_color_to_height_meters(c: Color) -> f32 {
@@ -136,18 +78,16 @@ pub fn spawn_elevation_meshes(
 
     let material = match config.as_ref().raster_tile_source {
         RasterTileSource::Debug => debug_material(materials, &chunk),
-        RasterTileSource::OSMDefault => MeshMaterial3d(materials.add(StandardMaterial {
+        _ => MeshMaterial3d(materials.add(StandardMaterial {
             base_color_texture: Some(chunk.raster),
             uv_transform: Affine2::from_angle_translation(PI * 0.5, Vec2::new(1.0, 0.0)),
             ..Default::default()
         })),
-        RasterTileSource::CesiumGoogle => debug_material(materials, &chunk),
     };
 
     let mesh = commands
         .spawn((
             Mesh3d(meshes.add(build_mesh_data(heights, IVec2::splat(TILE_VERTEX_COUNT)))),
-            Transform::IDENTITY,
             material,
         ))
         .id();

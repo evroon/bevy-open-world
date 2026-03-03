@@ -3,10 +3,10 @@ use bevy_egui::{
     EguiContexts,
     egui::{self, ComboBox, Label, Pos2, Ui},
 };
-use bevy_terrain::quadtree::QuadTree;
+use bevy_terrain::quadtree::{ChunkLoaded, QuadTree};
 
 use crate::{
-    chunk::world_to_lat_lon,
+    chunk::{Chunk, world_to_lat_lon},
     config::{OSMConfig, RasterTileSource},
 };
 
@@ -16,6 +16,7 @@ pub fn osm_ui(
     ui: &mut Ui,
     camera: &Transform,
     quadtrees: &mut Query<(Entity, &mut QuadTree)>,
+    loading_chunks: Query<(Entity, &Chunk), Without<ChunkLoaded>>,
 ) {
     let mut selected = config.raster_tile_source.clone();
     ComboBox::from_label("Raster tile source")
@@ -30,11 +31,19 @@ pub fn osm_ui(
             ui.selectable_value(&mut selected, RasterTileSource::OSMDefault, "OSM - Default");
         });
     ui.end_row();
-    ui.add(Label::new(format!("translation: {:?}", camera.translation)));
+    ui.add(Label::new("translation:"));
+    ui.add(Label::new(format!(
+        "{:.0}, {:.0}, {:.0}",
+        camera.translation.x, camera.translation.y, camera.translation.z
+    )));
+    ui.end_row();
+    ui.add(Label::new("lat, lon:"));
+    let (lat, lon) = world_to_lat_lon(camera.translation, config.location.get_world_center());
+    ui.add(Label::new(format!("{:.5}, {:.5}", lat, lon)));
     ui.end_row();
     ui.add(Label::new(format!(
-        "lat, lon: {:?}",
-        world_to_lat_lon(camera.translation, config.location.get_world_center())
+        "Chunks loading: {}",
+        loading_chunks.iter().len()
     )));
     ui.end_row();
 
@@ -50,9 +59,10 @@ pub fn setup_osm_ui(
     mut commands: Commands,
     mut osm_config: ResMut<OSMConfig>,
     camera: Single<&Transform, With<Camera>>,
-    mut quadtrees: Query<(Entity, &mut QuadTree)>,
     mut contexts: EguiContexts,
     keys: Res<ButtonInput<KeyCode>>,
+    mut quadtrees: Query<(Entity, &mut QuadTree)>,
+    loading_chunks: Query<(Entity, &Chunk), Without<ChunkLoaded>>,
 ) {
     if keys.just_pressed(KeyCode::KeyY) {
         osm_config.ui_visible = !osm_config.ui_visible;
@@ -73,6 +83,7 @@ pub fn setup_osm_ui(
                             ui,
                             &camera,
                             &mut quadtrees,
+                            loading_chunks,
                         );
                     });
             });

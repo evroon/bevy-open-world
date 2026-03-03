@@ -1,4 +1,5 @@
 mod building;
+pub mod cache;
 pub mod chunk;
 pub mod config;
 pub mod elevation;

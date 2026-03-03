@@ -8,6 +8,17 @@ pub enum RasterTileSource {
     CesiumGoogle,
     Debug,
 }
+
+impl RasterTileSource {
+    pub fn get_name(&self) -> String {
+        match self {
+            RasterTileSource::OSMDefault => "osm-default".into(),
+            RasterTileSource::CesiumGoogle => "cesium-google".into(),
+            RasterTileSource::Debug => "debug".into(),
+        }
+    }
+}
+
 #[derive(Resource)]
 pub struct OSMConfig {
     pub location: Location,

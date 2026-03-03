@@ -2,12 +2,14 @@ use std::path::Path;
 
 use crate::{
     building::spawn_building,
+    cache::{
+        cache_elevation_for_chunk, cache_raster_tile_for_chunk, get_elevation_cache_path,
+        get_elevation_cache_path_bevy, get_osm_cache_path, get_osm_raster_cache_path,
+        get_osm_raster_cache_path_bevy,
+    },
     chunk::Chunk,
     config::OSMConfig,
-    elevation::{
-        TILE_VERTEX_COUNT, cache_elevation_for_chunk, cache_raster_tile_for_chunk,
-        get_elevation_local, spawn_elevation_meshes,
-    },
+    elevation::{TILE_VERTEX_COUNT, get_elevation_local, spawn_elevation_meshes},
     material::MapMaterialHandle,
     mesh::Shape,
     tile::build_tile,
@@ -25,6 +27,7 @@ pub struct ComputeTransform(pub Task<CommandQueue>);
 pub fn preload_chunks(
     mut commands: Commands,
     nodes_to_load: Query<(Entity, &QuadTreeNodeComponent), Without<Chunk>>,
+    config: Res<OSMConfig>,
 ) {
     nodes_to_load.iter().for_each(|(entity, node)| {
         let chunk = Chunk {
@@ -35,7 +38,7 @@ pub fn preload_chunks(
             raster: Handle::default(),
         };
         cache_elevation_for_chunk(&chunk);
-        cache_raster_tile_for_chunk(&chunk);
+        cache_raster_tile_for_chunk(&chunk, &config);
 
         commands.entity(entity).insert(chunk);
     });
@@ -53,14 +56,14 @@ pub fn load_unloaded_chunks(
     config: Res<OSMConfig>,
 ) {
     chunks_to_load.iter_mut().for_each(|(entity, mut chunk)| {
-        let elevation_path_str = chunk.get_elevation_cache_path();
+        let elevation_path_str = get_elevation_cache_path(&chunk);
         let elevation_path = Path::new(&elevation_path_str);
-        let osm_raster_path_str = chunk.get_osm_raster_cache_path();
+        let osm_raster_path_str = get_osm_raster_cache_path(&chunk, &config);
         let osm_raster_path = Path::new(&osm_raster_path_str);
 
         if elevation_path.exists() && osm_raster_path.exists() {
-            chunk.elevation = asset_server.load(chunk.get_elevation_cache_path_bevy());
-            chunk.raster = asset_server.load(chunk.get_osm_raster_cache_path_bevy());
+            chunk.elevation = asset_server.load(get_elevation_cache_path_bevy(&chunk));
+            chunk.raster = asset_server.load(get_osm_raster_cache_path_bevy(&chunk, &config));
 
             if asset_server.is_loaded(chunk.elevation.id()) {
                 load_chunk(
@@ -108,26 +111,20 @@ pub fn load_chunk(
     let building_material: Handle<StandardMaterial> = map_materials.unknown_building.clone();
     let light_material: Handle<StandardMaterial> = map_materials.light.clone();
     let entity = commands.spawn_empty().id();
-    let lat_lon_origin = config.location.get_world_center();
-    let area_meters = chunk.get_area_in_meters(config.location.get_world_center());
-    let origin_meters = area_meters.center();
-    let size_meters = area_meters.size();
-    let lod = chunk.z;
 
     let get_elevation = move |translation: Vec3, heightmap: &Image| {
-        if !area_meters.contains(translation.xz()) {
+        if !Rect::from_center_size(Vec2::ZERO, Vec2::ONE).contains(translation.xz()) {
             return None;
         }
-        let local_coords = (((translation.xz() - origin_meters) / size_meters + Vec2::splat(0.5))
-            * TILE_VERTEX_COUNT as f32)
-            .as_ivec2();
+        let local_coords =
+            ((Vec2::new(0.5, 0.5) + translation.xz()) * TILE_VERTEX_COUNT as f32).as_ivec2();
         Some(get_elevation_local(heightmap, local_coords))
     };
-    let path = chunk.get_osm_cache_path();
+    let path = get_osm_cache_path(&chunk);
 
-    if lod >= 16 && Path::new(&path).exists() {
+    if Path::new(&path).exists() {
         let task = thread_pool.spawn(async move {
-            let (buildings, strokes, lights) = build_tile(chunk, lat_lon_origin);
+            let (buildings, strokes, lights) = build_tile(chunk);
 
             let mut command_queue = CommandQueue::default();
 
@@ -162,7 +159,7 @@ pub fn load_chunk(
                             translation += Vec3::Y * elevation;
                             return Some(
                                 Transform::from_translation(translation)
-                                    .with_scale(Vec3::splat(5.0)),
+                                    .with_scale(Vec3::splat(1.0)),
                             );
                         }
                         None
@@ -176,7 +173,7 @@ pub fn load_chunk(
                     .map(|(mesh, t)| (Mesh3d(meshes.add(mesh)), t))
                     .collect::<Vec<(Mesh3d, Transform)>>();
 
-                let light_mesh = meshes.add(Cuboid::from_size(Vec3::splat(1.0)));
+                let light_mesh = meshes.add(Cuboid::from_size(Vec3::new(0.01, 5.0, 0.01)));
 
                 let stroke_meshes: Vec<Handle<Mesh>> =
                     strokes.iter().map(|s| meshes.add(s.clone())).collect();

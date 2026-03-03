@@ -10,6 +10,8 @@ use bevy::math::ops::{atan, powf, sinh};
 use bevy::prelude::*;
 use osm::OSM;
 
+use crate::cache::get_osm_cache_path;
+
 // Assume at equator (110 km = 1 degree of longitude)
 pub const LAT_LON_TO_METERS_CONVERSION: Vec2 = Vec2::splat(1.1e5);
 const OVERPASS_BASE_URL: &str = "https://overpass-api.de/api/map";
@@ -27,26 +29,6 @@ pub struct Chunk {
     pub raster: Handle<Image>,
 }
 impl Chunk {
-    pub fn get_osm_raster_cache_path(&self) -> String {
-        let (z, x, y) = (self.z, self.x, self.y);
-        format!("assets/cache/osm-raster/{z}/{x}/{y}.png")
-    }
-    pub fn get_osm_raster_cache_path_bevy(&self) -> String {
-        let (z, x, y) = (self.z, self.x, self.y);
-        format!("cache/osm-raster/{z}/{x}/{y}.png")
-    }
-    pub fn get_osm_cache_path(&self) -> String {
-        let (z, x, y) = (self.z, self.x, self.y);
-        format!("assets/cache/osm/{z}/{x}/{y}.osm")
-    }
-    pub fn get_elevation_cache_path(&self) -> String {
-        let (z, x, y) = (self.z, self.x, self.y);
-        format!("assets/cache/elevation/{z}/{x}/{y}.webp")
-    }
-    pub fn get_elevation_cache_path_bevy(&self) -> String {
-        let (z, x, y) = (self.z, self.x, self.y);
-        format!("cache/elevation/{z}/{x}/{y}.webp")
-    }
     pub fn get_lat_lon_area(&self) -> Rect {
         let p0 = get_lat_lon(self.x as f32, self.y as f32, self.z);
         let p1 = get_lat_lon(1.0 + self.x as f32, 1.0 + self.y as f32, self.z);
@@ -103,6 +85,14 @@ pub fn lat_lon_to_world(lat_lon: Vec2, lat_lon_origin: Vec2) -> (f64, f64) {
     )
 }
 
+pub fn lat_lon_normalized_to_chunk(lat_lon: Vec2, chunk: &Chunk) -> (f64, f64) {
+    let chunk_area = chunk.get_lat_lon_area();
+    (
+        (lat_lon.y as f64 - chunk_area.center().y as f64) / chunk_area.size().y as f64,
+        -(lat_lon.x as f64 - chunk_area.center().x as f64) / chunk_area.size().x as f64,
+    )
+}
+
 /// The area of the location in lat, lon coordinates (degrees)
 pub fn world_to_lat_lon(pos: Vec3, lat_lon_origin: Vec2) -> (f32, f32) {
     (
@@ -112,7 +102,7 @@ pub fn world_to_lat_lon(pos: Vec3, lat_lon_origin: Vec2) -> (f32, f32) {
 }
 
 pub fn get_osm_for_chunk(chunk: Chunk) -> OSM {
-    let osm_path = chunk.get_osm_cache_path();
+    let osm_path = get_osm_cache_path(&chunk);
     let path = Path::new(&osm_path);
     ensure_cache_dir_exists(path);
 
