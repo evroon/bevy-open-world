@@ -1,4 +1,5 @@
 mod building;
+pub mod cache;
 pub mod chunk;
 pub mod config;
 pub mod elevation;
@@ -10,7 +11,6 @@ pub mod osm_types;
 mod theme;
 mod tile;
 pub mod ui;
-pub mod cache;
 
 extern crate osm_xml as osm;
 use crate::{

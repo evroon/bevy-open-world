@@ -122,7 +122,7 @@ pub fn load_chunk(
     };
     let path = get_osm_cache_path(&chunk);
 
-    if (chunk.x == 8529 && chunk.y == 5974 && chunk.z == 14) || Path::new(&path).exists() {
+    if Path::new(&path).exists() {
         let task = thread_pool.spawn(async move {
             let (buildings, strokes, lights) = build_tile(chunk);
 
