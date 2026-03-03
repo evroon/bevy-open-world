@@ -10,6 +10,7 @@ pub mod osm_types;
 mod theme;
 mod tile;
 pub mod ui;
+pub mod cache;
 
 extern crate osm_xml as osm;
 use crate::{

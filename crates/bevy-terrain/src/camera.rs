@@ -28,7 +28,7 @@ pub fn setup_lighting_for_open_world(mut commands: Commands) {
         VolumetricLight,
         (CascadeShadowConfigBuilder {
             minimum_distance: 1.0,
-            maximum_distance: 1e4,
+            maximum_distance: 1e5,
             first_cascade_far_bound: 10.0,
             ..Default::default()
         })
