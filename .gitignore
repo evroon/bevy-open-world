@@ -15,3 +15,5 @@ crates/bevy-adsb/clickhouse/logs
 crates/bevy-adsb/clickhouse/debug.csv
 
 rustc-ice*
+
+.env

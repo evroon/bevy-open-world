@@ -130,84 +130,82 @@ pub fn load_chunk(
 
             command_queue.push(move |world: &mut World| {
                 let images = SystemState::<Res<Assets<Image>>>::new(world).get(world);
-                let heightmap = images
-                    .get(elevation)
-                    .expect("Image should have loaded by now");
+                if let Some(heightmap) = images.get(elevation) {
+                    let building_meshes = buildings
+                        .iter()
+                        .flat_map(|building| {
+                            spawn_building(building)
+                                .into_iter()
+                                .filter_map(|(mesh, mut transform)| {
+                                    let translation = transform.translation;
+                                    if let Some(elevation) = get_elevation(translation, heightmap) {
+                                        transform.translation += Vec3::Y * elevation;
+                                        return Some((mesh, transform));
+                                    }
+                                    None
+                                })
+                                .collect::<Vec<_>>()
+                        })
+                        .collect::<Vec<(Mesh, Transform)>>();
 
-                let building_meshes = buildings
-                    .iter()
-                    .flat_map(|building| {
-                        spawn_building(building)
-                            .into_iter()
-                            .filter_map(|(mesh, mut transform)| {
-                                let translation = transform.translation;
-                                if let Some(elevation) = get_elevation(translation, heightmap) {
-                                    transform.translation += Vec3::Y * elevation;
-                                    return Some((mesh, transform));
-                                }
-                                None
-                            })
-                            .collect::<Vec<_>>()
-                    })
-                    .collect::<Vec<(Mesh, Transform)>>();
+                    let light_transforms = lights
+                        .into_iter()
+                        .filter_map(|light| {
+                            let mut translation = light.trans;
+                            if let Some(elevation) = get_elevation(translation, heightmap) {
+                                translation += Vec3::Y * elevation;
+                                return Some(
+                                    Transform::from_translation(translation)
+                                        .with_scale(Vec3::splat(1.0)),
+                                );
+                            }
+                            None
+                        })
+                        .collect::<Vec<Transform>>();
 
-                let light_transforms = lights
-                    .into_iter()
-                    .filter_map(|light| {
-                        let mut translation = light.trans;
-                        if let Some(elevation) = get_elevation(translation, heightmap) {
-                            translation += Vec3::Y * elevation;
-                            return Some(
-                                Transform::from_translation(translation)
-                                    .with_scale(Vec3::splat(1.0)),
-                            );
-                        }
-                        None
-                    })
-                    .collect::<Vec<Transform>>();
+                    let mut meshes = SystemState::<ResMut<Assets<Mesh>>>::new(world).get_mut(world);
 
-                let mut meshes = SystemState::<ResMut<Assets<Mesh>>>::new(world).get_mut(world);
+                    let mesh3ds = building_meshes
+                        .into_iter()
+                        .map(|(mesh, t)| (Mesh3d(meshes.add(mesh)), t))
+                        .collect::<Vec<(Mesh3d, Transform)>>();
 
-                let mesh3ds = building_meshes
-                    .into_iter()
-                    .map(|(mesh, t)| (Mesh3d(meshes.add(mesh)), t))
-                    .collect::<Vec<(Mesh3d, Transform)>>();
+                    let light_mesh = meshes.add(Cuboid::from_size(Vec3::new(0.01, 5.0, 0.01)));
 
-                let light_mesh = meshes.add(Cuboid::from_size(Vec3::new(0.01, 5.0, 0.01)));
+                    let stroke_meshes: Vec<Handle<Mesh>> =
+                        strokes.iter().map(|s| meshes.add(s.clone())).collect();
 
-                let stroke_meshes: Vec<Handle<Mesh>> =
-                    strokes.iter().map(|s| meshes.add(s.clone())).collect();
+                    for mesh in stroke_meshes {
+                        let stroke = world
+                            .spawn((
+                                Mesh3d(mesh),
+                                MeshMaterial3d(building_material.clone()),
+                                Shape,
+                            ))
+                            .id();
+                        world.entity_mut(chunk_entity).add_child(stroke);
+                    }
 
-                for mesh in stroke_meshes {
-                    let stroke = world
-                        .spawn((
-                            Mesh3d(mesh),
-                            MeshMaterial3d(building_material.clone()),
-                            Shape,
-                        ))
-                        .id();
-                    world.entity_mut(chunk_entity).add_child(stroke);
+                    for (mesh, trans) in mesh3ds {
+                        let bm = world
+                            .spawn((mesh, MeshMaterial3d(building_material.clone()), trans))
+                            .id();
+                        world.entity_mut(chunk_entity).add_child(bm);
+                    }
+
+                    for transform in light_transforms {
+                        let l = world
+                            .spawn((
+                                Mesh3d(light_mesh.clone()),
+                                MeshMaterial3d(light_material.clone()),
+                                transform,
+                            ))
+                            .id();
+                        world.entity_mut(chunk_entity).add_child(l);
+                    }
+
+                    world.entity_mut(entity).remove::<ComputeTransform>();
                 }
-
-                for (mesh, trans) in mesh3ds {
-                    let bm = world
-                        .spawn((mesh, MeshMaterial3d(building_material.clone()), trans))
-                        .id();
-                    world.entity_mut(chunk_entity).add_child(bm);
-                }
-
-                for transform in light_transforms {
-                    let l = world
-                        .spawn((
-                            Mesh3d(light_mesh.clone()),
-                            MeshMaterial3d(light_material.clone()),
-                            transform,
-                        ))
-                        .id();
-                    world.entity_mut(chunk_entity).add_child(l);
-                }
-
-                world.entity_mut(entity).remove::<ComputeTransform>();
             });
 
             command_queue

@@ -6,6 +6,7 @@ use crate::location::Location;
 pub enum RasterTileSource {
     OSMDefault,
     CesiumGoogle,
+    Transport,
     Debug,
 }
 
@@ -14,7 +15,16 @@ impl RasterTileSource {
         match self {
             RasterTileSource::OSMDefault => "osm-default".into(),
             RasterTileSource::CesiumGoogle => "cesium-google".into(),
+            RasterTileSource::Transport => "transport".into(),
             RasterTileSource::Debug => "debug".into(),
+        }
+    }
+    pub fn get_extension(&self) -> String {
+        match self {
+            RasterTileSource::OSMDefault => "png".into(),
+            RasterTileSource::CesiumGoogle => "jpg".into(),
+            RasterTileSource::Transport => "png".into(),
+            RasterTileSource::Debug => "".into(),
         }
     }
 }
@@ -31,7 +41,7 @@ impl Default for OSMConfig {
         Self {
             location: Location::MonacoCenter,
             ui_visible: true,
-            raster_tile_source: RasterTileSource::OSMDefault,
+            raster_tile_source: RasterTileSource::CesiumGoogle,
         }
     }
 }
