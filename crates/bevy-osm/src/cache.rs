@@ -1,6 +1,7 @@
-use std::{fs::File, io::Write, path::Path};
+use std::{env, fs::File, io::Write, path::Path};
 
 use bevy::log::debug;
+use dotenvy::dotenv;
 use ehttp::Response;
 
 use crate::{
@@ -14,12 +15,14 @@ const ELEVATION_BASE_URL: &str = "https://tiles.mapterhorn.com";
 pub fn get_osm_raster_cache_path(chunk: &Chunk, config: &OSMConfig) -> String {
     let (z, x, y) = (chunk.z, chunk.x, chunk.y);
     let name = config.raster_tile_source.get_name();
-    format!("assets/cache/{name}/{z}/{x}/{y}.png")
+    let extension = config.raster_tile_source.get_extension();
+    format!("assets/cache/{name}/{z}/{x}/{y}.{extension}")
 }
 pub fn get_osm_raster_cache_path_bevy(chunk: &Chunk, config: &OSMConfig) -> String {
     let (z, x, y) = (chunk.z, chunk.x, chunk.y);
     let name = config.raster_tile_source.get_name();
-    format!("cache/{name}/{z}/{x}/{y}.png")
+    let extension = config.raster_tile_source.get_extension();
+    format!("cache/{name}/{z}/{x}/{y}.{extension}")
 }
 pub fn get_osm_cache_path(chunk: &Chunk) -> String {
     let (z, x, y) = (chunk.z, chunk.x, chunk.y);
@@ -84,11 +87,20 @@ pub fn cache_raster_tile_for_chunk(chunk: &Chunk, config: &OSMConfig) {
 
     let url = match config.raster_tile_source {
         RasterTileSource::CesiumGoogle => {
-            format!("https://tile.thunderforest.com/transport/{z}/{x}/{y}.png")
+            dotenv().expect("Could not read .env");
+            let asset_id = env::var("CESIUM_ASSET_ID").expect("Could not read CESIUM_ASSET_ID");
+            let key = env::var("CESIUM_KEY").expect("Could not read CESIUM_KEY");
+            let session = env::var("CESIUM_SESSION").expect("Could not read CESIUM_SESSION");
+            format!(
+                "https://assets.ion.cesium.com/proxy/{asset_id}/v1/2dtiles/{z}/{x}/{y}?session={session}&key={key}"
+            )
+        }
+        RasterTileSource::Transport => {
+            format!("https://tileserver.memomaps.de/tilegen/{z}/{x}/{y}.png")
         }
         _ => format!("https://tile.openstreetmap.org/{z}/{x}/{y}.png"),
     };
 
     let path_str = get_osm_raster_cache_path(chunk, config);
-    cache_tile_for_chunk(path_str, url, |_, _| {});
+    cache_tile_for_chunk(path_str, url, |_, res| error!("{:?}", res));
 }

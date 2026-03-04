@@ -20,15 +20,16 @@ pub fn osm_ui(
 ) {
     let mut selected = config.raster_tile_source.clone();
     ComboBox::from_label("Raster tile source")
-        .selected_text(format!("{:?}", &selected))
+        .selected_text(selected.get_name())
         .show_ui(ui, |ui| {
-            ui.selectable_value(&mut selected, RasterTileSource::Debug, "Debug");
-            ui.selectable_value(
-                &mut selected,
+            for source in [
+                RasterTileSource::Debug,
                 RasterTileSource::CesiumGoogle,
-                "Cesium - Google",
-            );
-            ui.selectable_value(&mut selected, RasterTileSource::OSMDefault, "OSM - Default");
+                RasterTileSource::OSMDefault,
+                RasterTileSource::Transport,
+            ] {
+                ui.selectable_value(&mut selected, source.clone(), source.get_name());
+            }
         });
     ui.end_row();
     ui.add(Label::new("translation:"));
