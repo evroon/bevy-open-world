@@ -9,7 +9,6 @@ authors = ["evroon"]
 license = "GPL-3.0"
 keywords = ["bevy", "serialization", "gamedev", "savegame", "plugin"]
 categories = ["game-development"]
-publish = false
 
 [workspace]
 members = ["crates/*"]
