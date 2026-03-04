@@ -6,10 +6,9 @@ readme = "README.md"
 version = "0.1.0"
 edition = "2024"
 authors = ["evroon"]
-license = "MIT"
+license = "GPL-3.0"
 keywords = ["bevy", "serialization", "gamedev", "savegame", "plugin"]
 categories = ["game-development"]
-publish = false
 
 [workspace]
 members = ["crates/*"]
