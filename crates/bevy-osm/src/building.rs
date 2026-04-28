@@ -70,7 +70,7 @@ pub fn polygon_building(
         line,
         vertices: triangles
             .vertices
-            .chunks(2)
+            .iter()
             .map(|i| [i[0], 0., i[1]])
             .collect(),
         triangle_indices: triangles
