@@ -434,7 +434,7 @@ dependencies = [
  "bevy-volumetric-clouds",
  "bevy_egui",
  "chrono",
- "ehttp 0.7.1",
+ "ehttp",
  "url",
 ]
 
@@ -478,7 +478,7 @@ dependencies = [
  "bevy_egui",
  "bevy_panorbit_camera",
  "big_space",
- "ehttp 0.6.0",
+ "ehttp",
  "instant",
  "noise",
  "turborand",
@@ -494,7 +494,7 @@ dependencies = [
  "bevy_egui",
  "csv",
  "dotenvy",
- "ehttp 0.7.1",
+ "ehttp",
  "geo",
  "geo-types",
  "lyon",
@@ -2664,20 +2664,6 @@ dependencies = [
 
 [[package]]
 name = "ehttp"
-version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "04499d3c719edecfad5c9b46031726c8540905d73be6d7e4f9788c4a298da908"
-dependencies = [
- "document-features",
- "js-sys",
- "ureq 2.12.1",
- "wasm-bindgen",
- "wasm-bindgen-futures",
- "web-sys",
-]
-
-[[package]]
-name = "ehttp"
 version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b2f1b93eb2e039aaff63ce07cca59bd1dca02f2ce30075a17b619d2c42f56efc"
@@ -2685,7 +2671,7 @@ dependencies = [
  "async-channel 2.5.0",
  "document-features",
  "js-sys",
- "ureq 3.3.0",
+ "ureq",
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
@@ -6194,22 +6180,6 @@ checksum = "8ecb6da28b8a351d773b68d5825ac39017e680750f980f3a1a85cd8dd28a47c1"
 
 [[package]]
 name = "ureq"
-version = "2.12.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "02d1a66277ed75f640d608235660df48c8e3c19f3b4edb6a263315626cc3c01d"
-dependencies = [
- "base64",
- "flate2",
- "log",
- "once_cell",
- "rustls",
- "rustls-pki-types",
- "url",
- "webpki-roots 0.26.11",
-]
-
-[[package]]
-name = "ureq"
 version = "3.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dea7109cdcd5864d4eeb1b58a1648dc9bf520360d7af16ec26d0a9354bafcfc0"
@@ -6222,7 +6192,7 @@ dependencies = [
  "rustls-pki-types",
  "ureq-proto",
  "utf8-zero",
- "webpki-roots 1.0.6",
+ "webpki-roots",
 ]
 
 [[package]]
@@ -6605,15 +6575,6 @@ dependencies = [
  "objc2-foundation 0.3.2",
  "url",
  "web-sys",
-]
-
-[[package]]
-name = "webpki-roots"
-version = "0.26.11"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "521bc38abb08001b01866da9f51eb7c5d647a19260e00054a8c7fd5f9e57f7a9"
-dependencies = [
- "webpki-roots 1.0.6",
 ]
 
 [[package]]
