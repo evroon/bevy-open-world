@@ -36,6 +36,8 @@ use xmltree::{Element, EmitterConfig, XMLNode};
 
 /// Parses an SVG from a byte slice, replaces all `id` attributes with
 /// the value of `inkscape:label` (if present), and returns the modified SVG as bytes.
+///
+/// xmltree already renames `inkscape:label` to `label`, so we take that.
 pub(crate) fn update_svg_ids_from_labels(svg_bytes: &[u8]) -> Result<Vec<u8>, Box<dyn Error>> {
     fn process_element(element: &mut Element) {
         if let Some(label) = element.attributes.get("label").cloned() {
