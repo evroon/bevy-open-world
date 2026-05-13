@@ -32,7 +32,7 @@ pub mod paint {
 }
 
 use std::error::Error;
-use xmltree::{Element, EmitterConfig, XMLNode};
+use xmltree::{Element, XMLNode};
 
 /// Parses an SVG from a byte slice, replaces all `id` attributes with
 /// the value of `inkscape:label` (if present), and returns the modified SVG as bytes.
@@ -51,18 +51,12 @@ pub(crate) fn update_svg_ids_from_labels(svg_bytes: &[u8]) -> Result<Vec<u8>, Bo
     }
 
     let mut reader = svg_bytes;
-    let mut root_element = Element::parse(&mut reader)?;
+    let mut root_element = Element::parse(&mut (reader))?;
 
     process_element(&mut root_element);
 
     let mut output_bytes = Vec::new();
-    root_element.write_with_config(
-        &mut output_bytes,
-        EmitterConfig {
-            perform_indent: true,
-            ..Default::default()
-        },
-    )?;
+    root_element.write(&mut output_bytes)?;
 
     Ok(output_bytes)
 }
