@@ -30,6 +30,7 @@ bevy = { version = "0.18", default-features = false, features = [
 ] }
 copyless = "0.1"
 serde = "1.0.228"
+xmltree = "0.12.0"
 
 lyon_geom = "1.0"
 lyon_tessellation = "1.0"

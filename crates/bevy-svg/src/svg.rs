@@ -17,7 +17,12 @@ use usvg::{
     tiny_skia_path::{PathSegment, PathSegmentsIter},
 };
 
-use crate::{Convert, loader::FileSvgError, render::tessellation, util};
+use crate::{
+    Convert,
+    loader::FileSvgError,
+    render::tessellation,
+    util::{self, update_svg_ids_from_labels},
+};
 
 /// A loaded and deserialized SVG file.
 #[derive(AsBindGroup, Reflect, Debug, Clone, Asset)]
@@ -57,6 +62,8 @@ impl Default for Svg {
 impl Svg {
     /// Loads an SVG from bytes
     pub fn from_bytes(bytes: &[u8], path: impl Into<PathBuf> + Copy) -> Result<Svg, FileSvgError> {
+        let bytes = &update_svg_ids_from_labels(bytes).unwrap();
+
         let mut fontdb = usvg::fontdb::Database::default();
         fontdb.load_system_fonts();
         fontdb.load_font_data(include_bytes!("../../../assets/fonts/ECAMFontRegular.ttf").to_vec());
