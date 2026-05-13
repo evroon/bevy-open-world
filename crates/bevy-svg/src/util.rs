@@ -30,3 +30,53 @@ pub mod paint {
         Color::Srgba(Srgba::from_f32_array(avg))
     }
 }
+
+use std::error::Error;
+use xmltree::{Element, XMLNode};
+
+/// Parses an SVG from a byte slice, replaces all `id` attributes with
+/// the value of `inkscape:label` (if present), and returns the modified SVG as bytes.
+///
+/// xmltree already renames `inkscape:label` to `label`, so we take that.
+pub(crate) fn update_svg_ids_from_labels(svg_bytes: &[u8]) -> Result<Vec<u8>, Box<dyn Error>> {
+    fn process_element(element: &mut Element) {
+        if let Some(label) = element.attributes.get("label").cloned() {
+            element.attributes.insert("id".to_string(), label);
+        }
+        for child in &mut element.children {
+            if let XMLNode::Element(child_element) = child {
+                process_element(child_element);
+            }
+        }
+    }
+
+    let mut reader = svg_bytes;
+    let mut root_element = Element::parse(&mut (reader))?;
+
+    process_element(&mut root_element);
+
+    let mut output_bytes = Vec::new();
+    root_element.write(&mut output_bytes)?;
+
+    Ok(output_bytes)
+}
+
+#[cfg(test)]
+mod tests {
+    use xmltree::Element;
+
+    use crate::util::update_svg_ids_from_labels;
+
+    #[test]
+    fn test_replace_id_by_inkscape_label() {
+        let svg_example = include_bytes!("../../../assets/tests/svg-example.svg");
+        let mut svg_expected: &[u8] =
+            include_bytes!("../../../assets/tests/svg-example-id-replaced.svg");
+        let mut processed: &[u8] = &mut update_svg_ids_from_labels(svg_example).unwrap();
+
+        let processed_element = Element::parse(&mut processed).unwrap();
+        let expected_element = Element::parse(&mut svg_expected).unwrap();
+
+        assert_eq!(processed_element, expected_element);
+    }
+}
