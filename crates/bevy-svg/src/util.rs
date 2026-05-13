@@ -69,9 +69,6 @@ pub(crate) fn update_svg_ids_from_labels(svg_bytes: &[u8]) -> Result<Vec<u8>, Bo
 
 #[cfg(test)]
 mod tests {
-    use std::fs::File;
-    use std::io::prelude::*;
-
     use xmltree::Element;
 
     use crate::util::update_svg_ids_from_labels;
@@ -85,10 +82,7 @@ mod tests {
 
         let processed_element = Element::parse(&mut processed).unwrap();
         let expected_element = Element::parse(&mut svg_expected).unwrap();
-        // File::create("./test.svg")
-        //     .unwrap()
-        //     .write_all(&processed)
-        //     .unwrap();
+
         assert_eq!(processed_element, expected_element);
     }
 }
