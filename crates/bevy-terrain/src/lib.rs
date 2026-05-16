@@ -9,13 +9,18 @@ use bevy::{pbr::ExtendedMaterial, prelude::*};
 
 use quadtree::{QuadTree, QuadTreeConfig, QuadTreeNode};
 
-use crate::{mesh::build_mesh_cache, system::update_terrain_quadtree, water::Water};
+use crate::{
+    mesh::build_mesh_cache,
+    system::update_terrain_quadtree,
+    water::{Water, spawn_water},
+};
 
 pub struct WaterPlugin;
 
 impl Plugin for WaterPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(MaterialPlugin::<ExtendedMaterial<StandardMaterial, Water>>::default());
+        app.add_plugins(MaterialPlugin::<ExtendedMaterial<StandardMaterial, Water>>::default())
+            .add_systems(Startup, spawn_water);
     }
 }
 pub struct TerrainPlugin;

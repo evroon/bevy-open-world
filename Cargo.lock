@@ -2686,6 +2686,8 @@ dependencies = [
  "async-channel 2.5.0",
  "document-features",
  "js-sys",
+ "serde",
+ "serde_json",
  "ureq 3.3.0",
  "wasm-bindgen",
  "wasm-bindgen-futures",

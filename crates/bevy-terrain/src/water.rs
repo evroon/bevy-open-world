@@ -44,7 +44,7 @@ pub struct WaterSettings {
 }
 
 /// Spawns the water plane.
-pub fn spawn_water(
+pub(crate) fn spawn_water(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut water_materials: ResMut<Assets<ExtendedMaterial<StandardMaterial, Water>>>,

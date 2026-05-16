@@ -3,6 +3,9 @@ name = "bevy-flight-sim"
 description = "A plugin for Bevy that implements flight simulator elements (instruments etc.)"
 edition = "2024"
 
+[features]
+dev = ["bevy/dynamic_linking", "bevy/file_watcher"]
+
 [dependencies]
 bevy = { workspace = true, features = [
     "jpeg",

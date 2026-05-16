@@ -29,7 +29,7 @@ pub fn setup_lighting_for_open_world(mut commands: Commands) {
         (CascadeShadowConfigBuilder {
             minimum_distance: 1.0,
             maximum_distance: 1e5,
-            first_cascade_far_bound: 10.0,
+            first_cascade_far_bound: 1.5,
             ..Default::default()
         })
         .build(),

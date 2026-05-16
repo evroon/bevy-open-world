@@ -10,6 +10,8 @@ dist
 assets/cache
 assets/saves
 
+assets/models/a320
+
 crates/bevy-adsb/clickhouse/data
 crates/bevy-adsb/clickhouse/logs
 crates/bevy-adsb/clickhouse/debug.csv
@@ -17,3 +19,4 @@ crates/bevy-adsb/clickhouse/debug.csv
 rustc-ice*
 
 .env
+token.json
