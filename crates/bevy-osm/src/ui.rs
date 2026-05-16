@@ -24,7 +24,9 @@ pub fn osm_ui(
         .show_ui(ui, |ui| {
             for source in [
                 RasterTileSource::Debug,
-                RasterTileSource::CesiumGoogle,
+                RasterTileSource::CesiumGoogleSatellite,
+                RasterTileSource::CesiumGoogleRoadmaps,
+                RasterTileSource::CesiumGoogleContour,
                 RasterTileSource::OSMDefault,
                 RasterTileSource::Transport,
             ] {
