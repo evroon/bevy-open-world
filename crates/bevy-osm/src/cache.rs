@@ -103,7 +103,7 @@ fn get_download_url(chunk: &Chunk, source: &RasterTileSource) -> Result<String, 
             dotenv().expect("Could not read .env");
 
             // TODO: don't read file for every tile fetch
-            let file = File::open(get_token_cache_path(&source))
+            let file = File::open(get_token_cache_path(source))
                 .or(Err(DownloadUrlError::TokenFileAbsent))?;
             let secrets: CesiumTokenResponse =
                 serde_json::from_reader(file).or(Err(DownloadUrlError::TokenFileInvalid))?;
@@ -164,7 +164,7 @@ struct CesiumTokenResponse {
 pub fn get_new_session(source: &RasterTileSource) {
     let asset_id = source.get_cesium_asset_id();
 
-    let binding = get_token_cache_path(&source);
+    let binding = get_token_cache_path(source);
     let path = Path::new(&binding);
     ensure_cache_dir_exists(path);
 
@@ -181,7 +181,7 @@ pub fn get_new_session(source: &RasterTileSource) {
             .json::<CesiumTokenResponse>()
             .expect("Received invalid JSON when fetching new Cesium session");
         let file =
-            File::create(get_token_cache_path(&source)).expect("Could not open token.json file");
+            File::create(get_token_cache_path(source)).expect("Could not open token.json file");
         serde_json::to_writer_pretty(file, &json).expect("Could not write to token.json file");
 
         info!("saved new token.json");
