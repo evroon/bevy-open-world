@@ -6,9 +6,7 @@ use std::{
     path::Path,
 };
 
-use bevy::math::{
-    ops::{atan, powf, sinh},
-};
+use bevy::math::ops::{atan, powf, sinh};
 use bevy::prelude::*;
 use osm::OSM;
 
