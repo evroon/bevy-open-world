@@ -1,7 +1,10 @@
 use std::f32::consts::PI;
 
 use bevy::{
-    color::palettes::css::{BLUE, FUCHSIA, GREEN, INDIGO, RED, TEAL, WHITE},
+    color::palettes::css::{
+        BLUE, FUCHSIA, GHOST_WHITE, GREEN, INDIAN_RED, INDIGO, LIMEGREEN, ORANGE, POWDER_BLUE, RED,
+        SALMON, TEAL, WHITE,
+    },
     math::Affine2,
 };
 use bevy_terrain::{
@@ -52,6 +55,12 @@ fn debug_material(
             14 => GREEN.into(),
             15 => BLUE.into(),
             16 => INDIGO.into(),
+            17 => ORANGE.into(),
+            18 => POWDER_BLUE.into(),
+            19 => LIMEGREEN.into(),
+            20 => GHOST_WHITE.into(),
+            21 => INDIAN_RED.into(),
+            22 => SALMON.into(),
             _ => WHITE.into(),
         },
         ..Default::default()

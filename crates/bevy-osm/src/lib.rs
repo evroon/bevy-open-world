@@ -14,6 +14,7 @@ pub mod ui;
 
 extern crate osm_xml as osm;
 use crate::{
+    cache::ensure_session_is_valid,
     chunk::Chunk,
     config::OSMConfig,
     load_data::{handle_tasks, load_unloaded_chunks, preload_chunks},
@@ -55,6 +56,7 @@ pub fn build_terrain_tile(mut commands: Commands, osm_config: Res<OSMConfig>) {
     let quadtree = QuadTree {
         root: QuadTreeNode::new(Vec2::ZERO, area_meters.size(), chunk.x, chunk.y),
     };
+    ensure_session_is_valid(&osm_config.raster_tile_source);
 
     commands.spawn((
         Transform::IDENTITY,

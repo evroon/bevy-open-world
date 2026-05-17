@@ -47,6 +47,52 @@ impl Chunk {
     pub fn get_size_in_meters(&self) -> Vec2 {
         self.get_lat_lon_area().size().yx() * LAT_LON_TO_METERS_CONVERSION
     }
+    pub fn get_parent(&self) -> Chunk {
+        Chunk {
+            x: self.x / 2,
+            y: self.y / 2,
+            z: self.z - 1,
+            elevation: Handle::default(),
+            raster: Handle::default(),
+        }
+    }
+    pub fn get_parent_at_z(&self, z: i8) -> Chunk {
+        if self.z < z {
+            panic!("Current z is already less than requested z");
+        }
+
+        let mut current = self.clone();
+
+        loop {
+            current = current.get_parent();
+            if current.z <= z {
+                return current;
+            }
+        }
+    }
+    pub fn get_rect(&self) -> Rect {
+        Rect::new(
+            (self.x) as f32,
+            (self.y) as f32,
+            (self.x + 1) as f32,
+            (self.y + 1) as f32,
+        )
+    }
+    pub fn get_rect_inside_parent(&self, parent: Chunk) -> Rect {
+        if self.z <= parent.z {
+            panic!("Current z is less than or equal to parent z");
+        }
+
+        let scale_factor = powf(2.0, (self.z - parent.z) as f32);
+
+        let parent_rect = parent.get_rect();
+        let parent_rect_rescaled = Rect::from_corners(
+            parent_rect.min * scale_factor,
+            parent_rect.max * scale_factor,
+        );
+
+        self.get_rect().normalize(parent_rect_rescaled)
+    }
 }
 
 pub fn get_chunk_for_coord(lat_deg: f64, lon_deg: f64, zoom: i8) -> Chunk {
@@ -181,5 +227,54 @@ mod tests {
         let northwest = get_lat_lon(0.0, 0.0, 0);
         assert_float_eq(northwest.0, 85.051125);
         assert_float_eq(northwest.1, -180.0);
+    }
+
+    #[test]
+    fn test_get_parent() {
+        let parent = get_chunk_with_coordinates().0.get_parent();
+        assert_eq!(
+            parent,
+            Chunk {
+                x: 70089,
+                y: 48705,
+                z: 17,
+                elevation: Handle::default(),
+                raster: Handle::default(),
+            }
+        );
+        assert!(
+            parent
+                .get_lat_lon_area()
+                .contains(get_chunk_with_coordinates().0.get_lat_lon_area().center())
+        );
+    }
+
+    #[test]
+    fn test_get_parent_at_z() {
+        let parent = get_chunk_with_coordinates().0.get_parent_at_z(13);
+        assert_eq!(
+            parent,
+            Chunk {
+                x: 4380,
+                y: 3044,
+                z: 13,
+                elevation: Handle::default(),
+                raster: Handle::default(),
+            }
+        );
+        assert!(
+            parent
+                .get_lat_lon_area()
+                .contains(get_chunk_with_coordinates().0.get_lat_lon_area().center())
+        );
+    }
+
+    #[test]
+    fn test_get_rect_inside_parent() {
+        let chunk = get_chunk_with_coordinates().0;
+
+        let rect_inside_parent = chunk.get_rect_inside_parent(chunk.get_parent());
+
+        assert_eq!(rect_inside_parent, Rect::new(0.0, 0.5, 0.5, 1.0));
     }
 }
