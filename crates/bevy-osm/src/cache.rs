@@ -129,16 +129,30 @@ pub fn cache_raster_tile_for_chunk(chunk: &Chunk, config: &OSMConfig) {
     let path_str = get_osm_raster_cache_path(chunk, config);
 
     let download_url = get_download_url(chunk, &config.raster_tile_source);
+    let error_handler = |_, res: Result<Response, String>| {
+        match res {
+            Ok(res) => {
+                error!(
+                    "Raster tile download error [{:?}]: {:?}",
+                    res.status,
+                    res.text()
+                );
+            }
+            Err(err) => {
+                error!("Raster tile unknown download error: {:?}", err);
+            }
+        };
+    };
 
     if let Ok(download_url) = download_url {
-        cache_tile_for_chunk(path_str, download_url, |_, res| error!("{:?}", res));
+        cache_tile_for_chunk(path_str, download_url, error_handler);
     } else {
         // Try again
         get_new_session(&config.raster_tile_source);
 
         let download_url = get_download_url(chunk, &config.raster_tile_source)
             .expect("Could not get session after retrying");
-        cache_tile_for_chunk(path_str, download_url, |_, res| error!("{:?}", res));
+        cache_tile_for_chunk(path_str, download_url, error_handler);
     }
 }
 

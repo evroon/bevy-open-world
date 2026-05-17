@@ -6,6 +6,7 @@ use bevy_egui::{
 use bevy_terrain::quadtree::{ChunkLoaded, QuadTree};
 
 use crate::{
+    cache::ensure_session_is_valid,
     chunk::{Chunk, world_to_lat_lon},
     config::{OSMConfig, RasterTileSource},
 };
@@ -55,6 +56,7 @@ pub fn osm_ui(
         for (entity, mut quadtree) in quadtrees.iter_mut() {
             quadtree.root.destruct(&entity, commands);
         }
+        ensure_session_is_valid(&config.raster_tile_source);
     }
 }
 
