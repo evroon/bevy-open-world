@@ -8,6 +8,7 @@ pub mod location;
 pub mod material;
 pub mod mesh;
 pub mod osm_types;
+pub mod performance;
 mod theme;
 mod tile;
 pub mod ui;
@@ -19,6 +20,7 @@ use crate::{
     config::OSMConfig,
     load_data::{handle_tasks, load_unloaded_chunks, preload_chunks},
     material::MapMaterialHandle,
+    performance::{OSMPerformance, update_performance},
     ui::setup_osm_ui,
 };
 use bevy::prelude::*;
@@ -31,9 +33,18 @@ impl Plugin for OSMPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<MapMaterialHandle>()
             .init_resource::<OSMConfig>()
+            .init_resource::<OSMPerformance>()
             .add_systems(EguiPrimaryContextPass, setup_osm_ui)
             .add_systems(Startup, build_terrain_tile)
-            .add_systems(Update, (handle_tasks, load_unloaded_chunks, preload_chunks));
+            .add_systems(
+                Update,
+                (
+                    handle_tasks,
+                    load_unloaded_chunks,
+                    preload_chunks,
+                    update_performance,
+                ),
+            );
     }
 }
 
