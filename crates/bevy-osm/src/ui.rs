@@ -5,15 +5,15 @@ use bevy_egui::{
     EguiContexts,
     egui::{self, Color32, ComboBox, Label, Pos2, Response, Ui},
 };
-use bevy_terrain::quadtree::{ChunkLoaded, QuadTree};
-use egui_plot::{Legend, Points};
+use bevy_terrain::quadtree::QuadTree;
 use egui_plot::Plot;
 use egui_plot::PlotPoint;
 use egui_plot::PlotPoints;
+use egui_plot::{Legend, Points};
 
 use crate::{
     cache::ensure_session_is_valid,
-    chunk::{Chunk, world_to_lat_lon},
+    chunk::world_to_lat_lon,
     config::{OSMConfig, RasterTileSource},
     performance::OSMPerformance,
 };
@@ -22,7 +22,7 @@ fn show_plot(ui: &mut egui::Ui, points: &VecDeque<usize>) -> Response {
     Plot::new("Chunks loading")
         .legend(Legend::default())
         .x_axis_label("#chunks")
-        .default_y_bounds(0.0, 1e3)
+        .default_y_bounds(0.0, 500.0)
         .show(ui, |plot_ui| {
             plot_ui.points(
                 Points::new(
@@ -34,7 +34,10 @@ fn show_plot(ui: &mut egui::Ui, points: &VecDeque<usize>) -> Response {
                             .map(|(i, el)| PlotPoint::new(i as f64, *el as f64))
                             .collect(),
                     ),
-                ).stems(-1.5).radius(1.0).color(Color32::PURPLE)
+                )
+                .stems(-1.5)
+                .radius(1.0)
+                .color(Color32::PURPLE)
                 .name("chunks_loading"),
             );
         })
@@ -91,7 +94,6 @@ pub fn setup_osm_ui(
     mut contexts: EguiContexts,
     keys: Res<ButtonInput<KeyCode>>,
     mut quadtrees: Query<(Entity, &mut QuadTree)>,
-    loading_chunks: Query<(Entity, &Chunk), Without<ChunkLoaded>>,
     performance: Res<OSMPerformance>,
 ) {
     if keys.just_pressed(KeyCode::KeyY) {

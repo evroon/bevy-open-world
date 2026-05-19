@@ -25,7 +25,11 @@ use crate::{
 };
 use bevy::prelude::*;
 use bevy_egui::EguiPrimaryContextPass;
-use bevy_terrain::quadtree::{QuadTree, QuadTreeConfig, QuadTreeNode};
+use bevy_terrain::{
+    mesh::build_mesh_cache,
+    quadtree::{QuadTree, QuadTreeConfig, QuadTreeNode},
+    system::update_terrain_quadtree,
+};
 
 pub struct OSMPlugin;
 
@@ -35,13 +39,14 @@ impl Plugin for OSMPlugin {
             .init_resource::<OSMConfig>()
             .init_resource::<OSMPerformance>()
             .add_systems(EguiPrimaryContextPass, setup_osm_ui)
-            .add_systems(Startup, build_terrain_tile)
+            .add_systems(Startup, (build_terrain_tile, build_mesh_cache))
             .add_systems(
                 Update,
                 (
-                    handle_tasks,
-                    load_unloaded_chunks,
-                    preload_chunks,
+                    update_terrain_quadtree,
+                    handle_tasks.before(update_terrain_quadtree),
+                    load_unloaded_chunks.before(update_terrain_quadtree),
+                    preload_chunks.before(update_terrain_quadtree),
                     update_performance,
                 ),
             );
