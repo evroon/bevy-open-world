@@ -6,6 +6,7 @@ use bevy::ecs::{
     resource::Resource,
     system::{Query, ResMut},
 };
+use bevy_egui::egui::Color32;
 use bevy_terrain::quadtree::ChunkLoaded;
 
 use crate::chunk::Chunk;
@@ -19,7 +20,26 @@ pub struct OSMPerformance {
 
 impl Default for OSMPerformance {
     fn default() -> Self {
-        Self { chunks_loading: vec![0; MAX_PERFORMANCE_HISTORY].into() }
+        Self {
+            chunks_loading: vec![0; MAX_PERFORMANCE_HISTORY].into(),
+        }
+    }
+}
+
+impl OSMPerformance {
+    pub fn get_plot_color(&self) -> Color32 {
+        let last = *self
+            .chunks_loading
+            .iter()
+            .last()
+            .expect("History should always be filled");
+        if last > 300 {
+            Color32::RED
+        } else if last > 100 {
+            Color32::ORANGE
+        } else {
+            Color32::LIGHT_BLUE
+        }
     }
 }
 

@@ -1,9 +1,7 @@
-use std::collections::VecDeque;
-
 use bevy::prelude::*;
 use bevy_egui::{
     EguiContexts,
-    egui::{self, Color32, ComboBox, Label, Pos2, Response, Ui},
+    egui::{self, ComboBox, Label, Pos2, Response, Ui},
 };
 use bevy_terrain::quadtree::QuadTree;
 use egui_plot::Plot;
@@ -18,7 +16,7 @@ use crate::{
     performance::OSMPerformance,
 };
 
-fn show_plot(ui: &mut egui::Ui, points: &VecDeque<usize>) -> Response {
+fn show_plot(ui: &mut egui::Ui, performance: &OSMPerformance) -> Response {
     Plot::new("Chunks loading")
         .legend(Legend::default())
         .x_axis_label("#chunks")
@@ -28,7 +26,8 @@ fn show_plot(ui: &mut egui::Ui, points: &VecDeque<usize>) -> Response {
                 Points::new(
                     "Chunks loading",
                     PlotPoints::Owned(
-                        points
+                        performance
+                            .chunks_loading
                             .iter()
                             .enumerate()
                             .map(|(i, el)| PlotPoint::new(i as f64, *el as f64))
@@ -37,7 +36,7 @@ fn show_plot(ui: &mut egui::Ui, points: &VecDeque<usize>) -> Response {
                 )
                 .stems(-1.5)
                 .radius(1.0)
-                .color(Color32::PURPLE)
+                .color(performance.get_plot_color())
                 .name("chunks_loading"),
             );
         })
@@ -117,7 +116,7 @@ pub fn setup_osm_ui(
                             &mut quadtrees,
                         );
                     });
-                show_plot(ui, &performance.chunks_loading);
+                show_plot(ui, &performance);
             });
     }
 }
