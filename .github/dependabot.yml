@@ -9,6 +9,8 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    cooldown:
+      default-days: 30
     ignore:
         - dependency-name: "*"
           update-types: ["version-update:semver-patch"]
@@ -17,6 +19,8 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    cooldown:
+      default-days: 30
     reviewers:
       - "evroon"
     ignore:
