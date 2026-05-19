@@ -20,7 +20,7 @@ use crate::{
 };
 
 fn show_plot(ui: &mut egui::Ui, points: &VecDeque<usize>) -> Response {
-    Plot::new("My Plot")
+    Plot::new("Chunks loading")
         .legend(Legend::default())
         .x_axis_label("#chunks")
         .default_y_bounds(0.0, 1e3)
