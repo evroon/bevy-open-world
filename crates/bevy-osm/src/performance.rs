@@ -12,9 +12,15 @@ use crate::chunk::Chunk;
 
 const MAX_PERFORMANCE_HISTORY: usize = 128;
 
-#[derive(Resource, Default)]
+#[derive(Resource)]
 pub struct OSMPerformance {
     pub chunks_loading: VecDeque<usize>,
+}
+
+impl Default for OSMPerformance {
+    fn default() -> Self {
+        Self { chunks_loading: vec![0; MAX_PERFORMANCE_HISTORY].into() }
+    }
 }
 
 pub fn update_performance(
