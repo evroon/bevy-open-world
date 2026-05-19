@@ -3,11 +3,10 @@ use std::collections::VecDeque;
 use bevy::prelude::*;
 use bevy_egui::{
     EguiContexts,
-    egui::{self, ComboBox, Label, Pos2, Response, Ui},
+    egui::{self, Color32, ComboBox, Label, Pos2, Response, Ui},
 };
 use bevy_terrain::quadtree::{ChunkLoaded, QuadTree};
-use egui_plot::Legend;
-use egui_plot::Line;
+use egui_plot::{Legend, Points};
 use egui_plot::Plot;
 use egui_plot::PlotPoint;
 use egui_plot::PlotPoints;
@@ -25,8 +24,8 @@ fn show_plot(ui: &mut egui::Ui, points: &VecDeque<usize>) -> Response {
         .x_axis_label("#chunks")
         .default_y_bounds(0.0, 1e3)
         .show(ui, |plot_ui| {
-            plot_ui.line(
-                Line::new(
+            plot_ui.points(
+                Points::new(
                     "Chunks loading",
                     PlotPoints::Owned(
                         points
@@ -35,7 +34,7 @@ fn show_plot(ui: &mut egui::Ui, points: &VecDeque<usize>) -> Response {
                             .map(|(i, el)| PlotPoint::new(i as f64, *el as f64))
                             .collect(),
                     ),
-                )
+                ).stems(-1.5).radius(1.0).color(Color32::PURPLE)
                 .name("chunks_loading"),
             );
         })
