@@ -1,23 +1,54 @@
 use bevy::prelude::*;
 use bevy_egui::{
     EguiContexts,
-    egui::{self, ComboBox, Label, Pos2, Ui},
+    egui::{self, ComboBox, Label, Pos2, Response, Ui},
 };
-use bevy_terrain::quadtree::{ChunkLoaded, QuadTree};
+use bevy_terrain::quadtree::QuadTree;
+use egui_plot::Plot;
+use egui_plot::PlotPoint;
+use egui_plot::PlotPoints;
+use egui_plot::{Legend, Points};
 
 use crate::{
     cache::ensure_session_is_valid,
-    chunk::{Chunk, world_to_lat_lon},
+    chunk::world_to_lat_lon,
     config::{OSMConfig, RasterTileSource},
+    performance::OSMPerformance,
 };
 
-pub fn osm_ui(
+fn show_plot(ui: &mut egui::Ui, performance: &OSMPerformance) -> Response {
+    Plot::new("Chunks loading")
+        .legend(Legend::default())
+        .x_axis_label("#chunks")
+        .default_y_bounds(0.0, 500.0)
+        .show(ui, |plot_ui| {
+            plot_ui.points(
+                Points::new(
+                    "Chunks loading",
+                    PlotPoints::Owned(
+                        performance
+                            .chunks_loading
+                            .iter()
+                            .enumerate()
+                            .map(|(i, el)| PlotPoint::new(i as f64, *el as f64))
+                            .collect(),
+                    ),
+                )
+                .stems(-1.5)
+                .radius(1.0)
+                .color(performance.get_plot_color())
+                .name("chunks_loading"),
+            );
+        })
+        .response
+}
+
+fn osm_ui(
     commands: &mut Commands,
     config: &mut OSMConfig,
     ui: &mut Ui,
     camera: &Transform,
     quadtrees: &mut Query<(Entity, &mut QuadTree)>,
-    loading_chunks: Query<(Entity, &Chunk), Without<ChunkLoaded>>,
 ) {
     let mut selected = config.raster_tile_source.clone();
     ComboBox::from_label("Raster tile source")
@@ -45,11 +76,6 @@ pub fn osm_ui(
     let (lat, lon) = world_to_lat_lon(camera.translation, config.location.get_world_center());
     ui.add(Label::new(format!("{:.5}, {:.5}", lat, lon)));
     ui.end_row();
-    ui.add(Label::new(format!(
-        "Chunks loading: {}",
-        loading_chunks.iter().len()
-    )));
-    ui.end_row();
 
     if selected != config.raster_tile_source {
         config.raster_tile_source = selected;
@@ -67,7 +93,7 @@ pub fn setup_osm_ui(
     mut contexts: EguiContexts,
     keys: Res<ButtonInput<KeyCode>>,
     mut quadtrees: Query<(Entity, &mut QuadTree)>,
-    loading_chunks: Query<(Entity, &Chunk), Without<ChunkLoaded>>,
+    performance: Res<OSMPerformance>,
 ) {
     if keys.just_pressed(KeyCode::KeyY) {
         osm_config.ui_visible = !osm_config.ui_visible;
@@ -88,9 +114,9 @@ pub fn setup_osm_ui(
                             ui,
                             &camera,
                             &mut quadtrees,
-                            loading_chunks,
                         );
                     });
+                show_plot(ui, &performance);
             });
     }
 }

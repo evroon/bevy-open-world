@@ -8,6 +8,7 @@ pub mod location;
 pub mod material;
 pub mod mesh;
 pub mod osm_types;
+pub mod performance;
 mod theme;
 mod tile;
 pub mod ui;
@@ -19,11 +20,16 @@ use crate::{
     config::OSMConfig,
     load_data::{handle_tasks, load_unloaded_chunks, preload_chunks},
     material::MapMaterialHandle,
+    performance::{OSMPerformance, update_performance},
     ui::setup_osm_ui,
 };
 use bevy::prelude::*;
 use bevy_egui::EguiPrimaryContextPass;
-use bevy_terrain::quadtree::{QuadTree, QuadTreeConfig, QuadTreeNode};
+use bevy_terrain::{
+    mesh::build_mesh_cache,
+    quadtree::{QuadTree, QuadTreeConfig, QuadTreeNode},
+    system::update_terrain_quadtree,
+};
 
 pub struct OSMPlugin;
 
@@ -31,9 +37,19 @@ impl Plugin for OSMPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<MapMaterialHandle>()
             .init_resource::<OSMConfig>()
+            .init_resource::<OSMPerformance>()
             .add_systems(EguiPrimaryContextPass, setup_osm_ui)
-            .add_systems(Startup, build_terrain_tile)
-            .add_systems(Update, (handle_tasks, load_unloaded_chunks, preload_chunks));
+            .add_systems(Startup, (build_terrain_tile, build_mesh_cache))
+            .add_systems(
+                Update,
+                (
+                    update_terrain_quadtree,
+                    handle_tasks.before(update_terrain_quadtree),
+                    load_unloaded_chunks.before(update_terrain_quadtree),
+                    preload_chunks.before(update_terrain_quadtree),
+                    update_performance,
+                ),
+            );
     }
 }
 

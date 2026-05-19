@@ -6,7 +6,6 @@ use bevy_flight_sim::flightdeck::spawn_flightdeck;
 use bevy_flight_sim::runway::spawn_aircraft;
 use bevy_osm::OSMPlugin;
 use bevy_osm::config::OSMConfig;
-use bevy_terrain::TerrainPlugin;
 use bevy_terrain::camera::{
     get_camera_bundle_for_open_world, rotate_sun, setup_lighting_for_open_world,
 };
@@ -26,7 +25,6 @@ fn main() {
             FlyCameraPlugin,
             EguiPlugin::default(),
             // WaterPlugin,
-            TerrainPlugin,
         ))
         .add_systems(
             Startup,
