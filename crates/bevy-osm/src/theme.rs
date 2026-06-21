@@ -1,11 +1,214 @@
 use std::collections::HashMap;
 
 use bevy::{color::Color, log::warn};
-use osm_xml::Tag;
 
-use crate::{mesh::BuildingInstruction, osm_types::BuildingClass};
+use crate::{
+    layer::OMTLayer,
+    mesh::{BuildingInstruction, Layer},
+    osm_types::BuildingClass,
+    tag::Tag,
+};
 
 use super::mesh::{BuildInstruction, FillInstruction, StrokeInstruction};
+
+pub fn get_way_build_instruction_openfreemap(
+    tags: Vec<Tag>,
+    layer_name: OMTLayer,
+) -> BuildInstruction {
+    if let Some(tag) = tags.iter().find(|x| x.key == "class") {
+        match tag.val.as_str() {
+            "grass" | "meadow" => {
+                return BuildInstruction::Fill(FillInstruction {
+                    color: Color::linear_rgb(0.0, 0.8, 0.4),
+                    layer: Layer::Background,
+                });
+            }
+            "wetland" => {
+                return BuildInstruction::Fill(FillInstruction {
+                    color: Color::linear_rgb(0.0, 0.3, 1.0),
+                    layer: Layer::Background,
+                });
+            }
+            "surface" => {
+                return BuildInstruction::Fill(FillInstruction {
+                    color: Color::WHITE,
+                    layer: Layer::Background,
+                });
+            }
+            "ocean" => {
+                return BuildInstruction::Fill(FillInstruction {
+                    color: Color::linear_rgb(0.0, 0.0, 1.0),
+                    layer: Layer::Foreground,
+                });
+            }
+            "water" | "lake" | "pond" => {
+                return BuildInstruction::Fill(FillInstruction {
+                    color: Color::linear_rgb(0.0, 0.2, 0.9),
+                    layer: Layer::Foreground,
+                });
+            }
+            "park" => {
+                return BuildInstruction::Fill(FillInstruction {
+                    color: Color::linear_rgb(0.0, 0.8, 0.4),
+                    layer: Layer::Foreground,
+                });
+            }
+            "sand" => {
+                return BuildInstruction::Fill(FillInstruction {
+                    color: Color::linear_rgb(0.8, 0.8, 0.0),
+                    layer: Layer::Foreground,
+                });
+            }
+            "wood" => {
+                return BuildInstruction::Fill(FillInstruction {
+                    color: Color::linear_rgb(0.0, 1., 0.0),
+                    layer: Layer::Foreground,
+                });
+            }
+            "farmland" => {
+                return BuildInstruction::Fill(FillInstruction {
+                    color: Color::linear_rgb(0.5, 0.8, 0.4),
+                    layer: Layer::Foreground,
+                });
+            }
+            "river" | "ditch" | "stream" | "swimming_pool" | "drain" => {
+                if layer_name != OMTLayer::Waterway {
+                    return BuildInstruction::Fill(FillInstruction {
+                        color: Color::linear_rgb(0.0, 0.2, 0.9),
+                        layer: Layer::Foreground,
+                    });
+                } else {
+                    return BuildInstruction::None;
+                }
+            }
+            "rail" => {
+                return BuildInstruction::Stroke(StrokeInstruction {
+                    color: Color::linear_rgb(0.3, 0.3, 0.3),
+                    width: 6.0,
+                });
+            }
+            "primary" => {
+                return BuildInstruction::Stroke(StrokeInstruction {
+                    color: Color::linear_rgb(0.3, 0.3, 0.3),
+                    width: 7.0,
+                });
+            }
+            "runway" => {
+                return BuildInstruction::Fill(FillInstruction {
+                    color: Color::BLACK,
+                    layer: Layer::OnTop,
+                });
+            }
+            "taxiway" | "apron" => {
+                return BuildInstruction::Fill(FillInstruction {
+                    color: Color::linear_rgb(0.3, 0.3, 0.3),
+                    layer: Layer::Foreground,
+                });
+            }
+            "aerodrome" => {
+                return BuildInstruction::Fill(FillInstruction {
+                    color: Color::linear_rgb(0.1, 0.1, 0.1),
+                    layer: Layer::Background,
+                });
+            }
+            "playground" | "stadium" | "track" | "pitch" => {
+                return BuildInstruction::Fill(FillInstruction {
+                    color: Color::linear_rgb(1.0, 0.2, 0.2),
+                    layer: Layer::Foreground,
+                });
+            }
+            "secondary" | "railway" => {
+                return BuildInstruction::Stroke(StrokeInstruction {
+                    color: Color::linear_rgb(0.3, 0.3, 0.3),
+                    width: 4.0,
+                });
+            }
+            "busway" => {
+                return BuildInstruction::Stroke(StrokeInstruction {
+                    color: Color::linear_rgb(1.0, 0.2, 0.2),
+                    width: 5.0,
+                });
+            }
+            "motorway" | "motorway_link" => {
+                return BuildInstruction::Stroke(StrokeInstruction {
+                    color: Color::BLACK,
+                    width: 10.0,
+                });
+            }
+            "minor" => {
+                return BuildInstruction::Stroke(StrokeInstruction {
+                    color: Color::linear_rgb(0.3, 0.3, 0.3),
+                    width: 3.0,
+                });
+            }
+            "canal" => {
+                // return BuildInstruction::Stroke(StrokeInstruction {
+                //     color: Color::linear_rgb(1.0, 0.2, 0.2),
+                //     width: 2.0,
+                // });
+                return BuildInstruction::None;
+            }
+            "tertiary" | "path" | "service" => {
+                // return BuildInstruction::Stroke(StrokeInstruction {
+                //     color: Color::linear_rgb(1.0, 0.2, 0.2),
+                //     width: 2.0,
+                // });
+                return BuildInstruction::None;
+            }
+            "coastline" | "pier" | "bridge" | "trunk" => {
+                return BuildInstruction::None;
+            }
+            "residential" => {
+                return BuildInstruction::None;
+            }
+            "secondary_construction"
+            | "tertiary_construction"
+            | "minor_construction"
+            | "path_construction" => {
+                return BuildInstruction::None;
+            }
+            "rock" | "quarry" => {
+                return BuildInstruction::Fill(FillInstruction {
+                    color: Color::linear_rgb(42. / 255., 35. / 255., 35. / 255.),
+                    layer: Layer::Background,
+                });
+            }
+            "cemetery" | "college" | "hospital" | "kindergarten" | "library" | "school"
+            | "university" | "zoo" => {
+                return BuildInstruction::Fill(FillInstruction {
+                    color: Color::linear_rgb(123. / 255., 55. / 255., 38. / 255.),
+                    layer: Layer::Background,
+                });
+            }
+            "cliff"
+            | "commercial"
+            | "education"
+            | "industrial"
+            | "military"
+            | "nature_reserve"
+            | "naturentwicklungsgebiet"
+            | "naturschutzgebiet"
+            | "protected_area"
+            | "retail"
+            | "totalreservat" => {
+                return BuildInstruction::None;
+            }
+            _ => {
+                println!("Unknown class found: {:?}", tags);
+                return BuildInstruction::None;
+            }
+        }
+    }
+
+    match layer_name {
+        OMTLayer::Building => BuildInstruction::Building(BuildingInstruction {
+            class: Some(BuildingClass::Agricultural),
+            height: None,
+            levels: Some(6.0),
+        }),
+        _ => BuildInstruction::None,
+    }
+}
 
 pub fn get_way_build_instruction(tags: &Vec<Tag>) -> BuildInstruction {
     let mut color = Color::BLACK;
@@ -37,7 +240,10 @@ pub fn get_way_build_instruction(tags: &Vec<Tag>) -> BuildInstruction {
                     return BuildInstruction::None;
                 }
             }
-            return BuildInstruction::Fill(FillInstruction { color });
+            return BuildInstruction::Fill(FillInstruction {
+                color,
+                layer: Layer::Background,
+            });
         }
         if tag.key == "location" && tag.val == "underground" {
             return BuildInstruction::None;
@@ -90,12 +296,18 @@ pub fn get_way_build_instruction(tags: &Vec<Tag>) -> BuildInstruction {
         if tag.key == "leisure" && (tag.val == "park" || tag.val == "garden" || tag.val == "meadow")
         {
             color = Color::linear_rgb(0.0, 1.0, 0.0);
-            return BuildInstruction::Fill(FillInstruction { color });
+            return BuildInstruction::Fill(FillInstruction {
+                color,
+                layer: Layer::Background,
+            });
         }
         if tag.key == "landuse" {
             if tag.val == "forest" || tag.val == "meadow" || tag.val == "grass" {
                 color = Color::linear_rgb(0.0, 1.0, 0.0);
-                return BuildInstruction::Fill(FillInstruction { color });
+                return BuildInstruction::Fill(FillInstruction {
+                    color,
+                    layer: Layer::Background,
+                });
             }
             return BuildInstruction::None;
         }
@@ -145,21 +357,26 @@ pub fn get_way_build_instruction(tags: &Vec<Tag>) -> BuildInstruction {
     BuildInstruction::None
 }
 
-#[expect(dead_code, unused_variables)]
-pub fn get_rel_build_instruction(tags: &Vec<Tag>) -> BuildInstruction {
+pub fn get_rel_build_instruction(_tags: &Vec<Tag>) -> BuildInstruction {
     // TODO: handle relations that are only partially included in a dataset
     return BuildInstruction::None;
     #[expect(unreachable_code)]
     let mut color = Color::WHITE;
 
-    for tag in tags {
+    for tag in _tags {
         if tag.key == "ocean" && tag.val == "yes" {
             color = Color::linear_rgb(0.0, 0.2, 0.9);
-            return BuildInstruction::Fill(FillInstruction { color });
+            return BuildInstruction::Fill(FillInstruction {
+                color,
+                layer: Layer::Background,
+            });
         }
         if tag.key == "place" && tag.val == "island" {
             color = Color::linear_rgb(1.0, 1.0, 0.9);
-            return BuildInstruction::Fill(FillInstruction { color });
+            return BuildInstruction::Fill(FillInstruction {
+                color,
+                layer: Layer::Background,
+            });
         }
         if tag.key == "natural" {
             match tag.val.as_str() {
@@ -170,7 +387,10 @@ pub fn get_rel_build_instruction(tags: &Vec<Tag>) -> BuildInstruction {
                     return BuildInstruction::None;
                 }
             }
-            return BuildInstruction::Fill(FillInstruction { color });
+            return BuildInstruction::Fill(FillInstruction {
+                color,
+                layer: Layer::Background,
+            });
         }
     }
     BuildInstruction::None

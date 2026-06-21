@@ -1,17 +1,20 @@
-mod building;
+pub mod building;
 pub mod cache;
 pub mod chunk;
 pub mod config;
 pub mod elevation;
+pub mod layer;
 pub mod load_data;
 pub mod location;
 pub mod material;
 pub mod mesh;
 pub mod osm_types;
 pub mod performance;
-mod theme;
+pub mod tag;
+pub mod theme;
 mod tile;
 pub mod ui;
+pub mod vector;
 
 extern crate osm_xml as osm;
 use crate::{

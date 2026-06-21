@@ -79,7 +79,6 @@ pub fn polygon_building(
             .map(|i| *i as u32)
             .collect(),
     }
-    // spawn_building(commands, meshes, &b, map_materials);
 }
 
 pub fn spawn_building(building: &Building) -> Vec<(Mesh, Transform)> {

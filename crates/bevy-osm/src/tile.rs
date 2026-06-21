@@ -3,6 +3,7 @@ use crate::{
     building::{Building, polygon_building},
     chunk::{Chunk, get_osm_for_chunk, lat_lon_normalized_to_chunk},
     mesh::{BuildInstruction, LightInstruction, spawn_stroke_mesh},
+    tag::Tag,
     theme::get_way_build_instruction,
 };
 use bevy::prelude::*;
@@ -27,7 +28,15 @@ pub fn build_tile(chunk: Chunk) -> (Vec<Building>, Vec<Mesh>, Vec<LightInstructi
                 points.push(point(x as f32, z as f32));
             }
         }
-        match get_way_build_instruction(&way.tags) {
+        match get_way_build_instruction(
+            &way.tags
+                .iter()
+                .map(|tag| Tag {
+                    key: tag.key.clone(),
+                    val: tag.val.clone(),
+                })
+                .collect(),
+        ) {
             BuildInstruction::Fill(_) => {
                 // meshes.push(spawn_fill_mesh(points, fill));
             }
@@ -53,37 +62,4 @@ pub fn build_tile(chunk: Chunk) -> (Vec<Building>, Vec<Mesh>, Vec<LightInstructi
         lights.len()
     );
     (buildings, meshes, lights)
-    // for rel in doc.relations.values() {
-    //     let mut points = Vec::new();
-    //     for m in &rel.members {
-    //         if let osm::Member::Way(way, t) = m {
-    //             if t != "outer" {
-    //                 continue;
-    //             }
-    //             if let osm::Reference::Way(way) = doc.resolve_reference(way) {
-    //                 for n in &way.nodes {
-    //                     if let osm::Reference::Node(node) = doc.resolve_reference(n) {
-    //                         points.push(point(
-    //                             (node.lat as f32 - position_avg.0) * 1000.0,
-    //                             (node.lon as f32 - position_avg.1) * 1000.0,
-    //                         ));
-    //                     }
-    //                 }
-    //             }
-    //         }
-    //     }
-    //     if points.is_empty() {
-    //         continue;
-    //     }
-    //     match get_rel_build_instruction(&rel.tags) {
-    //         BuildInstruction::Fill(fill) => {
-    //             spawn_fill_mesh(&mut commands, &mut meshes, &mut materials, points, fill);
-    //         }
-    //         BuildInstruction::Stroke(stroke) => {
-    //             spawn_stroke_mesh(&mut commands, &mut meshes, &mut materials, points, stroke);
-    //         }
-    //         BuildInstruction::Building(_) => {}
-    //         BuildInstruction::None => {}
-    //     }
-    // }
 }

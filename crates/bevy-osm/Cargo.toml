@@ -22,6 +22,7 @@ serde = "1.0.228"
 bevy_egui = { workspace = true }
 dotenvy = "0.15.7"
 egui_plot = "0.34.0"
+mvt-reader = { workspace = true }
 
 [dev-dependencies]
 bevy = { workspace = true }

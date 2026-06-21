@@ -32,6 +32,7 @@ bevy_panorbit_camera = "0.34.0"
 bevy_egui = "0.39.0"
 big_space = { version = "0.12.0" }
 bevy-where-was-i = "0.4.0"
+mvt-reader = { git = "https://github.com/codeart1st/mvt-reader", rev="6de0c79ef81d77a3fdab4ea01eaa6380ac3e8b2e" }
 
 [dependencies]
 bevy = { workspace = true, features = [
@@ -44,6 +45,11 @@ bevy-volumetric-clouds = { version = "0.2.0", features = ["fly_camera"] }
 bevy-where-was-i = { workspace = true }
 ehttp = "0.6.0"
 noise = "0.9.0"
+geo-types = "0.7.17"
+rand = "0.10.0"
+lyon = "1.0.1"
+lyon_tessellation = "1.0.15"
+mvt-reader = { workspace = true }
 
 [dev-dependencies]
 bevy = { workspace = true, features = [
