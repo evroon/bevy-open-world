@@ -56,6 +56,7 @@ bevy_panorbit_camera = { workspace = true }
 bevy_egui = { workspace = true }
 big_space = { workspace = true, features = ["camera"] }
 turborand = "0.10.1"
+mvt-reader = { git = "https://github.com/codeart1st/mvt-reader", rev="6de0c79ef81d77a3fdab4ea01eaa6380ac3e8b2e" }
 
 bevy-adsb = { path = "crates/bevy-adsb" }
 bevy-earth = { path = "crates/bevy-earth" }
