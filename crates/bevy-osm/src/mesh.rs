@@ -59,8 +59,8 @@ pub enum Layer {
 impl Layer {
     pub fn get_z(&self) -> f32 {
         match self {
-            Layer::Background => -2.0,
-            Layer::Foreground => -1.0,
+            Layer::Background => -2.0 / 4096.,
+            Layer::Foreground => -1.0 / 4096.,
             Layer::OnTop => 0.0,
         }
     }
@@ -117,7 +117,7 @@ pub fn spawn_stroke_mesh(points: Vec<Point>, instruction: StrokeInstruction) -> 
         error!("StrokeTessellator error: {:?}", e);
     }
 
-    build_mesh(&buffers, 1.0)
+    build_mesh(&buffers, 1.0 / 4096.)
 }
 
 pub fn spawn_fill_mesh(points: Vec<Point>, instruction: FillInstruction) -> Mesh {

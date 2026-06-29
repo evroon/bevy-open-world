@@ -47,9 +47,9 @@ impl Plugin for OSMPlugin {
                 Update,
                 (
                     update_terrain_quadtree,
-                    handle_tasks.before(update_terrain_quadtree),
-                    load_unloaded_chunks.before(update_terrain_quadtree),
-                    preload_chunks.before(update_terrain_quadtree),
+                    handle_tasks,         //.before(update_terrain_quadtree),
+                    load_unloaded_chunks, //.before(update_terrain_quadtree),
+                    preload_chunks,       //.before(update_terrain_quadtree),
                     update_performance,
                 ),
             );

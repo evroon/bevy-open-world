@@ -2,11 +2,12 @@ use bevy::DefaultPlugins;
 use bevy::pbr::{DefaultOpaqueRendererMethod, ScatteringMedium};
 use bevy::prelude::*;
 use bevy_egui::EguiPlugin;
+use bevy_osm::chunk::Chunk;
 use bevy_osm::config::OSMConfig;
 use bevy_osm::layer::OMTLayer;
 use bevy_osm::material::MapMaterialHandle;
 use bevy_osm::tag::Tag;
-use bevy_osm::vector::{parse_pbf, spawn_pbf};
+use bevy_osm::vector::spawn_chunk;
 use bevy_terrain::camera::{
     get_camera_bundle_for_open_world, rotate_sun, setup_lighting_for_open_world,
 };
@@ -53,6 +54,12 @@ fn spawn_city(
     meshes: ResMut<Assets<Mesh>>,
     map_materials: Res<MapMaterialHandle>,
 ) {
-    let data = include_bytes!("../assets/osm/3212.pbf").into();
-    spawn_pbf(parse_pbf(data).unwrap(), commands, meshes, map_materials);
+    let chunk = Chunk {
+        x: 8529,
+        y: 5974,
+        z: 14,
+        elevation: Handle::default(),
+        raster: Handle::default(),
+    };
+    spawn_chunk(commands, meshes, map_materials, &chunk);
 }

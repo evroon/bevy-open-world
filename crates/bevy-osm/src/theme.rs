@@ -84,13 +84,13 @@ pub fn get_way_build_instruction_openfreemap(
             "rail" => {
                 return BuildInstruction::Stroke(StrokeInstruction {
                     color: Color::linear_rgb(0.3, 0.3, 0.3),
-                    width: 6.0,
+                    width: 6.0 / 4096.,
                 });
             }
-            "primary" => {
+            "primary" | "raceway" => {
                 return BuildInstruction::Stroke(StrokeInstruction {
                     color: Color::linear_rgb(0.3, 0.3, 0.3),
-                    width: 7.0,
+                    width: 7.0 / 4096.,
                 });
             }
             "runway" => {
@@ -99,13 +99,13 @@ pub fn get_way_build_instruction_openfreemap(
                     layer: Layer::OnTop,
                 });
             }
-            "taxiway" | "apron" => {
+            "taxiway" | "apron" | "helipad" => {
                 return BuildInstruction::Fill(FillInstruction {
                     color: Color::linear_rgb(0.3, 0.3, 0.3),
                     layer: Layer::Foreground,
                 });
             }
-            "aerodrome" => {
+            "aerodrome" | "heliport" => {
                 return BuildInstruction::Fill(FillInstruction {
                     color: Color::linear_rgb(0.1, 0.1, 0.1),
                     layer: Layer::Background,
@@ -120,38 +120,38 @@ pub fn get_way_build_instruction_openfreemap(
             "secondary" | "railway" => {
                 return BuildInstruction::Stroke(StrokeInstruction {
                     color: Color::linear_rgb(0.3, 0.3, 0.3),
-                    width: 4.0,
+                    width: 4.0 / 4096.,
                 });
             }
             "busway" => {
                 return BuildInstruction::Stroke(StrokeInstruction {
                     color: Color::linear_rgb(1.0, 0.2, 0.2),
-                    width: 5.0,
+                    width: 5.0 / 4096.,
                 });
             }
             "motorway" | "motorway_link" => {
                 return BuildInstruction::Stroke(StrokeInstruction {
                     color: Color::BLACK,
-                    width: 10.0,
+                    width: 10.0 / 4096.,
                 });
             }
             "minor" => {
                 return BuildInstruction::Stroke(StrokeInstruction {
                     color: Color::linear_rgb(0.3, 0.3, 0.3),
-                    width: 3.0,
+                    width: 3.0 / 4096.,
                 });
             }
             "canal" => {
                 // return BuildInstruction::Stroke(StrokeInstruction {
                 //     color: Color::linear_rgb(1.0, 0.2, 0.2),
-                //     width: 2.0,
+                //     width: 2.0/ 4096.,
                 // });
                 return BuildInstruction::None;
             }
             "tertiary" | "path" | "service" => {
                 // return BuildInstruction::Stroke(StrokeInstruction {
                 //     color: Color::linear_rgb(1.0, 0.2, 0.2),
-                //     width: 2.0,
+                //     width: 2.0/ 4096.,
                 // });
                 return BuildInstruction::None;
             }
@@ -174,7 +174,7 @@ pub fn get_way_build_instruction_openfreemap(
                 });
             }
             "cemetery" | "college" | "hospital" | "kindergarten" | "library" | "school"
-            | "university" | "zoo" => {
+            | "university" | "zoo" | "ferry" => {
                 return BuildInstruction::Fill(FillInstruction {
                     color: Color::linear_rgb(123. / 255., 55. / 255., 38. / 255.),
                     layer: Layer::Background,

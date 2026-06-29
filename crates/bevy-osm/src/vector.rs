@@ -1,4 +1,9 @@
+use std::fs::File;
+use std::io::Read;
+
 use crate::building::{polygon_building, spawn_building};
+use crate::cache::{cache_vector_tile_for_chunk, get_openfreemap_cache_path};
+use crate::chunk::Chunk;
 use crate::layer::OMTLayer;
 use crate::material::MapMaterialHandle;
 use crate::mesh::{BuildInstruction, spawn_fill_mesh, spawn_stroke_mesh};
@@ -69,6 +74,21 @@ pub fn spawn_pbf(
     }
 }
 
+pub fn spawn_chunk(
+    commands: Commands,
+    meshes: ResMut<Assets<Mesh>>,
+    map_materials: Res<MapMaterialHandle>,
+    chunk: &Chunk,
+) {
+    cache_vector_tile_for_chunk(&chunk);
+    let mut bytes = Vec::new();
+    File::open(get_openfreemap_cache_path(&chunk))
+        .unwrap()
+        .read_to_end(&mut bytes)
+        .unwrap();
+    spawn_pbf(parse_pbf(bytes).unwrap(), commands, meshes, map_materials);
+}
+
 pub fn parse_pbf(pbf_data: Vec<u8>) -> Result<Vec<PolygonInstruction>, ParserError> {
     let reader = Reader::new(pbf_data)?;
     let mut polygons = Vec::new();
@@ -119,7 +139,7 @@ fn process_layer(reader: &Reader, layer: &Layer) -> Result<Vec<PolygonInstructio
                     layer_name.clone(),
                     line_string
                         .into_iter()
-                        .map(|x| point(x.x as f32, x.y as f32))
+                        .map(|x| point(x.x as f32, x.y as f32) / 4096.)
                         .collect(),
                 ));
             }
@@ -130,7 +150,7 @@ fn process_layer(reader: &Reader, layer: &Layer) -> Result<Vec<PolygonInstructio
                         layer_name.clone(),
                         polygon
                             .into_iter()
-                            .map(|x| point(x.x as f32, x.y as f32))
+                            .map(|x| point(x.x as f32, x.y as f32) / 4096.)
                             .collect(),
                     ));
                 }
@@ -143,7 +163,7 @@ fn process_layer(reader: &Reader, layer: &Layer) -> Result<Vec<PolygonInstructio
                         polygon
                             .exterior()
                             .into_iter()
-                            .map(|x| point(x.x as f32, x.y as f32))
+                            .map(|x| point(x.x as f32, x.y as f32) / 4096.)
                             .collect(),
                     ));
                 }
