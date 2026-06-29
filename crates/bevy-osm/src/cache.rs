@@ -12,6 +12,9 @@ use crate::{
 use bevy::prelude::*;
 
 const ELEVATION_BASE_URL: &str = "https://tiles.mapterhorn.com";
+const VECTOR_TILES_VERSION: &str = "20260621_080001_pt";
+const VECTOR_TILES_BASE_URL: &str = "
+https://tiles.openfreemap.org/planet/20260621_080001_pt";
 
 pub fn get_osm_raster_cache_path(chunk: &Chunk, config: &OSMConfig) -> String {
     let (z, x, y) = (chunk.z, chunk.x, chunk.y);
@@ -41,6 +44,10 @@ pub fn get_elevation_cache_path_bevy(chunk: &Chunk) -> String {
     let (z, x, y) = (chunk.z, chunk.x, chunk.y);
     format!("cache/elevation/{z}/{x}/{y}.webp")
 }
+pub fn get_openfreemap_cache_path(chunk: &Chunk) -> String {
+    let (z, x, y) = (chunk.z, chunk.x, chunk.y);
+    format!("assets/cache/openfreemap/{VECTOR_TILES_VERSION}/{z}/{x}/{y}.pbf")
+}
 
 fn cache_tile_for_chunk(
     path_str: String,
@@ -52,7 +59,7 @@ fn cache_tile_for_chunk(
 
     if !path.exists() {
         let request = ehttp::Request::get(url.clone());
-        debug!("Downloading elevation tile for {url}");
+        debug!("Downloading tile for {url}");
 
         ehttp::fetch(request, move |response| {
             let path = Path::new(&path_str);
@@ -82,6 +89,16 @@ pub fn cache_elevation_for_chunk(chunk: &Chunk) {
             .write_all(include_bytes!("../../../assets/osm/empty-tile.webp"))
             .expect("Could not write to tile cache");
     };
+
+    let path_str = get_elevation_cache_path(chunk);
+    cache_tile_for_chunk(path_str, url, on_error);
+}
+
+pub fn cache_vector_tile_for_chunk(chunk: &Chunk) {
+    let (z, x, y) = (chunk.z, chunk.x, chunk.y);
+    let url = format!("{VECTOR_TILES_BASE_URL}/{z}/{x}/{y}.webp");
+
+    let on_error = move |_, _| {};
 
     let path_str = get_elevation_cache_path(chunk);
     cache_tile_for_chunk(path_str, url, on_error);

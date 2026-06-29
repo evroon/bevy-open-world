@@ -5,8 +5,8 @@ use bevy::{
 };
 use lyon::{math::Point, path::Path};
 use lyon_tessellation::{
-    BuffersBuilder, FillOptions, FillTessellator, FillVertex, FillVertexConstructor, StrokeOptions,
-    StrokeTessellator, StrokeVertex, StrokeVertexConstructor,
+    BuffersBuilder, FillOptions, FillTessellator, FillVertex, FillVertexConstructor, LineJoin,
+    StrokeOptions, StrokeTessellator, StrokeVertex, StrokeVertexConstructor,
 };
 
 use crate::osm_types::BuildingClass;
@@ -50,6 +50,22 @@ impl StrokeVertexConstructor<Vertex> for VertexConstructor {
 #[derive(Component)]
 pub struct Shape;
 
+pub enum Layer {
+    Background,
+    Foreground,
+    OnTop,
+}
+
+impl Layer {
+    pub fn get_z(&self) -> f32 {
+        match self {
+            Layer::Background => -2.0,
+            Layer::Foreground => -1.0,
+            Layer::OnTop => 0.0,
+        }
+    }
+}
+
 pub struct StrokeInstruction {
     pub color: Color,
     pub width: f32,
@@ -62,6 +78,7 @@ pub struct BuildingInstruction {
 
 pub struct FillInstruction {
     pub color: Color,
+    pub layer: Layer,
 }
 
 pub struct LightInstruction {
@@ -92,13 +109,15 @@ pub fn spawn_stroke_mesh(points: Vec<Point>, instruction: StrokeInstruction) -> 
 
     if let Err(e) = tess.tessellate_path(
         &path_builder.build(),
-        &StrokeOptions::default().with_line_width(instruction.width),
+        &StrokeOptions::default()
+            .with_line_width(instruction.width)
+            .with_line_join(LineJoin::Bevel),
         &mut BuffersBuilder::new(&mut buffers, constructor),
     ) {
         error!("StrokeTessellator error: {:?}", e);
     }
 
-    build_mesh(&buffers)
+    build_mesh(&buffers, 1.0)
 }
 
 pub fn spawn_fill_mesh(points: Vec<Point>, instruction: FillInstruction) -> Mesh {
@@ -123,10 +142,10 @@ pub fn spawn_fill_mesh(points: Vec<Point>, instruction: FillInstruction) -> Mesh
         error!("FillTessellator error: {:?}", e);
     }
 
-    build_mesh(&buffers)
+    build_mesh(&buffers, instruction.layer.get_z())
 }
 
-pub fn build_mesh(buffers: &VertexBuffers) -> Mesh {
+pub fn build_mesh(buffers: &VertexBuffers, z: f32) -> Mesh {
     let mut mesh = Mesh::new(
         PrimitiveTopology::TriangleList,
         RenderAssetUsages::default(),
@@ -137,7 +156,7 @@ pub fn build_mesh(buffers: &VertexBuffers) -> Mesh {
         buffers
             .vertices
             .iter()
-            .map(|v| [v.position[0], 0.1, v.position[1]])
+            .map(|v| [v.position[0], z, v.position[1]])
             .collect::<Vec<[f32; 3]>>(),
     );
     mesh.insert_attribute(

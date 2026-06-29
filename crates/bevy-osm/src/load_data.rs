@@ -3,9 +3,9 @@ use std::path::Path;
 use crate::{
     building::spawn_building,
     cache::{
-        cache_elevation_for_chunk, cache_raster_tile_for_chunk, get_elevation_cache_path,
-        get_elevation_cache_path_bevy, get_osm_cache_path, get_osm_raster_cache_path,
-        get_osm_raster_cache_path_bevy,
+        cache_elevation_for_chunk, cache_raster_tile_for_chunk, cache_vector_tile_for_chunk,
+        get_elevation_cache_path, get_elevation_cache_path_bevy, get_osm_cache_path,
+        get_osm_raster_cache_path, get_osm_raster_cache_path_bevy,
     },
     chunk::Chunk,
     config::OSMConfig,
@@ -39,6 +39,7 @@ pub fn preload_chunks(
         };
         cache_elevation_for_chunk(&chunk);
         cache_raster_tile_for_chunk(&chunk, &config);
+        cache_vector_tile_for_chunk(&chunk);
 
         commands.entity(entity).insert(chunk);
     });
