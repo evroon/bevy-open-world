@@ -10,6 +10,7 @@ use crate::mesh::{BuildInstruction, spawn_fill_mesh, spawn_stroke_mesh};
 use crate::tag::Tag;
 use crate::theme::get_way_build_instruction_openfreemap;
 use bevy::prelude::*;
+use geo::Coord;
 use geo_types::Geometry;
 use lyon::geom::euclid::{Point2D, UnknownUnit};
 use lyon::math::point;
@@ -21,12 +22,14 @@ pub type PolygonInstruction = (Vec<Tag>, OMTLayer, Vec<Point2D<f32, UnknownUnit>
 
 pub fn spawn_pbf(
     instructions: Vec<PolygonInstruction>,
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    map_materials: Res<MapMaterialHandle>,
+    commands: &mut Commands,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    map_materials: &Res<MapMaterialHandle>,
+    chunk_entity: Entity,
 ) {
     let mut rng = rand::rng();
     let building_material: Handle<StandardMaterial> = map_materials.unknown_building.clone();
+    let mut child_ids = Vec::new();
 
     for (tags, layer, polygon) in instructions {
         match get_way_build_instruction_openfreemap(
@@ -39,23 +42,25 @@ pub fn spawn_pbf(
             layer,
         ) {
             BuildInstruction::Fill(fill) => {
-                let mesh = spawn_fill_mesh(polygon.iter().map(|p| point(p.x, p.y)).collect(), fill);
+                // let mesh = spawn_fill_mesh(polygon.iter().map(|p| point(p.x, p.y)).collect(), fill);
 
-                commands.spawn((
-                    Mesh3d(meshes.add(mesh)),
-                    MeshMaterial3d(building_material.clone()),
-                    Transform::IDENTITY,
-                ));
+                // let mesh = commands.spawn((
+                //     Mesh3d(meshes.add(mesh)),
+                //     MeshMaterial3d(building_material.clone()),
+                //     Transform::IDENTITY,
+                // ));
+                // child_ids.push(mesh.id());
             }
             BuildInstruction::Stroke(stroke) => {
                 let mesh =
                     spawn_stroke_mesh(polygon.iter().map(|p| point(p.x, p.y)).collect(), stroke);
 
-                commands.spawn((
+                let mesh = commands.spawn((
                     Mesh3d(meshes.add(mesh)),
                     MeshMaterial3d(building_material.clone()),
                     Transform::IDENTITY,
                 ));
+                child_ids.push(mesh.id());
             }
             BuildInstruction::Building(building) => {
                 let building = polygon_building(&building, polygon, &mut rng);
@@ -65,20 +70,27 @@ pub fn spawn_pbf(
                     .collect::<Vec<(Mesh3d, Transform)>>();
 
                 for (mesh, trans) in mesh3ds {
-                    commands.spawn((mesh, MeshMaterial3d(building_material.clone()), trans));
+                    let mesh =
+                        commands.spawn((mesh, MeshMaterial3d(building_material.clone()), trans));
+                    child_ids.push(mesh.id());
                 }
             }
             BuildInstruction::Light(_light) => {}
             BuildInstruction::None => {}
         }
     }
+
+    for child_id in child_ids {
+        commands.entity(chunk_entity).add_child(child_id);
+    }
 }
 
 pub fn spawn_chunk(
-    commands: Commands,
-    meshes: ResMut<Assets<Mesh>>,
-    map_materials: Res<MapMaterialHandle>,
+    commands: &mut Commands,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    map_materials: &Res<MapMaterialHandle>,
     chunk: &Chunk,
+    chunk_entity: Entity,
 ) {
     cache_vector_tile_for_chunk(&chunk);
     let mut bytes = Vec::new();
@@ -86,7 +98,13 @@ pub fn spawn_chunk(
         .unwrap()
         .read_to_end(&mut bytes)
         .unwrap();
-    spawn_pbf(parse_pbf(bytes).unwrap(), commands, meshes, map_materials);
+    spawn_pbf(
+        parse_pbf(bytes).unwrap(),
+        commands,
+        meshes,
+        map_materials,
+        chunk_entity,
+    );
 }
 
 pub fn parse_pbf(pbf_data: Vec<u8>) -> Result<Vec<PolygonInstruction>, ParserError> {
@@ -124,6 +142,14 @@ fn get_tags(properties: &Feature<i32>) -> Vec<Tag> {
         .collect::<Vec<Tag>>()
 }
 
+#[inline]
+fn transform_coord(coord: &Coord<i32>) -> Point2D<f32, UnknownUnit> {
+    point(
+        (coord.x as f32 - 2048.) / 4096.,
+        (coord.y as f32 - 2048.) / 4096.,
+    )
+}
+
 fn process_layer(reader: &Reader, layer: &Layer) -> Result<Vec<PolygonInstruction>, ParserError> {
     let mut polygons = Vec::new();
     let features = reader.get_features_as::<i32>(layer.layer_index)?;
@@ -137,10 +163,7 @@ fn process_layer(reader: &Reader, layer: &Layer) -> Result<Vec<PolygonInstructio
                 polygons.push((
                     tags.clone(),
                     layer_name.clone(),
-                    line_string
-                        .into_iter()
-                        .map(|x| point(x.x as f32, x.y as f32) / 4096.)
-                        .collect(),
+                    line_string.into_iter().map(transform_coord).collect(),
                 ));
             }
             Geometry::MultiLineString(multi_line_string) => {
@@ -148,10 +171,7 @@ fn process_layer(reader: &Reader, layer: &Layer) -> Result<Vec<PolygonInstructio
                     polygons.push((
                         tags.clone(),
                         layer_name.clone(),
-                        polygon
-                            .into_iter()
-                            .map(|x| point(x.x as f32, x.y as f32) / 4096.)
-                            .collect(),
+                        polygon.into_iter().map(transform_coord).collect(),
                     ));
                 }
             }
@@ -163,7 +183,7 @@ fn process_layer(reader: &Reader, layer: &Layer) -> Result<Vec<PolygonInstructio
                         polygon
                             .exterior()
                             .into_iter()
-                            .map(|x| point(x.x as f32, x.y as f32) / 4096.)
+                            .map(transform_coord)
                             .collect(),
                     ));
                 }

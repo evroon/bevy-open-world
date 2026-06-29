@@ -1,6 +1,9 @@
 use std::collections::HashMap;
 
-use bevy::{color::Color, log::warn};
+use bevy::{
+    color::Color,
+    log::{debug, warn},
+};
 
 use crate::{
     layer::OMTLayer,
@@ -186,6 +189,14 @@ pub fn get_way_build_instruction_openfreemap(
             | "industrial"
             | "military"
             | "nature_reserve"
+            | "quarter"
+            | "bus_station"
+            | "neighbourhood"
+            | "healthcare"
+            | "suburb"
+            | "ridge"
+            | "aerialway"
+            | "theme_park"
             | "naturentwicklungsgebiet"
             | "naturschutzgebiet"
             | "protected_area"
@@ -194,18 +205,27 @@ pub fn get_way_build_instruction_openfreemap(
                 return BuildInstruction::None;
             }
             _ => {
-                println!("Unknown class found: {:?}", tags);
+                debug!("Unknown class found: {:?}", tags);
                 return BuildInstruction::None;
             }
         }
     }
 
     match layer_name {
-        OMTLayer::Building => BuildInstruction::Building(BuildingInstruction {
-            class: Some(BuildingClass::Agricultural),
-            height: None,
-            levels: Some(6.0),
-        }),
+        OMTLayer::Building => {
+            let tag_map = tags
+                .iter()
+                .map(|tag| (tag.key.clone(), tag.val.clone()))
+                .collect::<HashMap<String, String>>();
+
+            BuildInstruction::Building(BuildingInstruction {
+                class: Some(BuildingClass::Agricultural),
+                height: None,
+                levels: tag_map
+                    .get("render_height")
+                    .and_then(|x| x.parse::<i32>().ok().and_then(|x| Some(x.max(5) as f32))),
+            })
+        }
         _ => BuildInstruction::None,
     }
 }
@@ -341,7 +361,6 @@ pub fn get_way_build_instruction(tags: &Vec<Tag>) -> BuildInstruction {
                 .iter()
                 .map(|tag| (tag.key.clone(), tag.val.clone()))
                 .collect::<HashMap<String, String>>();
-
             return BuildInstruction::Building(BuildingInstruction {
                 class: Some(BuildingClass::from_string(&tag.val)),
                 height: tag_map.get("building:height").map(|h| h.parse().unwrap()),

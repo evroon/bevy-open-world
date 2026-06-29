@@ -96,7 +96,6 @@ pub fn cache_elevation_for_chunk(chunk: &Chunk) {
 pub fn cache_vector_tile_for_chunk(chunk: &Chunk) {
     let (z, x, y) = (chunk.z, chunk.x, chunk.y);
     let url = format!("{VECTOR_TILES_BASE_URL}/{z}/{x}/{y}.pbf");
-    println!("{url}");
 
     let on_error = move |s, r| error!("Could not download vector tile for {}: `{:?}`", s, r);
 

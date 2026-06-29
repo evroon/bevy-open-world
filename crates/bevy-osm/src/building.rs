@@ -61,7 +61,7 @@ pub fn polygon_building(
             Some(levels) => levels * 3.0,
             None => rng.random_range(6.0..12.5),
         },
-    } / 4096.;
+    };
     Building {
         _class: building_instruction.class,
         translate: [origin.x, origin.y],

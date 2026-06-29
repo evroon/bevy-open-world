@@ -4,8 +4,8 @@ use crate::{
     building::spawn_building,
     cache::{
         cache_elevation_for_chunk, cache_raster_tile_for_chunk, cache_vector_tile_for_chunk,
-        get_elevation_cache_path, get_elevation_cache_path_bevy, get_osm_cache_path,
-        get_osm_raster_cache_path, get_osm_raster_cache_path_bevy,
+        get_elevation_cache_path, get_elevation_cache_path_bevy, get_openfreemap_cache_path,
+        get_osm_cache_path, get_osm_raster_cache_path, get_osm_raster_cache_path_bevy,
     },
     chunk::Chunk,
     config::OSMConfig,
@@ -13,6 +13,7 @@ use crate::{
     material::MapMaterialHandle,
     mesh::Shape,
     tile::build_tile,
+    vector::spawn_chunk,
 };
 use bevy::{
     ecs::{system::SystemState, world::CommandQueue},
@@ -61,8 +62,10 @@ pub fn load_unloaded_chunks(
         let elevation_path = Path::new(&elevation_path_str);
         let osm_raster_path_str = get_osm_raster_cache_path(&chunk, &config);
         let osm_raster_path = Path::new(&osm_raster_path_str);
+        let vector_path_str = get_openfreemap_cache_path(&chunk);
+        let vector_path = Path::new(&vector_path_str);
 
-        if elevation_path.exists() && osm_raster_path.exists() {
+        if elevation_path.exists() && osm_raster_path.exists() && vector_path.exists() {
             chunk.elevation = asset_server.load(get_elevation_cache_path_bevy(&chunk));
             chunk.raster = asset_server.load(get_osm_raster_cache_path_bevy(&chunk, &config));
 
@@ -97,6 +100,12 @@ pub fn load_chunk(
     let heightmap = images
         .get(elevation)
         .expect("Image should have loaded by now");
+
+    // let vector_tile_chunk = match chunk.z > 14 {
+    //     true => chunk.get_parent_at_z(14),
+    //     false => chunk.clone(),
+    // };
+    spawn_chunk(commands, meshes, map_materials, &chunk, chunk_entity);
 
     spawn_elevation_meshes(
         commands,
