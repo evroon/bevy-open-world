@@ -25,7 +25,7 @@ use crate::{
     performance::{OSMPerformance, update_performance},
     ui::setup_osm_ui,
 };
-use bevy::prelude::*;
+use bevy::{diagnostic::FrameTimeDiagnosticsPlugin, prelude::*};
 use bevy_egui::EguiPrimaryContextPass;
 use bevy_terrain::{
     mesh::build_mesh_cache,
@@ -40,6 +40,7 @@ impl Plugin for OSMPlugin {
         app.init_resource::<MapMaterialHandle>()
             .init_resource::<OSMConfig>()
             .init_resource::<OSMPerformance>()
+            .add_plugins(FrameTimeDiagnosticsPlugin::default())
             .add_systems(EguiPrimaryContextPass, setup_osm_ui)
             .add_systems(Startup, (build_terrain_tile, build_mesh_cache))
             .add_systems(
