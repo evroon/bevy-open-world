@@ -67,6 +67,7 @@ fn debug_material(
     }))
 }
 
+#[expect(unused_variables)]
 pub fn spawn_elevation_meshes(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
@@ -80,7 +81,8 @@ pub fn spawn_elevation_meshes(
         .map(|(x_local, y_local, ..)| {
             (
                 (x_local, y_local),
-                get_elevation_local(heightmap, IVec2::new(x_local, y_local)),
+                -3.,
+                // get_elevation_local(heightmap, IVec2::new(x_local, y_local)),
             )
         })
         .collect::<HeightMap>();

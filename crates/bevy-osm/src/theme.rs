@@ -1,6 +1,9 @@
 use std::collections::HashMap;
 
-use bevy::{color::Color, log::warn};
+use bevy::{
+    color::Color,
+    log::{debug, warn},
+};
 
 use crate::{
     layer::OMTLayer,
@@ -84,13 +87,13 @@ pub fn get_way_build_instruction_openfreemap(
             "rail" => {
                 return BuildInstruction::Stroke(StrokeInstruction {
                     color: Color::linear_rgb(0.3, 0.3, 0.3),
-                    width: 6.0,
+                    width: 6.0 / 4096.,
                 });
             }
-            "primary" => {
+            "primary" | "raceway" => {
                 return BuildInstruction::Stroke(StrokeInstruction {
                     color: Color::linear_rgb(0.3, 0.3, 0.3),
-                    width: 7.0,
+                    width: 7.0 / 4096.,
                 });
             }
             "runway" => {
@@ -99,13 +102,13 @@ pub fn get_way_build_instruction_openfreemap(
                     layer: Layer::OnTop,
                 });
             }
-            "taxiway" | "apron" => {
+            "taxiway" | "apron" | "helipad" => {
                 return BuildInstruction::Fill(FillInstruction {
                     color: Color::linear_rgb(0.3, 0.3, 0.3),
                     layer: Layer::Foreground,
                 });
             }
-            "aerodrome" => {
+            "aerodrome" | "heliport" => {
                 return BuildInstruction::Fill(FillInstruction {
                     color: Color::linear_rgb(0.1, 0.1, 0.1),
                     layer: Layer::Background,
@@ -120,38 +123,38 @@ pub fn get_way_build_instruction_openfreemap(
             "secondary" | "railway" => {
                 return BuildInstruction::Stroke(StrokeInstruction {
                     color: Color::linear_rgb(0.3, 0.3, 0.3),
-                    width: 4.0,
+                    width: 4.0 / 4096.,
                 });
             }
             "busway" => {
                 return BuildInstruction::Stroke(StrokeInstruction {
                     color: Color::linear_rgb(1.0, 0.2, 0.2),
-                    width: 5.0,
+                    width: 5.0 / 4096.,
                 });
             }
             "motorway" | "motorway_link" => {
                 return BuildInstruction::Stroke(StrokeInstruction {
                     color: Color::BLACK,
-                    width: 10.0,
+                    width: 10.0 / 4096.,
                 });
             }
             "minor" => {
                 return BuildInstruction::Stroke(StrokeInstruction {
                     color: Color::linear_rgb(0.3, 0.3, 0.3),
-                    width: 3.0,
+                    width: 3.0 / 4096.,
                 });
             }
             "canal" => {
                 // return BuildInstruction::Stroke(StrokeInstruction {
                 //     color: Color::linear_rgb(1.0, 0.2, 0.2),
-                //     width: 2.0,
+                //     width: 2.0/ 4096.,
                 // });
                 return BuildInstruction::None;
             }
             "tertiary" | "path" | "service" => {
                 // return BuildInstruction::Stroke(StrokeInstruction {
                 //     color: Color::linear_rgb(1.0, 0.2, 0.2),
-                //     width: 2.0,
+                //     width: 2.0/ 4096.,
                 // });
                 return BuildInstruction::None;
             }
@@ -174,7 +177,7 @@ pub fn get_way_build_instruction_openfreemap(
                 });
             }
             "cemetery" | "college" | "hospital" | "kindergarten" | "library" | "school"
-            | "university" | "zoo" => {
+            | "university" | "zoo" | "ferry" => {
                 return BuildInstruction::Fill(FillInstruction {
                     color: Color::linear_rgb(123. / 255., 55. / 255., 38. / 255.),
                     layer: Layer::Background,
@@ -186,6 +189,14 @@ pub fn get_way_build_instruction_openfreemap(
             | "industrial"
             | "military"
             | "nature_reserve"
+            | "quarter"
+            | "bus_station"
+            | "neighbourhood"
+            | "healthcare"
+            | "suburb"
+            | "ridge"
+            | "aerialway"
+            | "theme_park"
             | "naturentwicklungsgebiet"
             | "naturschutzgebiet"
             | "protected_area"
@@ -194,18 +205,27 @@ pub fn get_way_build_instruction_openfreemap(
                 return BuildInstruction::None;
             }
             _ => {
-                println!("Unknown class found: {:?}", tags);
+                debug!("Unknown class found: {:?}", tags);
                 return BuildInstruction::None;
             }
         }
     }
 
     match layer_name {
-        OMTLayer::Building => BuildInstruction::Building(BuildingInstruction {
-            class: Some(BuildingClass::Agricultural),
-            height: None,
-            levels: Some(6.0),
-        }),
+        OMTLayer::Building => {
+            let tag_map = tags
+                .iter()
+                .map(|tag| (tag.key.clone(), tag.val.clone()))
+                .collect::<HashMap<String, String>>();
+
+            BuildInstruction::Building(BuildingInstruction {
+                class: Some(BuildingClass::Agricultural),
+                height: None,
+                levels: tag_map
+                    .get("render_height")
+                    .and_then(|x| x.parse::<i32>().ok().map(|x| x.max(5) as f32)),
+            })
+        }
         _ => BuildInstruction::None,
     }
 }
@@ -341,7 +361,6 @@ pub fn get_way_build_instruction(tags: &Vec<Tag>) -> BuildInstruction {
                 .iter()
                 .map(|tag| (tag.key.clone(), tag.val.clone()))
                 .collect::<HashMap<String, String>>();
-
             return BuildInstruction::Building(BuildingInstruction {
                 class: Some(BuildingClass::from_string(&tag.val)),
                 height: tag_map.get("building:height").map(|h| h.parse().unwrap()),

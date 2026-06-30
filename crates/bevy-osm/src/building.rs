@@ -24,6 +24,12 @@ pub struct Building {
     pub triangle_indices: Vec<u32>,
 }
 
+impl Building {
+    pub fn get_translation(&self) -> Vec3 {
+        Vec3::new(self.translate[0], 0.0, self.translate[1])
+    }
+}
+
 pub fn polygon_building(
     building_instruction: &BuildingInstruction,
     polygon: Vec<Point<f32>>,
@@ -35,7 +41,7 @@ pub fn polygon_building(
             polygon
                 .iter()
                 .rev()
-                .map(|v| (v.x - origin.x, v.y - origin.y))
+                .map(|v| v.to_tuple())
                 .collect::<Vec<(f32, f32)>>(),
         ),
         vec![],
@@ -71,7 +77,7 @@ pub fn polygon_building(
         vertices: triangles
             .vertices
             .iter()
-            .map(|i| [i[0], 0., i[1]])
+            .map(|i| [i[0], height, i[1]])
             .collect(),
         triangle_indices: triangles
             .triangle_indices
@@ -81,40 +87,49 @@ pub fn polygon_building(
     }
 }
 
-pub fn spawn_building(building: &Building) -> Vec<(Mesh, Transform)> {
-    let mut result = Vec::new();
+pub fn spawn_building(building: &Building) -> Mesh {
+    let mut wall_mesh = build_wall_mesh(building);
+
+    wall_mesh
+        .merge(&build_roof_mesh(building))
+        .expect("could not merge meshes");
+
+    wall_mesh
+}
+
+fn build_wall_mesh(building: &Building) -> Mesh {
     let wall = Wall::new(&building.line, building.height);
-    let mut mesh = Mesh::new(
+
+    let mut wall_mesh = Mesh::new(
         PrimitiveTopology::TriangleList,
-        RenderAssetUsages::MAIN_WORLD | RenderAssetUsages::RENDER_WORLD,
+        RenderAssetUsages::RENDER_WORLD,
     );
-    mesh.insert_attribute(
+
+    wall_mesh.insert_attribute(
         Mesh::ATTRIBUTE_POSITION,
         VertexAttributeValues::from(wall.vertices),
     );
-    mesh.insert_attribute(
+    wall_mesh.insert_attribute(
         Mesh::ATTRIBUTE_NORMAL,
         VertexAttributeValues::from(wall.normals),
     );
-    mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, VertexAttributeValues::from(wall.uvs));
-    mesh.insert_indices(Indices::U32(wall.indices));
-    mesh.compute_normals();
+    wall_mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, VertexAttributeValues::from(wall.uvs));
+    wall_mesh.insert_indices(Indices::U32(wall.indices));
+    wall_mesh.compute_normals();
 
-    let translate: Vec3 = Vec3::new(building.translate[0], 0., building.translate[1]);
-    let transform = Transform::from_translation(translate);
-    result.push((mesh, transform));
+    wall_mesh
+}
 
-    // Roof
-    let mut roof = Mesh::new(
+fn build_roof_mesh(building: &Building) -> Mesh {
+    let mut roof_mesh = Mesh::new(
         PrimitiveTopology::TriangleList,
-        RenderAssetUsages::MAIN_WORLD | RenderAssetUsages::RENDER_WORLD,
+        RenderAssetUsages::RENDER_WORLD,
     );
-    let vertices: Vec<[f32; 3]> = building.vertices.iter().map(|v| v.map(|p| p)).collect();
-    roof.insert_attribute(
+    roof_mesh.insert_attribute(
         Mesh::ATTRIBUTE_POSITION,
-        VertexAttributeValues::from(vertices.clone()),
+        VertexAttributeValues::from(building.vertices.clone()),
     );
-    roof.insert_attribute(
+    roof_mesh.insert_attribute(
         Mesh::ATTRIBUTE_NORMAL,
         VertexAttributeValues::from(
             building
@@ -124,17 +139,22 @@ pub fn spawn_building(building: &Building) -> Vec<(Mesh, Transform)> {
                 .collect::<Vec<[f32; 3]>>(),
         ),
     );
-    let uvs: Vec<[f32; 2]> = vertices.clone().iter().map(|p| [p[0], p[2]]).collect();
-    roof.insert_attribute(Mesh::ATTRIBUTE_UV_0, VertexAttributeValues::from(uvs));
-    let bs = building.triangle_indices.clone();
-    roof.insert_indices(Indices::U32(bs));
-    roof.invert_winding().unwrap();
-    roof.compute_normals();
+    roof_mesh.insert_attribute(
+        Mesh::ATTRIBUTE_UV_0,
+        VertexAttributeValues::from(
+            building
+                .vertices
+                .clone()
+                .iter()
+                .map(|p| [p[0], p[2]])
+                .collect::<Vec<[f32; 2]>>(),
+        ),
+    );
+    let mut bs = building.triangle_indices.clone();
+    bs.reverse();
+    roof_mesh.insert_indices(Indices::U32(bs));
 
-    let translation = transform.translation + Vec3::Y * building.height;
-
-    result.push((roof, Transform::from_translation(translation)));
-    result
+    roof_mesh
 }
 
 #[derive(Component, Debug)]

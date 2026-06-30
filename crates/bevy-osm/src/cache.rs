@@ -13,8 +13,7 @@ use bevy::prelude::*;
 
 const ELEVATION_BASE_URL: &str = "https://tiles.mapterhorn.com";
 const VECTOR_TILES_VERSION: &str = "20260621_080001_pt";
-const VECTOR_TILES_BASE_URL: &str = "
-https://tiles.openfreemap.org/planet/20260621_080001_pt";
+const VECTOR_TILES_BASE_URL: &str = "https://tiles.openfreemap.org/planet/20260621_080001_pt";
 
 pub fn get_osm_raster_cache_path(chunk: &Chunk, config: &OSMConfig) -> String {
     let (z, x, y) = (chunk.z, chunk.x, chunk.y);
@@ -96,11 +95,11 @@ pub fn cache_elevation_for_chunk(chunk: &Chunk) {
 
 pub fn cache_vector_tile_for_chunk(chunk: &Chunk) {
     let (z, x, y) = (chunk.z, chunk.x, chunk.y);
-    let url = format!("{VECTOR_TILES_BASE_URL}/{z}/{x}/{y}.webp");
+    let url = format!("{VECTOR_TILES_BASE_URL}/{z}/{x}/{y}.pbf");
 
-    let on_error = move |_, _| {};
+    let on_error = move |s, r| error!("Could not download vector tile for {}: `{:?}`", s, r);
 
-    let path_str = get_elevation_cache_path(chunk);
+    let path_str = get_openfreemap_cache_path(chunk);
     cache_tile_for_chunk(path_str, url, on_error);
 }
 
