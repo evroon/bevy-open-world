@@ -1,6 +1,6 @@
-use bevy::DefaultPlugins;
-use bevy::pbr::{DefaultOpaqueRendererMethod, ScatteringMedium};
+use bevy::pbr::DefaultOpaqueRendererMethod;
 use bevy::prelude::*;
+use bevy::{DefaultPlugins, light::atmosphere::ScatteringMedium};
 use bevy_egui::EguiPlugin;
 use bevy_flight_sim::flightdeck::spawn_flightdeck;
 use bevy_flight_sim::runway::spawn_aircraft;
