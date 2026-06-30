@@ -67,6 +67,7 @@ fn debug_material(
     }))
 }
 
+#[expect(unused_variables)]
 pub fn spawn_elevation_meshes(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,

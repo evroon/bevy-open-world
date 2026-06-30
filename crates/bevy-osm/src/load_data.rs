@@ -150,8 +150,7 @@ pub fn load_chunk(
 
         let mut command_queue = CommandQueue::default();
         command_queue.push(move |world: &mut World| {
-            let mut meshes =
-                SystemState::<ResMut<Assets<Mesh>>>::new(world).get_mut(world);
+            let mut meshes = SystemState::<ResMut<Assets<Mesh>>>::new(world).get_mut(world);
 
             let stroke_handles: Vec<Handle<Mesh>> = computed_strokes
                 .into_iter()
@@ -164,7 +163,11 @@ pub fn load_chunk(
 
             for handle in stroke_handles {
                 let stroke = world
-                    .spawn((Mesh3d(handle), MeshMaterial3d(building_material.clone()), Shape))
+                    .spawn((
+                        Mesh3d(handle),
+                        MeshMaterial3d(building_material.clone()),
+                        Shape,
+                    ))
                     .id();
                 world.entity_mut(chunk_entity).add_child(stroke);
             }
@@ -176,7 +179,9 @@ pub fn load_chunk(
                 world.entity_mut(chunk_entity).add_child(bm);
             }
 
-            world.entity_mut(vector_entity).remove::<ComputeVectorTile>();
+            world
+                .entity_mut(vector_entity)
+                .remove::<ComputeVectorTile>();
         });
         command_queue
     });
