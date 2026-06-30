@@ -39,8 +39,8 @@ fn main() {
         .run();
 }
 
-fn spawn_camera(mut commands: Commands, scattering_mediums: ResMut<Assets<ScatteringMedium>>) {
-    let mut camera = commands.spawn(get_camera_bundle_for_open_world(scattering_mediums));
+fn spawn_camera(mut commands: Commands) {
+    let mut camera = commands.spawn(get_camera_bundle_for_open_world());
     camera.insert(FlyCam);
     camera.insert(WhereWasI::from_name("osm_camera"));
     camera.insert(Projection::Perspective(PerspectiveProjection {
