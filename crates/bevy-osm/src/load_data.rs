@@ -1,7 +1,7 @@
-use std::path::Path;
+use std::{io::Read, path::Path};
 
 use crate::{
-    building::spawn_building,
+    building::{polygon_building, spawn_building},
     cache::{
         cache_elevation_for_chunk, cache_raster_tile_for_chunk, cache_vector_tile_for_chunk,
         get_elevation_cache_path, get_elevation_cache_path_bevy, get_openfreemap_cache_path,
@@ -11,9 +11,10 @@ use crate::{
     config::OSMConfig,
     elevation::{TILE_VERTEX_COUNT, get_elevation_local, spawn_elevation_meshes},
     material::MapMaterialHandle,
-    mesh::Shape,
+    mesh::{BuildInstruction, Shape, spawn_stroke_mesh},
+    theme::get_way_build_instruction_openfreemap,
     tile::build_tile,
-    vector::spawn_chunk,
+    vector::parse_pbf,
 };
 use bevy::{
     ecs::{system::SystemState, world::CommandQueue},
@@ -24,6 +25,9 @@ use bevy_terrain::quadtree::{ChunkLoaded, QuadTreeNodeComponent};
 
 #[derive(Component)]
 pub struct ComputeTransform(pub Task<CommandQueue>);
+
+#[derive(Component)]
+pub struct ComputeVectorTile(pub Task<CommandQueue>);
 
 pub fn preload_chunks(
     mut commands: Commands,
@@ -105,7 +109,81 @@ pub fn load_chunk(
     //     true => chunk.get_parent_at_z(14),
     //     false => chunk.clone(),
     // };
-    spawn_chunk(commands, meshes, map_materials, &chunk, chunk_entity);
+
+    let thread_pool = AsyncComputeTaskPool::get();
+
+    // Spawn an async task to process the vector tile off the main thread.
+    let building_material = map_materials.unknown_building.clone();
+    let vector_entity = commands.spawn_empty().id();
+    let chunk_for_vector = chunk.clone();
+
+    let vector_task = thread_pool.spawn(async move {
+        let path = get_openfreemap_cache_path(&chunk_for_vector);
+        let mut bytes = Vec::new();
+        std::fs::File::open(&path)
+            .expect("Vector tile file should exist")
+            .read_to_end(&mut bytes)
+            .expect("Could not read vector tile file");
+
+        let instructions = parse_pbf(bytes).unwrap_or_default();
+
+        let mut rng = rand::rng();
+        let mut computed_strokes: Vec<Mesh> = Vec::new();
+        let mut computed_buildings: Vec<(Mesh, Transform)> = Vec::new();
+
+        for (tags, layer, polygon) in instructions {
+            match get_way_build_instruction_openfreemap(tags, layer) {
+                BuildInstruction::Stroke(stroke) => {
+                    let points = polygon
+                        .iter()
+                        .map(|p| lyon::math::point(p.x, p.y))
+                        .collect();
+                    computed_strokes.push(spawn_stroke_mesh(points, stroke));
+                }
+                BuildInstruction::Building(building_instr) => {
+                    let building = polygon_building(&building_instr, polygon, &mut rng);
+                    computed_buildings.extend(spawn_building(&building));
+                }
+                _ => {}
+            }
+        }
+
+        let mut command_queue = CommandQueue::default();
+        command_queue.push(move |world: &mut World| {
+            let mut meshes =
+                SystemState::<ResMut<Assets<Mesh>>>::new(world).get_mut(world);
+
+            let stroke_handles: Vec<Handle<Mesh>> = computed_strokes
+                .into_iter()
+                .map(|m| meshes.add(m))
+                .collect();
+            let building_handles: Vec<(Mesh3d, Transform)> = computed_buildings
+                .into_iter()
+                .map(|(m, t)| (Mesh3d(meshes.add(m)), t))
+                .collect();
+
+            for handle in stroke_handles {
+                let stroke = world
+                    .spawn((Mesh3d(handle), MeshMaterial3d(building_material.clone()), Shape))
+                    .id();
+                world.entity_mut(chunk_entity).add_child(stroke);
+            }
+
+            for (mesh3d, transform) in building_handles {
+                let bm = world
+                    .spawn((mesh3d, MeshMaterial3d(building_material.clone()), transform))
+                    .id();
+                world.entity_mut(chunk_entity).add_child(bm);
+            }
+
+            world.entity_mut(vector_entity).remove::<ComputeVectorTile>();
+        });
+        command_queue
+    });
+
+    commands
+        .entity(vector_entity)
+        .insert(ComputeVectorTile(vector_task));
 
     spawn_elevation_meshes(
         commands,
@@ -117,7 +195,6 @@ pub fn load_chunk(
         config,
     );
 
-    let thread_pool = AsyncComputeTaskPool::get();
     let building_material: Handle<StandardMaterial> = map_materials.unknown_building.clone();
     let light_material: Handle<StandardMaterial> = map_materials.light.clone();
     let entity = commands.spawn_empty().id();
@@ -229,6 +306,17 @@ pub fn handle_tasks(mut commands: Commands, mut transform_tasks: Query<&mut Comp
     for mut task in &mut transform_tasks {
         if let Some(mut commands_queue) = block_on(future::poll_once(&mut task.0)) {
             // append the returned command queue to have it execute later
+            commands.append(&mut commands_queue);
+        }
+    }
+}
+
+pub fn handle_vector_tasks(
+    mut commands: Commands,
+    mut vector_tasks: Query<&mut ComputeVectorTile>,
+) {
+    for mut task in &mut vector_tasks {
+        if let Some(mut commands_queue) = block_on(future::poll_once(&mut task.0)) {
             commands.append(&mut commands_queue);
         }
     }

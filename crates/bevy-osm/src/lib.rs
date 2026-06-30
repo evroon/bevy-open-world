@@ -21,7 +21,7 @@ use crate::{
     cache::ensure_session_is_valid,
     chunk::Chunk,
     config::OSMConfig,
-    load_data::{handle_tasks, load_unloaded_chunks, preload_chunks},
+    load_data::{handle_tasks, handle_vector_tasks, load_unloaded_chunks, preload_chunks},
     material::MapMaterialHandle,
     performance::{OSMPerformance, update_performance},
     ui::setup_osm_ui,
@@ -48,6 +48,7 @@ impl Plugin for OSMPlugin {
                 (
                     update_terrain_quadtree,
                     handle_tasks.before(update_terrain_quadtree),
+                    handle_vector_tasks.before(update_terrain_quadtree),
                     load_unloaded_chunks.before(update_terrain_quadtree),
                     preload_chunks.before(update_terrain_quadtree),
                     update_performance,
