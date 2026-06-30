@@ -16,10 +16,9 @@ use crate::{
     performance::OSMPerformance,
 };
 
-fn show_plot(ui: &mut egui::Ui, performance: &OSMPerformance) -> Response {
+fn show_chunks_loading_plot(ui: &mut egui::Ui, performance: &OSMPerformance) -> Response {
     Plot::new("Chunks loading")
         .legend(Legend::default())
-        .x_axis_label("#chunks")
         .default_y_bounds(0.0, 500.0)
         .show(ui, |plot_ui| {
             plot_ui.points(
@@ -36,8 +35,34 @@ fn show_plot(ui: &mut egui::Ui, performance: &OSMPerformance) -> Response {
                 )
                 .stems(-1.5)
                 .radius(1.0)
-                .color(performance.get_plot_color())
-                .name("chunks_loading"),
+                .color(performance.get_chunks_loading_plot_color())
+                .name("Chunks loading"),
+            );
+        })
+        .response
+}
+
+fn show_fps_plot(ui: &mut egui::Ui, performance: &OSMPerformance) -> Response {
+    Plot::new("FPS")
+        .legend(Legend::default())
+        .default_y_bounds(0.0, 120.0)
+        .show(ui, |plot_ui| {
+            plot_ui.points(
+                Points::new(
+                    "FPS",
+                    PlotPoints::Owned(
+                        performance
+                            .fps
+                            .iter()
+                            .enumerate()
+                            .map(|(i, el)| PlotPoint::new(i as f64, *el))
+                            .collect(),
+                    ),
+                )
+                .stems(-1.5)
+                .radius(1.0)
+                .color(performance.get_fps_plot_color())
+                .name("FPS (Hz)"),
             );
         })
         .response
@@ -116,7 +141,17 @@ pub fn setup_osm_ui(
                             &mut quadtrees,
                         );
                     });
-                show_plot(ui, &performance);
+                egui::Grid::new("plot_grid")
+                    .num_columns(1)
+                    .spacing([100.0, 4.0])
+                    .min_row_height(200.0)
+                    .striped(true)
+                    .show(ui, |ui| {
+                        show_chunks_loading_plot(ui, &performance);
+                        ui.end_row();
+                        show_fps_plot(ui, &performance);
+                        ui.end_row();
+                    });
             });
     }
 }
