@@ -6,7 +6,7 @@ use crate::cache::{cache_vector_tile_for_chunk, get_openfreemap_cache_path};
 use crate::chunk::Chunk;
 use crate::layer::OMTLayer;
 use crate::material::MapMaterialHandle;
-use crate::mesh::{BuildInstruction, spawn_fill_mesh, spawn_stroke_mesh};
+use crate::mesh::{BuildInstruction, spawn_stroke_mesh};
 use crate::tag::Tag;
 use crate::theme::get_way_build_instruction_openfreemap;
 use bevy::prelude::*;
