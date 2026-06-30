@@ -172,6 +172,15 @@ pub fn load_chunk(
 
         let mut command_queue = CommandQueue::default();
         command_queue.push(move |world: &mut World| {
+            // If the chunk was despawned while the async task was running, discard
+            // the results and clean up the task entity to avoid a panic.
+            if world.get_entity(chunk_entity).is_err() {
+                if let Ok(ve) = world.get_entity_mut(vector_entity) {
+                    ve.despawn();
+                }
+                return;
+            }
+
             let mut meshes = SystemState::<ResMut<Assets<Mesh>>>::new(world).get_mut(world);
 
             let light_mesh = meshes.add(Cuboid::from_size(Vec3::new(0.003, 5.0, 0.003)));
