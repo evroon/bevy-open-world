@@ -41,7 +41,7 @@ pub fn spawn_pbf(
                 .collect(),
             layer,
         ) {
-            BuildInstruction::Fill(fill) => {
+            BuildInstruction::Fill(_fill) => {
                 // let mesh = spawn_fill_mesh(polygon.iter().map(|p| point(p.x, p.y)).collect(), fill);
 
                 // let mesh = commands.spawn((
@@ -92,9 +92,9 @@ pub fn spawn_chunk(
     chunk: &Chunk,
     chunk_entity: Entity,
 ) {
-    cache_vector_tile_for_chunk(&chunk);
+    cache_vector_tile_for_chunk(chunk);
     let mut bytes = Vec::new();
-    File::open(get_openfreemap_cache_path(&chunk))
+    File::open(get_openfreemap_cache_path(chunk))
         .unwrap()
         .read_to_end(&mut bytes)
         .unwrap();

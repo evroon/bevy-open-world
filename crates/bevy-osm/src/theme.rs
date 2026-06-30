@@ -223,7 +223,7 @@ pub fn get_way_build_instruction_openfreemap(
                 height: None,
                 levels: tag_map
                     .get("render_height")
-                    .and_then(|x| x.parse::<i32>().ok().and_then(|x| Some(x.max(5) as f32))),
+                    .and_then(|x| x.parse::<i32>().ok().map(|x| x.max(5) as f32)),
             })
         }
         _ => BuildInstruction::None,

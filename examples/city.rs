@@ -51,8 +51,8 @@ fn spawn_camera(mut commands: Commands, scattering_mediums: ResMut<Assets<Scatte
 
 fn spawn_city(
     mut commands: Commands,
-    meshes: ResMut<Assets<Mesh>>,
-    map_materials: &Res<MapMaterialHandle>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    map_materials: Res<MapMaterialHandle>,
 ) {
     let chunk = Chunk {
         x: 8529,
@@ -62,5 +62,5 @@ fn spawn_city(
         raster: Handle::default(),
     };
     let root = commands.spawn(()).id();
-    spawn_chunk(commands, meshes, map_materials, &chunk, root);
+    spawn_chunk(&mut commands, &mut meshes, &map_materials, &chunk, root);
 }

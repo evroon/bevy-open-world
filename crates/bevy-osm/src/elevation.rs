@@ -71,7 +71,7 @@ pub fn spawn_elevation_meshes(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<StandardMaterial>>,
-    heightmap: &Image,
+    _heightmap: &Image,
     entity: Entity,
     chunk: Chunk,
     config: &Res<OSMConfig>,
