@@ -20,7 +20,7 @@ rust-version = "1.89"
 
 
 [dependencies]
-bevy = { version = "0.18", default-features = false, features = [
+bevy = { version = "0.19", default-features = false, features = [
     "bevy_asset",
     "bevy_core_pipeline",
     "bevy_log",
@@ -42,4 +42,4 @@ anyhow = "1.0"
 thiserror = "2.0"
 
 [dev-dependencies]
-bevy = { version = "0.18", default-features = true }
+bevy = { version = "0.19", default-features = true }

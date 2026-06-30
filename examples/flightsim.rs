@@ -1,6 +1,6 @@
 use bevy::DefaultPlugins;
 use bevy::asset::AssetMetaCheck;
-use bevy::pbr::{DefaultOpaqueRendererMethod, ScatteringMedium};
+use bevy::pbr::DefaultOpaqueRendererMethod;
 use bevy::prelude::*;
 use bevy_egui::EguiPlugin;
 use bevy_flight_sim::runway::{spawn_aircraft, spawn_runway};
@@ -54,8 +54,8 @@ fn main() {
         .run();
 }
 
-fn spawn_camera(mut commands: Commands, scattering_mediums: ResMut<Assets<ScatteringMedium>>) {
-    let mut camera = commands.spawn(get_camera_bundle_for_open_world(scattering_mediums));
+fn spawn_camera(mut commands: Commands) {
+    let mut camera = commands.spawn(get_camera_bundle_for_open_world());
     camera.insert(FlyCam);
     camera.insert(WhereWasI::from_name("flightsim_camera"));
 }

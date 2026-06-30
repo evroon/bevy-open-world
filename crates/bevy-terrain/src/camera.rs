@@ -2,24 +2,32 @@ use core::f32::consts::PI;
 
 use bevy::anti_alias::taa::TemporalAntiAliasing;
 use bevy::camera::Exposure;
+use bevy::camera::Hdr;
 use bevy::core_pipeline::tonemapping::Tonemapping;
+use bevy::light::Atmosphere;
+use bevy::light::atmosphere::ScatteringMedium;
 use bevy::light::light_consts::lux;
 use bevy::light::{
     AtmosphereEnvironmentMapLight, CascadeShadowConfigBuilder, VolumetricFog, VolumetricLight,
 };
-use bevy::pbr::{Atmosphere, AtmosphereSettings, ScatteringMedium};
+use bevy::pbr::AtmosphereSettings;
 use bevy::post_process::bloom::Bloom;
 use bevy::prelude::*;
-use bevy::render::view::Hdr;
 
 use bevy::pbr::ScreenSpaceReflections;
 use bevy_where_was_i::WhereWasI;
 
-pub fn setup_lighting_for_open_world(mut commands: Commands) {
+pub fn setup_lighting_for_open_world(
+    mut commands: Commands,
+    mut scattering_mediums: ResMut<Assets<ScatteringMedium>>,
+) {
+    commands.spawn(Atmosphere::earth(
+        scattering_mediums.add(ScatteringMedium::default()),
+    ));
     // Sun
     commands.spawn((
         DirectionalLight {
-            shadows_enabled: true,
+            shadow_maps_enabled: true,
             illuminance: lux::RAW_SUNLIGHT,
             ..default()
         },
@@ -36,13 +44,10 @@ pub fn setup_lighting_for_open_world(mut commands: Commands) {
     ));
 }
 
-pub fn get_camera_bundle_for_open_world(
-    mut scattering_mediums: ResMut<Assets<ScatteringMedium>>,
-) -> impl Bundle {
+pub fn get_camera_bundle_for_open_world() -> impl Bundle {
     (
         Camera3d::default(),
         Transform::from_xyz(-2.4, 0.04, 0.0).looking_at(Vec3::Y * 0.1, Vec3::Y),
-        Atmosphere::earthlike(scattering_mediums.add(ScatteringMedium::default())),
         AtmosphereSettings::default(),
         Exposure { ev100: 13.0 },
         Tonemapping::AcesFitted,

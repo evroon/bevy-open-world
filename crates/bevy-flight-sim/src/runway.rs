@@ -1,8 +1,8 @@
 use bevy::{
     color::palettes::css::BLACK,
     image::{ImageAddressMode, ImageLoaderSettings, ImageSampler, ImageSamplerDescriptor},
+    material::OpaqueRendererMethod,
     math::Affine2,
-    pbr::OpaqueRendererMethod,
     prelude::*,
 };
 
@@ -57,7 +57,7 @@ pub fn spawn_runway(
 
 pub fn spawn_aircraft(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn((
-        SceneRoot(asset_server.load("models/low_poly_spaceship/scene.gltf#Scene0")),
+        WorldAssetRoot(asset_server.load("models/low_poly_spaceship/scene.gltf#Scene0")),
         Transform::from_xyz(0.0, 300.0, 0.0).with_scale(Vec3::splat(20.0)),
     ));
 }

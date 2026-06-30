@@ -181,7 +181,9 @@ pub fn load_chunk(
                 return;
             }
 
-            let mut meshes = SystemState::<ResMut<Assets<Mesh>>>::new(world).get_mut(world);
+            let mut meshes = SystemState::<ResMut<Assets<Mesh>>>::new(world)
+                .get_mut(world)
+                .unwrap();
 
             let light_mesh = meshes.add(Cuboid::from_size(Vec3::new(0.003, 5.0, 0.003)));
 

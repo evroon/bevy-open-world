@@ -33,9 +33,13 @@ pub fn spawn_task(mut commands: Commands, adsb: Res<ADSBConfig>, previous_data: 
         .await;
 
         command_queue.push(move |world: &mut World| {
-            *SystemState::<ResMut<DataFetch>>::new(world).get_mut(world) = data_fetch_result;
+            *SystemState::<ResMut<DataFetch>>::new(world)
+                .get_mut(world)
+                .unwrap() = data_fetch_result;
 
-            let mut manager = SystemState::<ResMut<ADSBConfig>>::new(world).get_mut(world);
+            let mut manager = SystemState::<ResMut<ADSBConfig>>::new(world)
+                .get_mut(world)
+                .unwrap();
 
             manager.buffer_time = manager.buffer_time + manager.buffer_chunk_duration;
 
