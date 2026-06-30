@@ -1,6 +1,6 @@
 use bevy::{
-    core_pipeline::tonemapping::Tonemapping, pbr::ExtendedMaterial, post_process::bloom::Bloom,
-    prelude::*, render::view::Hdr,
+    camera::Hdr, core_pipeline::tonemapping::Tonemapping, pbr::ExtendedMaterial,
+    post_process::bloom::Bloom, prelude::*,
 };
 use bevy_adsb::{
     EARTH_RADIUS,
@@ -75,7 +75,7 @@ fn setup(mut commands: Commands) {
     commands.spawn((
         Sun,
         DirectionalLight {
-            shadows_enabled: true,
+            shadow_maps_enabled: true,
             ..default()
         },
     ));
