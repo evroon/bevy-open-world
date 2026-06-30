@@ -3,8 +3,8 @@ use std::collections::HashMap;
 use bevy::{
     asset::RenderAssetUsages,
     color::palettes::css::GREEN,
+    material::OpaqueRendererMethod,
     mesh::{Indices, PrimitiveTopology, triangle_normal},
-    pbr::OpaqueRendererMethod,
     prelude::*,
 };
 use noise::{NoiseFn, Perlin};

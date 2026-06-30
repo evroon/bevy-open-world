@@ -59,9 +59,9 @@ pub(crate) fn spawn_water(
                 ..default()
             },
             extension: Water {
-                normals: asset_server.load_with_settings::<Image, ImageLoaderSettings>(
-                    "textures/water_normals.png",
-                    |settings| {
+                normals: asset_server
+                    .load_builder()
+                    .with_settings(|settings: &mut ImageLoaderSettings| {
                         settings.is_srgb = false;
                         settings.sampler = ImageSampler::Descriptor(ImageSamplerDescriptor {
                             address_mode_u: ImageAddressMode::Repeat,
@@ -70,8 +70,8 @@ pub(crate) fn spawn_water(
                             min_filter: ImageFilterMode::Linear,
                             ..default()
                         });
-                    },
-                ),
+                    })
+                    .load("textures/water_normals.png"),
                 // These water settings are just random values to create some
                 // variety.
                 settings: WaterSettings {

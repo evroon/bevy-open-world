@@ -1,8 +1,8 @@
 use bevy::{
     color::palettes::css::BLACK,
     image::{ImageAddressMode, ImageLoaderSettings, ImageSampler, ImageSamplerDescriptor},
+    material::OpaqueRendererMethod,
     math::Affine2,
-    pbr::OpaqueRendererMethod,
     prelude::*,
 };
 

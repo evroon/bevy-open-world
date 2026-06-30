@@ -7,10 +7,12 @@ use bevy::light::light_consts::lux;
 use bevy::light::{
     AtmosphereEnvironmentMapLight, CascadeShadowConfigBuilder, VolumetricFog, VolumetricLight,
 };
-use bevy::pbr::{Atmosphere, AtmosphereSettings, ScatteringMedium};
+use bevy::camera::Hdr;
+use bevy::light::atmosphere::ScatteringMedium;
+use bevy::light::Atmosphere;
+use bevy::pbr::AtmosphereSettings;
 use bevy::post_process::bloom::Bloom;
 use bevy::prelude::*;
-use bevy::render::view::Hdr;
 
 use bevy::pbr::ScreenSpaceReflections;
 use bevy_where_was_i::WhereWasI;
@@ -19,7 +21,7 @@ pub fn setup_lighting_for_open_world(mut commands: Commands) {
     // Sun
     commands.spawn((
         DirectionalLight {
-            shadows_enabled: true,
+            shadow_maps_enabled: true,
             illuminance: lux::RAW_SUNLIGHT,
             ..default()
         },

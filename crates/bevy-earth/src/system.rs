@@ -1,7 +1,8 @@
 use core::f32::consts::PI;
 
 use bevy::{
-    pbr::{ExtendedMaterial, MaterialExtension, OpaqueRendererMethod},
+    material::OpaqueRendererMethod,
+    pbr::{ExtendedMaterial, MaterialExtension},
     prelude::*,
     render::render_resource::*,
     shader::ShaderRef,
@@ -85,7 +86,7 @@ pub fn animate_materials(
     mut materials: ResMut<Assets<ExtendedMaterial<StandardMaterial, EarthMaterialExtension>>>,
 ) {
     for material_handle in material_handles.iter() {
-        if let Some(material) = materials.get_mut(material_handle) {
+        if let Some(mut material) = materials.get_mut(material_handle) {
             material.extension.sun_dir = earth_config.sun_direction * Vec3::Z;
             material.extension.emission_strength = earth_config.emission_strength;
             material.extension.transition_fraction = earth_config.transition_fraction;
