@@ -64,16 +64,15 @@ pub fn spawn_pbf(
             }
             BuildInstruction::Building(building) => {
                 let building = polygon_building(&building, polygon, &mut rng);
-                let mesh3ds = spawn_building(&building)
-                    .into_iter()
-                    .map(|(mesh, t)| (Mesh3d(meshes.add(mesh)), t))
-                    .collect::<Vec<(Mesh3d, Transform)>>();
+                let mesh = spawn_building(&building);
 
-                for (mesh, trans) in mesh3ds {
-                    let mesh =
-                        commands.spawn((mesh, MeshMaterial3d(building_material.clone()), trans));
-                    child_ids.push(mesh.id());
-                }
+                let mesh = commands.spawn((
+                    Mesh3d(meshes.add(mesh)),
+                    MeshMaterial3d(building_material.clone()),
+                    Transform::IDENTITY,
+                ));
+
+                child_ids.push(mesh.id());
             }
             BuildInstruction::Light(_light) => {}
             BuildInstruction::None => {}
