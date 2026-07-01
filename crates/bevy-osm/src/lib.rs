@@ -15,10 +15,9 @@ pub mod theme;
 pub mod ui;
 pub mod vector;
 
-extern crate osm_xml as osm;
 use crate::{
     cache::ensure_session_is_valid,
-    chunk::Chunk,
+    chunk::{get_chunk_for_coord, get_root_chunk_for_location},
     config::OSMConfig,
     load_data::{handle_vector_tasks, load_unloaded_chunks, preload_chunks},
     material::MapMaterialHandle,
@@ -29,7 +28,7 @@ use bevy::{diagnostic::FrameTimeDiagnosticsPlugin, prelude::*};
 use bevy_egui::EguiPrimaryContextPass;
 use bevy_terrain::{
     mesh::build_mesh_cache,
-    quadtree::{QuadTree, QuadTreeConfig, QuadTreeNode},
+    quadtree::{QuadTree, QuadTreeConfig},
     system::update_terrain_quadtree,
 };
 
@@ -57,29 +56,24 @@ impl Plugin for OSMPlugin {
 }
 
 pub fn build_terrain_tile(mut commands: Commands, osm_config: Res<OSMConfig>) {
-    let chunk = Chunk {
-        x: 266,
-        y: 186,
-        z: 9,
-        elevation: Handle::default(),
-        raster: Handle::default(),
-    };
+    let origin = osm_config.location.get_world_center();
 
     let config = QuadTreeConfig {
         k: 1.1,
         min_lod: 0,
         max_lod: 13,
-        size: chunk.get_size_in_meters().x,
+        size: get_chunk_for_coord(origin.x as f64, origin.y as f64, 9)
+            .get_size_in_meters()
+            .x,
     };
-    let area_meters = chunk.get_area_in_meters(osm_config.location.get_world_center());
-    let quadtree = QuadTree {
-        root: QuadTreeNode::new(Vec2::ZERO, area_meters.size(), chunk.x, chunk.y),
-    };
+
     ensure_session_is_valid(&osm_config.raster_tile_source);
 
     commands.spawn((
         Transform::IDENTITY,
-        quadtree.clone(),
+        QuadTree {
+            root: get_root_chunk_for_location(&osm_config.location),
+        },
         config.clone(),
         Visibility::Inherited,
     ));

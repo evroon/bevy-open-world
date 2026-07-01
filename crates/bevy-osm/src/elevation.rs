@@ -67,7 +67,6 @@ fn debug_material(
     }))
 }
 
-#[expect(unused_variables)]
 pub fn spawn_elevation_meshes(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
@@ -81,8 +80,7 @@ pub fn spawn_elevation_meshes(
         .map(|(x_local, y_local, ..)| {
             (
                 (x_local, y_local),
-                -3.,
-                // get_elevation_local(heightmap, IVec2::new(x_local, y_local)),
+                get_elevation_local(heightmap, IVec2::new(x_local, y_local)),
             )
         })
         .collect::<HeightMap>();
@@ -92,6 +90,7 @@ pub fn spawn_elevation_meshes(
         _ => MeshMaterial3d(materials.add(StandardMaterial {
             base_color_texture: Some(chunk.raster),
             uv_transform: Affine2::from_angle_translation(PI * 0.5, Vec2::new(1.0, 0.0)),
+            perceptual_roughness: 0.8,
             ..Default::default()
         })),
     };

@@ -43,6 +43,7 @@ bevy = { workspace = true, features = [
     "bevy_mesh",
     "free_camera",
     "pan_camera",
+    "bevy_dev_tools",
 ] }
 bevy-volumetric-clouds = { version = "0.2.0", features = ["fly_camera"] }
 bevy-where-was-i = { workspace = true }

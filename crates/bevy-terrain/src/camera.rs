@@ -4,6 +4,7 @@ use bevy::anti_alias::taa::TemporalAntiAliasing;
 use bevy::camera::Exposure;
 use bevy::camera::Hdr;
 use bevy::core_pipeline::tonemapping::Tonemapping;
+use bevy::dev_tools::infinite_grid::InfiniteGrid;
 use bevy::light::Atmosphere;
 use bevy::light::atmosphere::ScatteringMedium;
 use bevy::light::light_consts::lux;
@@ -21,6 +22,7 @@ pub fn setup_lighting_for_open_world(
     mut commands: Commands,
     mut scattering_mediums: ResMut<Assets<ScatteringMedium>>,
 ) {
+    commands.spawn(InfiniteGrid);
     commands.spawn(Atmosphere::earth(
         scattering_mediums.add(ScatteringMedium::default()),
     ));
@@ -59,12 +61,12 @@ pub fn get_camera_bundle_for_open_world() -> impl Bundle {
         TemporalAntiAliasing::default(),
         ScreenSpaceReflections::default(),
         DistanceFog {
-            color: Color::srgba(0.35, 0.48, 0.66, 1.0),
+            color: Color::srgba(0.35, 0.48, 0.5, 1.0),
             directional_light_color: Color::NONE,
-            directional_light_exponent: 80.0,
+            directional_light_exponent: 40.0,
             falloff: FogFalloff::from_visibility_colors(
-                5e4,
-                Color::srgb(0.35, 0.5, 0.66),
+                6e4,
+                Color::srgb(0.35, 0.5, 0.5),
                 Color::srgb(0.8, 0.844, 1.0),
             ),
         },

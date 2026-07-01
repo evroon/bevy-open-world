@@ -53,7 +53,7 @@ pub struct OSMConfig {
 impl Default for OSMConfig {
     fn default() -> Self {
         Self {
-            location: Location::MonacoCenter,
+            location: Location::Amsterdam,
             ui_visible: true,
             raster_tile_source: RasterTileSource::CesiumGoogleSatellite,
         }
