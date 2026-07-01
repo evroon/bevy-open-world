@@ -173,6 +173,7 @@ pub fn get_way_build_instruction_openfreemap(
             }
             LayerClass::MountainPeak
             | LayerClass::TransportationName
+            | LayerClass::WaterName
             | LayerClass::Boundary
             | LayerClass::Building
             | LayerClass::AerodromeLabel

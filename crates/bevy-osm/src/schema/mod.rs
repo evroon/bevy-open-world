@@ -31,6 +31,7 @@ pub enum LayerClass {
     TransportationName,
     Water(Water),
     Waterway(Waterway),
+    WaterName,
     Unknown,
 }
 
@@ -208,8 +209,9 @@ pub fn parse_class(layer: &OMTLayer, class: &str) -> LayerClass {
         OMTLayer::TransportationName => LayerClass::TransportationName,
         OMTLayer::Boundary => LayerClass::Boundary,
         OMTLayer::Building => LayerClass::Building,
+        OMTLayer::Housenumber => LayerClass::Housenumber,
+        OMTLayer::WaterName => LayerClass::WaterName,
         OMTLayer::AerodromeLabel => LayerClass::AerodromeLabel,
         OMTLayer::Park => LayerClass::Park,
-        _ => LayerClass::Unknown,
     }
 }
