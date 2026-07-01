@@ -93,8 +93,8 @@ fn osm_ui(
         info!("Setting location to `{}`", selected.get_name());
         config.location = selected;
 
-        for (entity, mut quadtree) in quadtrees.iter_mut() {
-            quadtree.root.destruct(&entity, commands);
+        for (_entity, mut quadtree) in quadtrees.iter_mut() {
+            quadtree.root.destruct(commands);
             quadtree.root = get_root_chunk_for_location(&config.location);
         }
         ensure_session_is_valid(&config.raster_tile_source);
@@ -119,8 +119,8 @@ fn osm_ui(
 
     if selected != config.raster_tile_source {
         config.raster_tile_source = selected;
-        for (entity, mut quadtree) in quadtrees.iter_mut() {
-            quadtree.root.destruct(&entity, commands);
+        for (_entity, mut quadtree) in quadtrees.iter_mut() {
+            quadtree.root.destruct(commands);
         }
         ensure_session_is_valid(&config.raster_tile_source);
     }

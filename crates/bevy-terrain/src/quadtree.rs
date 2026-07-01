@@ -126,18 +126,14 @@ impl QuadTreeNode {
         .into();
     }
 
-    pub fn destruct(&mut self, root_entity: &Entity, commands: &mut Commands) {
+    pub fn destruct(&mut self, commands: &mut Commands) {
         if let Some(entity_id) = self.entity {
-            commands.get_entity(entity_id).unwrap().despawn();
-            commands
-                .get_entity(*root_entity)
-                .unwrap()
-                .detach_child(entity_id);
+            commands.entity(entity_id).despawn();
             self.entity = None;
         }
 
         for child in &mut self.children {
-            child.as_mut().destruct(root_entity, commands);
+            child.as_mut().destruct(commands);
         }
     }
 
@@ -162,7 +158,7 @@ impl QuadTreeNode {
                 });
 
                 if all_loaded && self.entity.is_some() {
-                    commands.get_entity(self.entity.unwrap()).unwrap().despawn();
+                    commands.entity(self.entity.unwrap()).despawn();
                     self.entity = None;
                 }
             }
@@ -173,7 +169,7 @@ impl QuadTreeNode {
             let loaded = nodes_query.get(ent).unwrap().2.is_some();
             if loaded && !self.children.is_empty() {
                 for child in &mut self.children {
-                    child.destruct(root_entity, commands);
+                    child.destruct(commands);
                 }
                 self.children = Vec::new();
             }
