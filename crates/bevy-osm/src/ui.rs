@@ -11,8 +11,9 @@ use egui_plot::{Legend, Points};
 
 use crate::{
     cache::ensure_session_is_valid,
-    chunk::world_to_lat_lon,
+    chunk::{get_root_chunk_for_location, world_to_lat_lon},
     config::{OSMConfig, RasterTileSource},
+    location::Location,
     performance::OSMPerformance,
 };
 
@@ -62,7 +63,10 @@ fn show_fps_plot(ui: &mut egui::Ui, performance: &OSMPerformance) -> Response {
                 .stems(-1.5)
                 .radius(1.0)
                 .color(performance.get_fps_plot_color())
-                .name("FPS (Hz)"),
+                .name(format!(
+                    "FPS (Hz): {:.0}",
+                    performance.fps.iter().sum::<f64>() / (performance.fps.len() as f64)
+                )),
             );
         })
         .response
@@ -75,6 +79,27 @@ fn osm_ui(
     camera: &Transform,
     quadtrees: &mut Query<(Entity, &mut QuadTree)>,
 ) {
+    let mut selected = config.location.clone();
+    ComboBox::from_label("Location")
+        .selected_text(selected.get_name())
+        .show_ui(ui, |ui| {
+            for source in [Location::Amsterdam, Location::Monaco, Location::NewYork] {
+                ui.selectable_value(&mut selected, source.clone(), source.get_name());
+            }
+        });
+    ui.end_row();
+
+    if selected != config.location {
+        info!("Setting location to `{}`", selected.get_name());
+        config.location = selected;
+
+        for (entity, mut quadtree) in quadtrees.iter_mut() {
+            quadtree.root.destruct(&entity, commands);
+            quadtree.root = get_root_chunk_for_location(&config.location);
+        }
+        ensure_session_is_valid(&config.raster_tile_source);
+    }
+
     let mut selected = config.raster_tile_source.clone();
     ComboBox::from_label("Raster tile source")
         .selected_text(selected.get_name())
@@ -91,6 +116,15 @@ fn osm_ui(
             }
         });
     ui.end_row();
+
+    if selected != config.raster_tile_source {
+        config.raster_tile_source = selected;
+        for (entity, mut quadtree) in quadtrees.iter_mut() {
+            quadtree.root.destruct(&entity, commands);
+        }
+        ensure_session_is_valid(&config.raster_tile_source);
+    }
+
     ui.add(Label::new("translation:"));
     ui.add(Label::new(format!(
         "{:.0}, {:.0}, {:.0}",
@@ -101,14 +135,6 @@ fn osm_ui(
     let (lat, lon) = world_to_lat_lon(camera.translation, config.location.get_world_center());
     ui.add(Label::new(format!("{:.5}, {:.5}", lat, lon)));
     ui.end_row();
-
-    if selected != config.raster_tile_source {
-        config.raster_tile_source = selected;
-        for (entity, mut quadtree) in quadtrees.iter_mut() {
-            quadtree.root.destruct(&entity, commands);
-        }
-        ensure_session_is_valid(&config.raster_tile_source);
-    }
 }
 
 pub fn setup_osm_ui(

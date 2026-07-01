@@ -9,7 +9,7 @@ use crate::{
     },
     chunk::Chunk,
     config::OSMConfig,
-    elevation::spawn_elevation_meshes,
+    elevation::{TILE_VERTEX_COUNT, get_elevation_local, spawn_elevation_meshes},
     material::MapMaterialHandle,
     mesh::{BuildInstruction, LightInstruction, Shape, spawn_stroke_mesh},
     theme::get_way_build_instruction_openfreemap,
@@ -21,7 +21,6 @@ use bevy::{
     tasks::{AsyncComputeTaskPool, Task, block_on, futures_lite::future},
 };
 use bevy_terrain::quadtree::{ChunkLoaded, QuadTreeNodeComponent};
-use lyon::geom::euclid::{Point2D, UnknownUnit};
 
 #[derive(Component)]
 pub struct ComputeTransform(pub Task<CommandQueue>);
@@ -103,7 +102,8 @@ pub fn load_chunk(
     let elevation = chunk.elevation.id();
     let heightmap = images
         .get(elevation)
-        .expect("Image should have loaded by now");
+        .expect("Image should have loaded by now")
+        .clone();
 
     // let vector_tile_chunk = match chunk.z > 14 {
     //     true => chunk.get_parent_at_z(14),
@@ -111,6 +111,14 @@ pub fn load_chunk(
     // };
 
     let thread_pool = AsyncComputeTaskPool::get();
+    let get_elevation = move |translation: Vec3, heightmap: &Image| {
+        if !Rect::from_center_size(Vec2::ZERO, Vec2::ONE).contains(translation.xz()) {
+            return None;
+        }
+        let local_coords =
+            ((Vec2::new(0.5, 0.5) + translation.xz()) * TILE_VERTEX_COUNT as f32).as_ivec2();
+        Some(get_elevation_local(heightmap, local_coords))
+    };
 
     // Spawn an async task to process the vector tile off the main thread.
     let building_material = map_materials.unknown_building.clone();
@@ -136,20 +144,25 @@ pub fn load_chunk(
         for (tags, layer, polygon) in instructions {
             match get_way_build_instruction_openfreemap(tags, layer) {
                 BuildInstruction::Stroke(stroke) => {
-                    let points: Vec<Point2D<f32, UnknownUnit>> = polygon
-                        .iter()
-                        .map(|p| lyon::math::point(p.x, p.y))
-                        .collect();
-
-                    let center = points[0];
+                    let center = polygon[0];
                     lights.push(LightInstruction {
-                        trans: Vec3::new(center.x, 2.0, center.y),
+                        trans: Vec3::new(
+                            center.x,
+                            get_elevation(Vec3::new(center.x, 0.0, center.y), &heightmap)
+                                .unwrap_or(0.0)
+                                + 2.0,
+                            center.y,
+                        ),
                     });
-                    computed_strokes.push(spawn_stroke_mesh(points, stroke));
+                    computed_strokes.push(spawn_stroke_mesh(polygon, stroke));
                 }
                 BuildInstruction::Building(building_instr) => {
                     let building = polygon_building(&building_instr, polygon, &mut rng);
-                    computed_buildings.push(spawn_building(&building));
+                    let mesh = spawn_building(&building);
+                    computed_buildings.push(mesh.translated_by(
+                        Vec3::Y
+                            * get_elevation(building.get_translation(), &heightmap).unwrap_or(0.0),
+                    ));
                 }
                 _ => {}
             }
@@ -244,7 +257,10 @@ pub fn load_chunk(
         commands,
         meshes,
         materials,
-        heightmap,
+        &images
+            .get(elevation)
+            .expect("Image should have loaded by now")
+            .clone(),
         chunk_entity,
         chunk.clone(),
         config,

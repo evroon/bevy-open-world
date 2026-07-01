@@ -1,20 +1,18 @@
 use std::{
     f32::consts::PI,
     f64::consts::PI as PI_64,
-    fs::{self, File},
-    io::Write,
+    fs::{self},
     path::Path,
 };
 
 use bevy::math::ops::{atan, powf, sinh};
 use bevy::prelude::*;
-use osm::OSM;
+use bevy_terrain::quadtree::QuadTreeNode;
 
-use crate::cache::get_osm_cache_path;
+use crate::location::Location;
 
 // Assume at equator (110 km = 1 degree of longitude)
 pub const LAT_LON_TO_METERS_CONVERSION: Vec2 = Vec2::splat(1.1e5);
-const OVERPASS_BASE_URL: &str = "https://overpass-api.de/api/map";
 
 pub fn ensure_cache_dir_exists(path: &Path) {
     fs::create_dir_all(Path::new(path).parent().unwrap())
@@ -95,6 +93,13 @@ impl Chunk {
     }
 }
 
+pub fn get_root_chunk_for_location(location: &Location) -> QuadTreeNode {
+    let origin = location.get_world_center();
+    let chunk = get_chunk_for_coord(origin.x as f64, origin.y as f64, 9);
+    let area_meters = chunk.get_area_in_meters(location.get_world_center());
+    QuadTreeNode::new(Vec2::ZERO, area_meters.size(), chunk.x, chunk.y)
+}
+
 pub fn get_chunk_for_coord(lat_deg: f64, lon_deg: f64, zoom: i8) -> Chunk {
     let n = (1 << zoom) as f64;
 
@@ -145,43 +150,6 @@ pub fn world_to_lat_lon(pos: Vec3, lat_lon_origin: Vec2) -> (f32, f32) {
         -pos.z / LAT_LON_TO_METERS_CONVERSION.x + lat_lon_origin.x,
         pos.x / LAT_LON_TO_METERS_CONVERSION.y + lat_lon_origin.y,
     )
-}
-
-pub fn get_osm_for_chunk(chunk: Chunk) -> OSM {
-    let osm_path = get_osm_cache_path(&chunk);
-    let path = Path::new(&osm_path);
-    ensure_cache_dir_exists(path);
-
-    if !path.exists() {
-        info!("Downloading OSM data for {chunk:?}");
-        let area = chunk.get_lat_lon_area();
-        let request = ehttp::Request::get(format!(
-            "{OVERPASS_BASE_URL}?bbox={},{},{},{}",
-            area.min.y, area.min.x, area.max.y, area.max.x
-        ));
-        let response = ehttp::fetch_blocking(&request);
-
-        if let Ok(response) = response {
-            let response_text = response.text().unwrap();
-            if response_text.contains("The server is probably too busy to handle your request")
-                || response_text.contains("rate_limited")
-            {
-                error!("failed to query Overpass API");
-            }
-
-            File::create_new(path)
-                .unwrap()
-                .write_all(&response.bytes)
-                .expect("failed to write Overpass data");
-        } else {
-            error!("failed to query Overpass API");
-        }
-
-        info!("Finished downloading OSM data for {chunk:?}");
-    }
-
-    let file = File::open(path).unwrap();
-    osm::OSM::parse(file).unwrap()
 }
 
 #[cfg(test)]
