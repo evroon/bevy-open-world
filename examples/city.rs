@@ -2,12 +2,11 @@ use bevy::DefaultPlugins;
 use bevy::pbr::DefaultOpaqueRendererMethod;
 use bevy::prelude::*;
 use bevy_egui::EguiPlugin;
-use bevy_osm::chunk::Chunk;
 use bevy_osm::config::OSMConfig;
-use bevy_osm::layer::OMTLayer;
 use bevy_osm::material::MapMaterialHandle;
 use bevy_osm::tag::Tag;
 use bevy_osm::vector::spawn_chunk;
+use bevy_osm::{chunk::Chunk, schema::layer::OMTLayer};
 use bevy_terrain::camera::{
     get_camera_bundle_for_open_world, rotate_sun, setup_lighting_for_open_world,
 };

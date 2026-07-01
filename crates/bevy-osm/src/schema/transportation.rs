@@ -1,0 +1,33 @@
+use serde::{Deserialize, Serialize};
+
+#[derive(Serialize, Deserialize)]
+pub enum Transportation {
+    Aerialway,
+    Busguideway,
+    Busway,
+    Ferry,
+    Minor,
+    MinorConstruction,
+    Motorway,
+    MotorwayConstruction,
+    Path,
+    PathConstruction,
+    Pier,
+    Bridge,
+    Primary,
+    Transit,
+    PrimaryConstruction,
+    Raceway,
+    RacewayConstruction,
+    Rail,
+    Secondary,
+    SecondaryConstruction,
+    Service,
+    ServiceConstruction,
+    Tertiary,
+    TertiaryConstruction,
+    Track,
+    TrackConstruction,
+    Trunk,
+    TrunkConstruction,
+}
