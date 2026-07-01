@@ -195,7 +195,7 @@ pub fn get_way_build_instruction_openfreemap(
                 return BuildInstruction::None;
             }
             LayerClass::Unknown => {
-                warn!("Unknown class found [{layer_name:?}|: {:?}", tag.val);
+                warn!("Unknown class found [{layer_name:?}]: {:?}", tag.val);
                 return BuildInstruction::None;
             }
         }
