@@ -19,7 +19,7 @@ fn main() {
         .insert_resource(DefaultOpaqueRendererMethod::deferred())
         .insert_resource(MovementSettings { speed: 2.0 })
         .insert_resource(OSMConfig {
-            location: Location::Monaco,
+            location: Location::Amsterdam,
             ..Default::default()
         })
         .add_plugins((
