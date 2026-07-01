@@ -52,8 +52,7 @@ pub fn move_aircraft(
         }
 
         if config.time - aircraft.last_update > config.remove_aircraft_after_last_signal {
-            commands.get_entity(entity).unwrap().clear();
-            commands.get_entity(entity).unwrap().despawn();
+            commands.entity(entity).despawn();
             config.planes -= 1;
             data.icaos.remove(&aircraft.icao);
         }
