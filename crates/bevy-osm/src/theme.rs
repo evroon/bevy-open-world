@@ -112,20 +112,32 @@ pub fn get_way_build_instruction_openfreemap(
                 });
             }
             LayerClass::Transportation(
+                Transportation::Motorway | Transportation::MotorwayConstruction,
+            ) => {
+                return BuildInstruction::Stroke(StrokeInstruction {
+                    color: Color::BLACK,
+                    width: 10.0 / 4096.,
+                });
+            }
+            LayerClass::Transportation(
+                Transportation::Minor | Transportation::MinorConstruction,
+            ) => {
+                return BuildInstruction::Stroke(StrokeInstruction {
+                    color: Color::linear_rgb(0.3, 0.3, 0.3),
+                    width: 3.0 / 4096.,
+                });
+            }
+            LayerClass::Transportation(
                 Transportation::Tertiary
                 | Transportation::TertiaryConstruction
                 | Transportation::Path
                 | Transportation::PathConstruction
                 | Transportation::Service
                 | Transportation::ServiceConstruction
-                | Transportation::Motorway
-                | Transportation::MotorwayConstruction
                 | Transportation::Track
                 | Transportation::TrackConstruction
                 | Transportation::Trunk
                 | Transportation::TrunkConstruction
-                | Transportation::Minor
-                | Transportation::MinorConstruction
                 | Transportation::Pier
                 | Transportation::Bridge
                 | Transportation::Transit,
