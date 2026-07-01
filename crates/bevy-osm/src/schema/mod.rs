@@ -89,7 +89,7 @@ pub fn parse_class(layer: &OMTLayer, class: &str) -> LayerClass {
             "quarry" => LayerClass::Landuse(Landuse::Quarry),
             "quarter" => LayerClass::Landuse(Landuse::Quarter),
             "railway" => LayerClass::Landuse(Landuse::Railway),
-            "religious" => LayerClass::Landuse(Landuse::Religous),
+            "religious" => LayerClass::Landuse(Landuse::Religious),
             "residential" => LayerClass::Landuse(Landuse::Residential),
             "retail" => LayerClass::Landuse(Landuse::Retail),
             "school" => LayerClass::Landuse(Landuse::School),

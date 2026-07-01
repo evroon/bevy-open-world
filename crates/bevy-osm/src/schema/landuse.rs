@@ -30,7 +30,7 @@ pub enum Landuse {
     Quarter,
     Railway,
     RecreationGround,
-    Religous,
+    Religious,
     Residential,
     Retail,
     School,
