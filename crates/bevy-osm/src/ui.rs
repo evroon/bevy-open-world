@@ -83,7 +83,12 @@ fn osm_ui(
     ComboBox::from_label("Location")
         .selected_text(selected.get_name())
         .show_ui(ui, |ui| {
-            for source in [Location::Amsterdam, Location::Monaco, Location::NewYork] {
+            for source in [
+                Location::Amsterdam,
+                Location::London,
+                Location::Monaco,
+                Location::NewYork,
+            ] {
                 ui.selectable_value(&mut selected, source.clone(), source.get_name());
             }
         });

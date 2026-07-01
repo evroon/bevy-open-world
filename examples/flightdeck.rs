@@ -7,7 +7,6 @@ use bevy_flight_sim::flightdeck::spawn_flightdeck;
 use bevy_flight_sim::runway::spawn_aircraft;
 use bevy_osm::config::OSMConfig;
 use bevy_osm::{OSMPlugin, location::Location};
-use bevy_terrain::WaterPlugin;
 use bevy_terrain::camera::{
     get_camera_bundle_for_open_world, rotate_sun, setup_lighting_for_open_world,
 };
@@ -30,7 +29,7 @@ fn main() {
             WhereWasIPlugin::default(),
             FlyCameraPlugin,
             EguiPlugin::default(),
-            WaterPlugin,
+            // WaterPlugin,
         ))
         .add_systems(
             Startup,
