@@ -10,7 +10,7 @@ use crate::{
     chunk::Chunk,
     config::OSMConfig,
     elevation::{TILE_VERTEX_COUNT, get_elevation_local, spawn_elevation_meshes},
-    material::MapMaterialHandle,
+    material::{MapMaterialHandle, MapMeshHandle},
     mesh::{BuildInstruction, LightInstruction, Shape, spawn_stroke_mesh},
     theme::get_way_build_instruction_openfreemap,
     vector::parse_pbf,
@@ -55,6 +55,7 @@ pub fn load_unloaded_chunks(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     map_materials: Res<MapMaterialHandle>,
+    map_meshes: Res<MapMeshHandle>,
     mut chunks_to_load: Query<(Entity, &mut Chunk), Without<ChunkLoaded>>,
     asset_server: Res<AssetServer>,
     images: Res<Assets<Image>>,
@@ -78,6 +79,7 @@ pub fn load_unloaded_chunks(
                     &mut meshes,
                     &mut materials,
                     &map_materials,
+                    &map_meshes,
                     &images,
                     &config,
                     entity,
@@ -94,6 +96,7 @@ pub fn load_chunk(
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<StandardMaterial>>,
     map_materials: &Res<MapMaterialHandle>,
+    map_meshes: &Res<MapMeshHandle>,
     images: &Res<Assets<Image>>,
     config: &Res<OSMConfig>,
     chunk_entity: Entity,
@@ -120,9 +123,11 @@ pub fn load_chunk(
         Some(get_elevation_local(heightmap, local_coords))
     };
 
-    // Spawn an async task to process the vector tile off the main thread.
+    // Fetch shared handles before entering the async task so the closure does
+    // not need to call meshes.add for the light mesh.
     let building_material = map_materials.unknown_building.clone();
     let light_material = map_materials.light.clone();
+    let light_mesh = map_meshes.light.clone();
     let vector_entity = commands.spawn_empty().id();
     let chunk_for_vector = chunk.clone();
 
@@ -197,8 +202,6 @@ pub fn load_chunk(
             let mut meshes = SystemState::<ResMut<Assets<Mesh>>>::new(world)
                 .get_mut(world)
                 .unwrap();
-
-            let light_mesh = meshes.add(Cuboid::from_size(Vec3::new(0.003, 5.0, 0.003)));
 
             let stroke_handles: Vec<Handle<Mesh>> = computed_strokes
                 .into_iter()

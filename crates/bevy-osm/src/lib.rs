@@ -20,7 +20,7 @@ use crate::{
     chunk::{get_chunk_for_coord, get_root_chunk_for_location},
     config::OSMConfig,
     load_data::{handle_vector_tasks, load_unloaded_chunks, preload_chunks},
-    material::MapMaterialHandle,
+    material::{MapMaterialHandle, MapMeshHandle},
     performance::{OSMPerformance, update_performance},
     ui::setup_osm_ui,
 };
@@ -37,6 +37,7 @@ pub struct OSMPlugin;
 impl Plugin for OSMPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<MapMaterialHandle>()
+            .init_resource::<MapMeshHandle>()
             .init_resource::<OSMConfig>()
             .init_resource::<OSMPerformance>()
             .add_plugins(FrameTimeDiagnosticsPlugin::default())
