@@ -1,6 +1,6 @@
 use bevy::{
     color::LinearRgba,
-    prelude::{Assets, Color, FromWorld, Handle, Resource, StandardMaterial, World, default},
+    prelude::{Assets, Color, Cuboid, FromWorld, Handle, Mesh, Resource, StandardMaterial, Vec3, World, default},
 };
 use std::collections::HashMap;
 use strum::IntoEnumIterator;
@@ -127,5 +127,21 @@ impl FromWorld for MapMaterialHandle {
             unknown_building_roof,
             light,
         }
+    }
+}
+
+/// Shared mesh handles for map rendering.  Analogous to [`MapMaterialHandle`]
+/// but for [`Mesh`] assets that are reused across chunks.
+#[derive(Resource)]
+pub struct MapMeshHandle {
+    /// A single thin cuboid used for every street-light instance.
+    pub light: Handle<Mesh>,
+}
+
+impl FromWorld for MapMeshHandle {
+    fn from_world(world: &mut World) -> Self {
+        let mut meshes = world.resource_mut::<Assets<Mesh>>();
+        let light = meshes.add(Cuboid::from_size(Vec3::new(0.003, 5.0, 0.003)));
+        Self { light }
     }
 }
