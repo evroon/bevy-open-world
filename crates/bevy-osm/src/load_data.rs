@@ -16,24 +16,17 @@ use crate::{
     vector::parse_pbf,
 };
 use bevy::{
+    ecs::{system::SystemState, world::CommandQueue},
     prelude::*,
     tasks::{AsyncComputeTaskPool, Task, block_on, futures_lite::future},
 };
 use bevy_terrain::quadtree::{ChunkLoaded, QuadTreeNodeComponent};
 
 #[derive(Component)]
-pub struct ComputeTransform(pub Task<()>);
-
-/// Data produced by the async vector-tile compute task.
-pub struct VectorTileResult {
-    pub chunk_entity: Entity,
-    pub computed_strokes: Vec<Mesh>,
-    pub merged_buildings: Vec<Mesh>,
-    pub light_transforms: Vec<Transform>,
-}
+pub struct ComputeTransform(pub Task<CommandQueue>);
 
 #[derive(Component)]
-pub struct ComputeVectorTile(pub Task<VectorTileResult>);
+pub struct ComputeVectorTile(pub Task<CommandQueue>);
 
 pub fn preload_chunks(
     mut commands: Commands,
@@ -56,10 +49,13 @@ pub fn preload_chunks(
     });
 }
 
+#[expect(clippy::too_many_arguments)]
 pub fn load_unloaded_chunks(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    map_materials: Res<MapMaterialHandle>,
+    map_meshes: Res<MapMeshHandle>,
     mut chunks_to_load: Query<(Entity, &mut Chunk), Without<ChunkLoaded>>,
     asset_server: Res<AssetServer>,
     images: Res<Assets<Image>>,
@@ -82,6 +78,8 @@ pub fn load_unloaded_chunks(
                     &mut commands,
                     &mut meshes,
                     &mut materials,
+                    &map_materials,
+                    &map_meshes,
                     &images,
                     &config,
                     entity,
@@ -92,10 +90,13 @@ pub fn load_unloaded_chunks(
     });
 }
 
+#[expect(clippy::too_many_arguments)]
 pub fn load_chunk(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<StandardMaterial>>,
+    map_materials: &Res<MapMaterialHandle>,
+    map_meshes: &Res<MapMeshHandle>,
     images: &Res<Assets<Image>>,
     config: &Res<OSMConfig>,
     chunk_entity: Entity,
@@ -122,7 +123,11 @@ pub fn load_chunk(
         Some(get_elevation_local(heightmap, local_coords))
     };
 
-    // Spawn an async task to process the vector tile off the main thread.
+    // Fetch shared handles before entering the async task so the closure does
+    // not need to call meshes.add for the light mesh.
+    let building_material = map_materials.unknown_building.clone();
+    let light_material = map_materials.light.clone();
+    let light_mesh = map_meshes.light.clone();
     let vector_entity = commands.spawn_empty().id();
     let chunk_for_vector = chunk.clone();
 
@@ -183,12 +188,68 @@ pub fn load_chunk(
             .map(|light| Transform::from_translation(light.trans))
             .collect::<Vec<Transform>>();
 
-        VectorTileResult {
-            chunk_entity,
-            computed_strokes,
-            merged_buildings,
-            light_transforms,
-        }
+        let mut command_queue = CommandQueue::default();
+        command_queue.push(move |world: &mut World| {
+            // If the chunk was despawned while the async task was running, discard
+            // the results and clean up the task entity to avoid a panic.
+            if world.get_entity(chunk_entity).is_err() {
+                if let Ok(ve) = world.get_entity_mut(vector_entity) {
+                    ve.despawn();
+                }
+                return;
+            }
+
+            let mut meshes = SystemState::<ResMut<Assets<Mesh>>>::new(world)
+                .get_mut(world)
+                .unwrap();
+
+            let stroke_handles: Vec<Handle<Mesh>> = computed_strokes
+                .into_iter()
+                .map(|m| meshes.add(m))
+                .collect();
+
+            let building_handles: Vec<Mesh3d> = merged_buildings
+                .into_iter()
+                .map(|m| Mesh3d(meshes.add(m)))
+                .collect();
+
+            for handle in stroke_handles {
+                let stroke = world
+                    .spawn((
+                        Mesh3d(handle),
+                        MeshMaterial3d(building_material.clone()),
+                        Shape,
+                    ))
+                    .id();
+                world.entity_mut(chunk_entity).add_child(stroke);
+            }
+
+            for mesh3d in building_handles {
+                let bm = world
+                    .spawn((
+                        mesh3d,
+                        MeshMaterial3d(building_material.clone()),
+                        Transform::IDENTITY,
+                    ))
+                    .id();
+                world.entity_mut(chunk_entity).add_child(bm);
+            }
+
+            for transform in light_transforms {
+                let l = world
+                    .spawn((
+                        Mesh3d(light_mesh.clone()),
+                        MeshMaterial3d(light_material.clone()),
+                        transform,
+                    ))
+                    .id();
+                world.entity_mut(chunk_entity).add_child(l);
+            }
+            world
+                .entity_mut(vector_entity)
+                .remove::<ComputeVectorTile>();
+        });
+        command_queue
     });
 
     commands
@@ -211,67 +272,11 @@ pub fn load_chunk(
 
 pub fn handle_vector_tasks(
     mut commands: Commands,
-    mut vector_tasks: Query<(Entity, &mut ComputeVectorTile)>,
-    mut meshes: ResMut<Assets<Mesh>>,
-    map_materials: Res<MapMaterialHandle>,
-    map_meshes: Res<MapMeshHandle>,
-    chunk_query: Query<Entity, With<Chunk>>,
+    mut vector_tasks: Query<&mut ComputeVectorTile>,
 ) {
-    for (vector_entity, mut task) in &mut vector_tasks {
-        if let Some(result) = block_on(future::poll_once(&mut task.0)) {
-            // If the chunk was despawned while the async task was running, discard
-            // the results and clean up the task entity to avoid a panic.
-            if chunk_query.get(result.chunk_entity).is_err() {
-                commands.entity(vector_entity).despawn();
-                continue;
-            }
-
-            let stroke_handles: Vec<Handle<Mesh>> = result
-                .computed_strokes
-                .into_iter()
-                .map(|m| meshes.add(m))
-                .collect();
-
-            let building_handles: Vec<Mesh3d> = result
-                .merged_buildings
-                .into_iter()
-                .map(|m| Mesh3d(meshes.add(m)))
-                .collect();
-
-            for handle in stroke_handles {
-                let stroke = commands
-                    .spawn((
-                        Mesh3d(handle),
-                        MeshMaterial3d(map_materials.unknown_building.clone()),
-                        Shape,
-                    ))
-                    .id();
-                commands.entity(result.chunk_entity).add_child(stroke);
-            }
-
-            for mesh3d in building_handles {
-                let bm = commands
-                    .spawn((
-                        mesh3d,
-                        MeshMaterial3d(map_materials.unknown_building.clone()),
-                        Transform::IDENTITY,
-                    ))
-                    .id();
-                commands.entity(result.chunk_entity).add_child(bm);
-            }
-
-            for transform in result.light_transforms {
-                let l = commands
-                    .spawn((
-                        Mesh3d(map_meshes.light.clone()),
-                        MeshMaterial3d(map_materials.light.clone()),
-                        transform,
-                    ))
-                    .id();
-                commands.entity(result.chunk_entity).add_child(l);
-            }
-
-            commands.entity(vector_entity).remove::<ComputeVectorTile>();
+    for mut task in &mut vector_tasks {
+        if let Some(mut commands_queue) = block_on(future::poll_once(&mut task.0)) {
+            commands.append(&mut commands_queue);
         }
     }
 }
