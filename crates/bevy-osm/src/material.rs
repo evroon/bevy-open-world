@@ -1,6 +1,9 @@
 use bevy::{
     color::LinearRgba,
-    prelude::{Assets, Color, Cuboid, FromWorld, Handle, Mesh, Resource, StandardMaterial, Vec3, World, default},
+    prelude::{
+        Assets, Color, Cuboid, FromWorld, Handle, Mesh, Resource, StandardMaterial, Vec3, World,
+        default,
+    },
 };
 use std::collections::HashMap;
 use strum::IntoEnumIterator;
