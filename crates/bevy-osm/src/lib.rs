@@ -1,3 +1,4 @@
+pub mod assets;
 pub mod building;
 pub mod cache;
 pub mod chunk;
@@ -16,10 +17,11 @@ pub mod ui;
 pub mod vector;
 
 use crate::{
+    assets::mvt::{MVTAsset, MVTAssetLoader},
     cache::ensure_session_is_valid,
     chunk::{get_chunk_for_coord, get_root_chunk_for_location},
     config::OSMConfig,
-    load_data::{handle_vector_tasks, load_unloaded_chunks, preload_chunks},
+    load_data::{handle_vector_tasks, insert_chunks_from_quadtree, load_unloaded_chunks},
     material::{MapMaterialHandle, MapMeshHandle},
     performance::{OSMPerformance, update_performance},
     ui::setup_osm_ui,
@@ -40,6 +42,8 @@ impl Plugin for OSMPlugin {
             .init_resource::<MapMeshHandle>()
             .init_resource::<OSMConfig>()
             .init_resource::<OSMPerformance>()
+            .init_asset::<MVTAsset>()
+            .init_asset_loader::<MVTAssetLoader>()
             .add_plugins(FrameTimeDiagnosticsPlugin::default())
             .add_systems(EguiPrimaryContextPass, setup_osm_ui)
             .add_systems(Startup, (build_terrain_tile, build_mesh_cache))
@@ -49,7 +53,7 @@ impl Plugin for OSMPlugin {
                     update_terrain_quadtree,
                     handle_vector_tasks.before(update_terrain_quadtree),
                     load_unloaded_chunks.before(update_terrain_quadtree),
-                    preload_chunks.before(update_terrain_quadtree),
+                    insert_chunks_from_quadtree.before(update_terrain_quadtree),
                     update_performance,
                 ),
             );
