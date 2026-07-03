@@ -117,7 +117,6 @@ pub fn spawn_stroke_mesh(points: Vec<Point>, instruction: StrokeInstruction) -> 
     for p in points[1..].iter() {
         path_builder.line_to(*p);
     }
-    path_builder.end(true);
 
     let mut buffers = VertexBuffers::new();
     let mut tess = StrokeTessellator::new();

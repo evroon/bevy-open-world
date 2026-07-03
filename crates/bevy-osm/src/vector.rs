@@ -64,32 +64,32 @@ fn process_layer(reader: &Reader, layer: &Layer) -> Result<Vec<PolygonInstructio
 
         match &feature.geometry {
             Geometry::LineString(line_string) => {
-                polygons.push((
-                    tags.clone(),
-                    layer_name.clone(),
-                    line_string.into_iter().map(transform_coord).collect(),
-                ));
+                let poly: Vec<Point2D<f32, UnknownUnit>> =
+                    line_string.into_iter().map(transform_coord).collect();
+                if !poly.is_empty() {
+                    polygons.push((tags.clone(), layer_name.clone(), poly));
+                }
             }
             Geometry::MultiLineString(multi_line_string) => {
                 for polygon in multi_line_string {
-                    polygons.push((
-                        tags.clone(),
-                        layer_name.clone(),
-                        polygon.into_iter().map(transform_coord).collect(),
-                    ));
+                    let poly: Vec<Point2D<f32, UnknownUnit>> =
+                        polygon.into_iter().map(transform_coord).collect();
+                    if !poly.is_empty() {
+                        polygons.push((tags.clone(), layer_name.clone(), poly));
+                    }
                 }
             }
             Geometry::MultiPolygon(multi_polygon) => {
                 for polygon in multi_polygon {
-                    polygons.push((
-                        tags.clone(),
-                        layer_name.clone(),
-                        polygon
-                            .exterior()
-                            .into_iter()
-                            .map(transform_coord)
-                            .collect(),
-                    ));
+                    let poly: Vec<Point2D<f32, UnknownUnit>> = polygon
+                        .exterior()
+                        .into_iter()
+                        .map(transform_coord)
+                        .collect();
+
+                    if !poly.is_empty() {
+                        polygons.push((tags.clone(), layer_name.clone(), poly));
+                    }
                 }
             }
             Geometry::MultiPoint(_) => {

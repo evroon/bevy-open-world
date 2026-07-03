@@ -143,7 +143,7 @@ pub fn load_chunk(
                     BuildInstruction::Light(light) => {
                         lights.push(light);
                     }
-                    BuildInstruction::Stroke(stroke) => {
+                    BuildInstruction::Stroke(stroke) if stroke.polygon.iter().len() > 2 => {
                         computed_strokes.push(spawn_stroke_mesh(stroke.polygon.clone(), stroke));
                     }
                     BuildInstruction::Building(building) => {
