@@ -1,4 +1,5 @@
 use bevy::DefaultPlugins;
+use bevy::asset::AssetMetaCheck;
 use bevy::dev_tools::infinite_grid::InfiniteGridPlugin;
 use bevy::pbr::DefaultOpaqueRendererMethod;
 use bevy::prelude::*;
@@ -21,7 +22,20 @@ fn main() {
             ..Default::default()
         })
         .add_plugins((
-            DefaultPlugins,
+            DefaultPlugins
+                .set(WindowPlugin {
+                    primary_window: Some(Window {
+                        canvas: Some("#bevy".to_owned()),
+                        fit_canvas_to_parent: true,
+                        prevent_default_event_handling: false,
+                        ..default()
+                    }),
+                    ..default()
+                })
+                .set(AssetPlugin {
+                    meta_check: AssetMetaCheck::Never,
+                    ..default()
+                }),
             InfiniteGridPlugin,
             OSMPlugin,
             WhereWasIPlugin::default(),

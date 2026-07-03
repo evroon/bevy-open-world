@@ -65,14 +65,22 @@ pub fn load_unloaded_chunks(
     config: Res<OSMConfig>,
 ) {
     chunks_to_load.iter_mut().for_each(|(entity, mut chunk)| {
-        let elevation_path_str = get_elevation_cache_path(&chunk);
-        let elevation_path = Path::new(&elevation_path_str);
-        let osm_raster_path_str = get_osm_raster_cache_path(&chunk, &config);
-        let osm_raster_path = Path::new(&osm_raster_path_str);
-        let vector_path_str = get_openfreemap_cache_path(&chunk);
-        let vector_path = Path::new(&vector_path_str);
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let elevation_path_str = get_elevation_cache_path(&chunk);
+            let elevation_path = Path::new(&elevation_path_str);
+            let osm_raster_path_str = get_osm_raster_cache_path(&chunk, &config);
+            let osm_raster_path = Path::new(&osm_raster_path_str);
+            let vector_path_str = get_openfreemap_cache_path(&chunk);
+            let vector_path = Path::new(&vector_path_str);
+            let is_ready =
+                elevation_path.exists() && osm_raster_path.exists() && vector_path.exists();
+        }
 
-        if elevation_path.exists() && osm_raster_path.exists() && vector_path.exists() {
+        #[cfg(target_arch = "wasm32")]
+        let is_ready = true;
+
+        if is_ready {
             chunk.elevation = asset_server.load(get_elevation_cache_path_bevy(&chunk));
             chunk.raster = asset_server.load(get_osm_raster_cache_path_bevy(&chunk, &config));
 
@@ -129,10 +137,10 @@ pub fn load_chunk(
     let vector_task = thread_pool.spawn(async move {
         let path = get_openfreemap_cache_path(&chunk_for_vector);
         let mut bytes = Vec::new();
-        std::fs::File::open(&path)
-            .expect("Vector tile file should exist")
-            .read_to_end(&mut bytes)
-            .expect("Could not read vector tile file");
+        // std::fs::File::open(&path)
+        //     .expect("Vector tile file should exist")
+        //     .read_to_end(&mut bytes)
+        //     .expect("Could not read vector tile file");
 
         let instructions = parse_pbf(bytes).unwrap_or_default();
 
