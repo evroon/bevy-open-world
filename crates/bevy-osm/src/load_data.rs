@@ -144,7 +144,10 @@ pub fn load_chunk(
                         lights.push(light);
                     }
                     BuildInstruction::Stroke(stroke) => {
-                        computed_strokes.push(spawn_stroke_mesh(stroke.polygon.clone(), stroke));
+                        if stroke.polygon.iter().len() > 2 {
+                            computed_strokes
+                                .push(spawn_stroke_mesh(stroke.polygon.clone(), stroke));
+                        }
                     }
                     BuildInstruction::Building(building) => {
                         let building_polygon =
@@ -179,15 +182,6 @@ pub fn load_chunk(
 
         let mut command_queue = CommandQueue::default();
         command_queue.push(move |world: &mut World| {
-            // If the chunk was despawned while the async task was running, discard
-            // the results and clean up the task entity to avoid a panic.
-            if world.get_entity(chunk_entity).is_err() {
-                if let Ok(ve) = world.get_entity_mut(vector_entity) {
-                    ve.despawn();
-                }
-                return;
-            }
-
             let mut meshes = SystemState::<ResMut<Assets<Mesh>>>::new(world)
                 .get_mut(world)
                 .unwrap();

@@ -156,7 +156,7 @@ impl FromWorld for MapMaterialHandle {
                         depth_bias: 0.,
                         reflectance: 0.5,
                         perceptual_roughness: 0.7,
-                        emissive: LinearRgba::rgb(0., 0., 255.),
+                        emissive: LinearRgba::rgb(10.0, 10.0, 100.0),
                         ..default()
                     }),
                 ),
