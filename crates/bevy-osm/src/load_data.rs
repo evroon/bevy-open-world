@@ -1,7 +1,7 @@
 use std::{io::Read, path::Path};
 
 use crate::{
-    building::{polygon_building, spawn_building},
+    building::{build_building_mesh, polygon_building},
     cache::{
         cache_elevation_for_chunk, cache_raster_tile_for_chunk, cache_vector_tile_for_chunk,
         get_elevation_cache_path, get_elevation_cache_path_bevy, get_openfreemap_cache_path,
@@ -11,7 +11,7 @@ use crate::{
     config::OSMConfig,
     elevation::{TILE_VERTEX_COUNT, get_elevation_local, spawn_elevation_meshes},
     material::{MapMaterialHandle, MapMeshHandle},
-    mesh::{BuildInstruction, LightInstruction, Shape, spawn_stroke_mesh},
+    mesh::{BuildInstruction, Shape, spawn_stroke_mesh},
     theme::get_way_build_instruction_openfreemap,
     vector::parse_pbf,
 };
@@ -89,6 +89,14 @@ pub fn load_unloaded_chunks(
         }
     });
 }
+pub fn get_elevation(translation: Vec3, heightmap: &Image) -> Option<f32> {
+    if !Rect::from_center_size(Vec2::ZERO, Vec2::ONE).contains(translation.xz()) {
+        return None;
+    }
+    let local_coords =
+        ((Vec2::new(0.5, 0.5) + translation.xz()) * TILE_VERTEX_COUNT as f32).as_ivec2();
+    Some(get_elevation_local(heightmap, local_coords))
+}
 
 #[expect(clippy::too_many_arguments)]
 pub fn load_chunk(
@@ -108,25 +116,9 @@ pub fn load_chunk(
         .expect("Image should have loaded by now")
         .clone();
 
-    // let vector_tile_chunk = match chunk.z > 14 {
-    //     true => chunk.get_parent_at_z(14),
-    //     false => chunk.clone(),
-    // };
-
     let thread_pool = AsyncComputeTaskPool::get();
-    let get_elevation = move |translation: Vec3, heightmap: &Image| {
-        if !Rect::from_center_size(Vec2::ZERO, Vec2::ONE).contains(translation.xz()) {
-            return None;
-        }
-        let local_coords =
-            ((Vec2::new(0.5, 0.5) + translation.xz()) * TILE_VERTEX_COUNT as f32).as_ivec2();
-        Some(get_elevation_local(heightmap, local_coords))
-    };
-
-    // Fetch shared handles before entering the async task so the closure does
-    // not need to call meshes.add for the light mesh.
     let building_material = map_materials.unknown_building.clone();
-    let light_material = map_materials.light.clone();
+    let light_materials = map_materials.lights.clone();
     let light_mesh = map_meshes.light.clone();
     let vector_entity = commands.spawn_empty().id();
     let chunk_for_vector = chunk.clone();
@@ -141,35 +133,37 @@ pub fn load_chunk(
 
         let instructions = parse_pbf(bytes).unwrap_or_default();
 
-        let mut rng = rand::rng();
         let mut computed_strokes: Vec<Mesh> = Vec::new();
         let mut computed_buildings: Vec<Mesh> = Vec::new();
         let mut lights = Vec::new();
 
         for (tags, layer, polygon) in instructions {
-            match get_way_build_instruction_openfreemap(tags, layer) {
-                BuildInstruction::Stroke(stroke) => {
-                    let center = polygon[0];
-                    lights.push(LightInstruction {
-                        trans: Vec3::new(
-                            center.x,
-                            get_elevation(Vec3::new(center.x, 0.0, center.y), &heightmap)
-                                .unwrap_or(0.0)
-                                + 2.0,
-                            center.y,
-                        ),
-                    });
-                    computed_strokes.push(spawn_stroke_mesh(polygon, stroke));
+            for a in get_way_build_instruction_openfreemap(tags, layer, polygon, &heightmap) {
+                match a {
+                    BuildInstruction::Light(light) => {
+                        lights.push(light);
+                    }
+                    BuildInstruction::Stroke(stroke) => {
+                        computed_strokes.push(spawn_stroke_mesh(stroke.polygon.clone(), stroke));
+                    }
+                    BuildInstruction::Building(building) => {
+                        let building_polygon =
+                            polygon_building(&building, building.polygon.clone());
+                        let mesh = build_building_mesh(&building_polygon);
+                        computed_buildings.push(
+                            mesh.translated_by(
+                                Vec3::Y
+                                    * (get_elevation(
+                                        building_polygon.get_translation(),
+                                        &heightmap,
+                                    )
+                                    .unwrap_or(0.0)
+                                        + building.offset_above_ground_level),
+                            ),
+                        );
+                    }
+                    _ => {}
                 }
-                BuildInstruction::Building(building_instr) => {
-                    let building = polygon_building(&building_instr, polygon, &mut rng);
-                    let mesh = spawn_building(&building);
-                    computed_buildings.push(mesh.translated_by(
-                        Vec3::Y
-                            * get_elevation(building.get_translation(), &heightmap).unwrap_or(0.0),
-                    ));
-                }
-                _ => {}
             }
         }
 
@@ -182,11 +176,6 @@ pub fn load_chunk(
             }
             merged_buildings.push(first);
         }
-
-        let light_transforms = lights
-            .into_iter()
-            .map(|light| Transform::from_translation(light.trans))
-            .collect::<Vec<Transform>>();
 
         let mut command_queue = CommandQueue::default();
         command_queue.push(move |world: &mut World| {
@@ -235,14 +224,15 @@ pub fn load_chunk(
                 world.entity_mut(chunk_entity).add_child(bm);
             }
 
-            for transform in light_transforms {
+            for light in lights {
                 let l = world
                     .spawn((
                         Mesh3d(light_mesh.clone()),
-                        MeshMaterial3d(light_material.clone()),
-                        transform,
+                        MeshMaterial3d(light_materials[&light.color].clone()),
+                        Transform::from_translation(light.trans),
                     ))
                     .id();
+
                 world.entity_mut(chunk_entity).add_child(l);
             }
             world

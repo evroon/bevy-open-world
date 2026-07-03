@@ -5,8 +5,6 @@ use geo::algorithm::TriangulateEarcut;
 use geo::{LineString, Winding};
 use geo_types::Polygon;
 use lyon::geom::Point;
-use rand::RngExt;
-use rand::rngs::ThreadRng;
 use std::f32::consts::FRAC_PI_2;
 use std::ops::Sub;
 
@@ -18,7 +16,6 @@ pub struct Building {
     pub _class: Option<BuildingClass>,
     pub translate: [f32; 2],
     pub height: f32,
-    pub _levels: Option<f32>,
     pub line: Vec<[f32; 2]>,
     pub vertices: Vec<[f32; 3]>,
     pub triangle_indices: Vec<u32>,
@@ -33,7 +30,6 @@ impl Building {
 pub fn polygon_building(
     building_instruction: &BuildingInstruction,
     polygon: Vec<Point<f32>>,
-    rng: &mut ThreadRng,
 ) -> Building {
     let origin = polygon[0];
     let mut polygon = Polygon::new(
@@ -61,23 +57,15 @@ pub fn polygon_building(
 
     let triangles = polygon.earcut_triangles_raw();
 
-    let height: f32 = match building_instruction.height {
-        Some(h) => h,
-        None => match building_instruction.levels {
-            Some(levels) => levels * 3.0,
-            None => rng.random_range(6.0..12.5),
-        },
-    };
     Building {
         _class: building_instruction.class,
         translate: [origin.x, origin.y],
-        height,
-        _levels: building_instruction.levels,
+        height: building_instruction.height,
         line,
         vertices: triangles
             .vertices
             .iter()
-            .map(|i| [i[0], height, i[1]])
+            .map(|i| [i[0], building_instruction.height, i[1]])
             .collect(),
         triangle_indices: triangles
             .triangle_indices
@@ -87,7 +75,7 @@ pub fn polygon_building(
     }
 }
 
-pub fn spawn_building(building: &Building) -> Mesh {
+pub fn build_building_mesh(building: &Building) -> Mesh {
     let mut wall_mesh = build_wall_mesh(building);
 
     wall_mesh

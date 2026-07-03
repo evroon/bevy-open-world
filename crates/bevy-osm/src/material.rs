@@ -8,7 +8,7 @@ use bevy::{
 use std::collections::HashMap;
 use strum::IntoEnumIterator;
 
-use crate::osm_types::BuildingClass;
+use crate::{mesh::LightColor, osm_types::BuildingClass};
 
 type Reflectance = f32;
 type Roughness = f32;
@@ -31,10 +31,9 @@ pub struct MapMaterialHandle {
     pub roof: Handle<StandardMaterial>,
     pub roofs: HashMap<BuildingClass, Handle<StandardMaterial>>,
     pub walls: HashMap<BuildingClass, Handle<StandardMaterial>>,
-    pub light: Handle<StandardMaterial>,
+    pub lights: HashMap<LightColor, Handle<StandardMaterial>>,
     pub unknown_building: Handle<StandardMaterial>,
     pub unknown_building_roof: Handle<StandardMaterial>,
-    // pub road: HashMap<RoadClass, Handle<StandardMaterial>>,
 }
 impl FromWorld for MapMaterialHandle {
     fn from_world(world: &mut World) -> Self {
@@ -99,36 +98,82 @@ impl FromWorld for MapMaterialHandle {
             ..default()
         });
 
-        let light = standard_materials.add(StandardMaterial {
-            base_color: Color::WHITE,
-            depth_bias: 0.,
-            reflectance: 0.5,
-            perceptual_roughness: 0.7,
-            emissive: LinearRgba::rgb(100.0, 100.0, 10.0),
-            ..default()
-        });
-
-        // let mut road: HashMap<RoadClass, Handle<StandardMaterial>> = HashMap::new();
-        // for road_class in RoadClass::iter() {
-        //     let color = Color::from(&road_class);
-        //     let road_color_handle = standard_materials.add(StandardMaterial {
-        //         base_color: color,
-        //         // depth_bias: road_class.depth_bias() * 100.,
-        //         reflectance: 0.5,
-        //         perceptual_roughness: 0.8,
-        //         ..default()
-        //     });
-        //     road.entry(road_class)
-        //         .or_insert_with_key(|_key| road_color_handle);
-        // }
-
         Self {
             roof,
             roofs,
             walls,
             unknown_building,
             unknown_building_roof,
-            light,
+            lights: (vec![
+                (
+                    LightColor::White,
+                    standard_materials.add(StandardMaterial {
+                        base_color: Color::WHITE,
+                        depth_bias: 0.,
+                        reflectance: 0.5,
+                        perceptual_roughness: 0.7,
+                        emissive: LinearRgba::rgb(100.0, 100.0, 255.0),
+                        ..default()
+                    }),
+                ),
+                (
+                    LightColor::Yellow,
+                    standard_materials.add(StandardMaterial {
+                        base_color: Color::WHITE,
+                        depth_bias: 0.,
+                        reflectance: 0.5,
+                        perceptual_roughness: 0.7,
+                        emissive: LinearRgba::rgb(100.0, 100.0, 10.0),
+                        ..default()
+                    }),
+                ),
+                (
+                    LightColor::Orange,
+                    standard_materials.add(StandardMaterial {
+                        base_color: Color::WHITE,
+                        depth_bias: 0.,
+                        reflectance: 0.5,
+                        perceptual_roughness: 0.7,
+                        emissive: LinearRgba::rgb(223., 113., 48.),
+                        ..default()
+                    }),
+                ),
+                (
+                    LightColor::Red,
+                    standard_materials.add(StandardMaterial {
+                        base_color: Color::WHITE,
+                        depth_bias: 0.,
+                        reflectance: 0.5,
+                        perceptual_roughness: 0.7,
+                        emissive: LinearRgba::rgb(255., 0., 0.),
+                        ..default()
+                    }),
+                ),
+                (
+                    LightColor::Blue,
+                    standard_materials.add(StandardMaterial {
+                        base_color: Color::WHITE,
+                        depth_bias: 0.,
+                        reflectance: 0.5,
+                        perceptual_roughness: 0.7,
+                        emissive: LinearRgba::rgb(0., 0., 255.),
+                        ..default()
+                    }),
+                ),
+                (
+                    LightColor::Green,
+                    standard_materials.add(StandardMaterial {
+                        base_color: Color::WHITE,
+                        depth_bias: 0.,
+                        reflectance: 0.5,
+                        perceptual_roughness: 0.7,
+                        emissive: LinearRgba::rgb(0., 255., 0.),
+                        ..default()
+                    }),
+                ),
+            ])
+            .into_iter()
+            .collect(),
         }
     }
 }

@@ -1,14 +1,5 @@
-use std::fs::File;
-use std::io::Read;
-
-use crate::building::{polygon_building, spawn_building};
-use crate::cache::{cache_vector_tile_for_chunk, get_openfreemap_cache_path};
-use crate::chunk::Chunk;
-use crate::material::MapMaterialHandle;
-use crate::mesh::{BuildInstruction, spawn_stroke_mesh};
 use crate::schema::layer::OMTLayer;
 use crate::tag::Tag;
-use crate::theme::get_way_build_instruction_openfreemap;
 use bevy::prelude::*;
 use geo::Coord;
 use geo_types::Geometry;
@@ -19,92 +10,6 @@ use mvt_reader::layer::Layer;
 use mvt_reader::{Reader, error::ParserError, feature::Value};
 
 pub type PolygonInstruction = (Vec<Tag>, OMTLayer, Vec<Point2D<f32, UnknownUnit>>);
-
-pub fn spawn_pbf(
-    instructions: Vec<PolygonInstruction>,
-    commands: &mut Commands,
-    meshes: &mut ResMut<Assets<Mesh>>,
-    map_materials: &Res<MapMaterialHandle>,
-    chunk_entity: Entity,
-) {
-    let mut rng = rand::rng();
-    let building_material: Handle<StandardMaterial> = map_materials.unknown_building.clone();
-    let mut child_ids = Vec::new();
-
-    for (tags, layer, polygon) in instructions {
-        match get_way_build_instruction_openfreemap(
-            tags.iter()
-                .map(|tag| Tag {
-                    key: tag.key.clone(),
-                    val: tag.val.clone(),
-                })
-                .collect(),
-            layer,
-        ) {
-            BuildInstruction::Fill(_fill) => {
-                // let mesh = spawn_fill_mesh(polygon.iter().map(|p| point(p.x, p.y)).collect(), fill);
-
-                // let mesh = commands.spawn((
-                //     Mesh3d(meshes.add(mesh)),
-                //     MeshMaterial3d(building_material.clone()),
-                //     Transform::IDENTITY,
-                // ));
-                // child_ids.push(mesh.id());
-            }
-            BuildInstruction::Stroke(stroke) => {
-                let mesh =
-                    spawn_stroke_mesh(polygon.iter().map(|p| point(p.x, p.y)).collect(), stroke);
-
-                let mesh = commands.spawn((
-                    Mesh3d(meshes.add(mesh)),
-                    MeshMaterial3d(building_material.clone()),
-                    Transform::IDENTITY,
-                ));
-                child_ids.push(mesh.id());
-            }
-            BuildInstruction::Building(building) => {
-                let building = polygon_building(&building, polygon, &mut rng);
-                let mesh = spawn_building(&building);
-
-                let mesh = commands.spawn((
-                    Mesh3d(meshes.add(mesh)),
-                    MeshMaterial3d(building_material.clone()),
-                    Transform::IDENTITY,
-                ));
-
-                child_ids.push(mesh.id());
-            }
-            BuildInstruction::Light(_light) => {}
-            BuildInstruction::None => {}
-        }
-    }
-
-    for child_id in child_ids {
-        commands.entity(chunk_entity).add_child(child_id);
-    }
-}
-
-pub fn spawn_chunk(
-    commands: &mut Commands,
-    meshes: &mut ResMut<Assets<Mesh>>,
-    map_materials: &Res<MapMaterialHandle>,
-    chunk: &Chunk,
-    chunk_entity: Entity,
-) {
-    cache_vector_tile_for_chunk(chunk);
-    let mut bytes = Vec::new();
-    File::open(get_openfreemap_cache_path(chunk))
-        .unwrap()
-        .read_to_end(&mut bytes)
-        .unwrap();
-    spawn_pbf(
-        parse_pbf(bytes).unwrap(),
-        commands,
-        meshes,
-        map_materials,
-        chunk_entity,
-    );
-}
 
 pub fn parse_pbf(pbf_data: Vec<u8>) -> Result<Vec<PolygonInstruction>, ParserError> {
     let reader = Reader::new(pbf_data)?;

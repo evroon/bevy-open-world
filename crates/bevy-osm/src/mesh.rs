@@ -3,7 +3,11 @@ use bevy::{
     mesh::{Indices, PrimitiveTopology},
     prelude::*,
 };
-use lyon::{math::Point, path::Path};
+use lyon::{
+    geom::euclid::{Point2D, UnknownUnit},
+    math::Point,
+    path::Path,
+};
 use lyon_tessellation::{
     BuffersBuilder, FillOptions, FillTessellator, FillVertex, FillVertexConstructor, LineJoin,
     StrokeOptions, StrokeTessellator, StrokeVertex, StrokeVertexConstructor,
@@ -69,20 +73,34 @@ impl Layer {
 pub struct StrokeInstruction {
     pub color: Color,
     pub width: f32,
+    pub polygon: Vec<Point2D<f32, UnknownUnit>>,
 }
 pub struct BuildingInstruction {
     pub class: Option<BuildingClass>,
-    pub height: Option<f32>,
-    pub levels: Option<f32>,
+    pub height: f32,
+    pub offset_above_ground_level: f32,
+    pub polygon: Vec<Point2D<f32, UnknownUnit>>,
 }
 
 pub struct FillInstruction {
     pub color: Color,
     pub layer: Layer,
+    pub polygon: Vec<Point2D<f32, UnknownUnit>>,
+}
+
+#[derive(Eq, PartialEq, Hash, Clone)]
+pub enum LightColor {
+    Blue,
+    Green,
+    Orange,
+    Red,
+    White,
+    Yellow,
 }
 
 pub struct LightInstruction {
     pub trans: Vec3,
+    pub color: LightColor,
 }
 
 pub enum BuildInstruction {
