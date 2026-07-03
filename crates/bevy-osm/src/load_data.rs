@@ -30,10 +30,12 @@ pub fn insert_chunks_from_quadtree(
 ) {
     nodes_to_load.iter().for_each(|(entity, node)| {
         let zxy = (node.lod + 9, node.x, node.y);
+        let (z, x, y) = zxy;
+
         commands.entity(entity).insert(Chunk {
+            z: z as i8,
             x,
             y,
-            z: z as i8,
             elevation: load_elevation_for_chunk(zxy, &asset_server),
             raster: load_raster_tile_for_chunk(zxy, &config, &asset_server),
             vector: load_vector_tile_for_chunk(zxy, &asset_server),
