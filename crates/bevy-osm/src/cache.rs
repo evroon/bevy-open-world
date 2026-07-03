@@ -202,37 +202,36 @@ pub fn get_new_session(source: &RasterTileSource) {
     let token_url =
         format!("https://api.cesium.com/v1/assets/{asset_id}/endpoint?access_token={access_token}");
 
-    let response = ehttp::fetch_blocking(&ehttp::Request::get(token_url));
+    let token_path = get_token_cache_path(source);
 
-    if let Ok(success) = &response
-        && success.ok
-    {
-        let json = success
-            .json::<CesiumTokenResponse>()
-            .expect("Received invalid JSON when fetching new Cesium session");
-        let file =
-            File::create(get_token_cache_path(source)).expect("Could not open token.json file");
-        serde_json::to_writer_pretty(file, &json).expect("Could not write to token.json file");
+    ehttp::fetch(ehttp::Request::get(token_url), move |response| {
+        if let Ok(success) = &response
+            && success.ok
+        {
+            let json = success
+                .json::<CesiumTokenResponse>()
+                .expect("Received invalid JSON when fetching new Cesium session");
+            let file = File::create(token_path).expect("Could not open token.json file");
+            serde_json::to_writer_pretty(file, &json).expect("Could not write to token.json file");
 
-        info!("saved new token.json");
-    } else {
-        panic!("Could not get new session from Cesium")
-    }
+            info!("saved new token.json");
+        } else {
+            panic!("Could not get new session from Cesium")
+        }
+    });
 }
 
 pub fn ensure_session_is_valid(source: &RasterTileSource) {
     let sampled_chunk = get_chunk_for_coord(0.0, 0.0, 0);
+    let source_2 = source.clone();
 
-    if let Ok(download_url) = get_download_url(&sampled_chunk, source) {
-        let response = ehttp::fetch_blocking(&ehttp::Request::get(download_url));
-
-        if let Ok(success) = &response
-            && success.ok
-        {
-            // Session is still valid
-            return;
-        }
+    if let Ok(download_url) = get_download_url(&sampled_chunk, &source_2) {
+        ehttp::fetch(ehttp::Request::get(download_url), move |response| {
+            if response.is_err() || !response.unwrap().ok {
+                get_new_session(&source_2);
+            }
+        });
+    } else {
+        get_new_session(&source);
     }
-
-    get_new_session(source);
 }

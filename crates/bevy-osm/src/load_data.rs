@@ -41,10 +41,13 @@ pub fn preload_chunks(
             elevation: Handle::default(),
             raster: Handle::default(),
         };
-        cache_elevation_for_chunk(&chunk);
-        cache_raster_tile_for_chunk(&chunk, &config);
-        cache_vector_tile_for_chunk(&chunk);
 
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            cache_elevation_for_chunk(&chunk);
+            cache_raster_tile_for_chunk(&chunk, &config);
+            cache_vector_tile_for_chunk(&chunk);
+        }
         commands.entity(entity).insert(chunk);
     });
 }

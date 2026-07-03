@@ -55,7 +55,7 @@ impl Default for OSMConfig {
         Self {
             location: Location::Amsterdam,
             ui_visible: true,
-            raster_tile_source: RasterTileSource::CesiumGoogleSatellite,
+            raster_tile_source: RasterTileSource::OSMDefault,
         }
     }
 }

@@ -3,8 +3,6 @@ use bevy::dev_tools::infinite_grid::InfiniteGridPlugin;
 use bevy::pbr::DefaultOpaqueRendererMethod;
 use bevy::prelude::*;
 use bevy_egui::EguiPlugin;
-use bevy_flight_sim::flightdeck::spawn_flightdeck;
-use bevy_flight_sim::runway::spawn_aircraft;
 use bevy_osm::config::OSMConfig;
 use bevy_osm::{OSMPlugin, location::Location};
 use bevy_terrain::camera::{
@@ -35,8 +33,8 @@ fn main() {
             Startup,
             (
                 setup_lighting_for_open_world,
-                spawn_flightdeck,
-                spawn_aircraft,
+                // spawn_flightdeck,
+                // spawn_aircraft,
                 spawn_camera,
             ),
         )

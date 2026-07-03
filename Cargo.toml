@@ -9,10 +9,14 @@ authors = ["evroon"]
 license = "GPL-3.0"
 keywords = ["bevy", "serialization", "gamedev", "savegame", "plugin"]
 categories = ["game-development"]
-exclude = [".github/workflows", "assets"]
+exclude = [".github/workflows", "assets/cache", "assets/saves"]
 
 [workspace]
 members = ["crates/*"]
+
+# Enable max optimizations for dependencies, but not for our code
+[profile.dev.package."*"]
+opt-level = 3
 
 [features]
 dev = ["bevy/dynamic_linking", "bevy/file_watcher"]
