@@ -19,7 +19,7 @@ use super::mesh::{BuildInstruction, FillInstruction, StrokeInstruction};
 fn snap_to_heightmap(center: Point2D<f32, UnknownUnit>, heightmap: &Image) -> Vec3 {
     Vec3::new(
         center.x,
-        get_elevation(Vec3::new(center.x, 0.0, center.y), &heightmap).unwrap_or(0.0) + 2.0,
+        get_elevation(Vec3::new(center.x, 0.0, center.y), heightmap).unwrap_or(0.0) + 2.0,
         center.y,
     )
 }
