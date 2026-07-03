@@ -9,7 +9,7 @@ authors = ["evroon"]
 license = "GPL-3.0"
 keywords = ["bevy", "serialization", "gamedev", "savegame", "plugin"]
 categories = ["game-development"]
-exclude = [".github/workflows", "assets/cache", "assets/saves"]
+exclude = [".github/workflows", "dist", "build", "assets/cache", "assets/saves"]
 
 [workspace]
 members = ["crates/*"]
@@ -17,6 +17,17 @@ members = ["crates/*"]
 # Enable max optimizations for dependencies, but not for our code
 [profile.dev.package."*"]
 opt-level = 3
+
+[profile.dev]
+opt-level = 1
+
+# Profile for distribution
+[profile.dist]
+inherits = "release"
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true
 
 [features]
 dev = ["bevy/dynamic_linking", "bevy/file_watcher"]
@@ -61,6 +72,7 @@ mvt-reader = { workspace = true }
 
 [dev-dependencies]
 bevy = { workspace = true, features = [
+    "webgpu",
     "jpeg",
     "bevy_mesh",
     "free_camera",

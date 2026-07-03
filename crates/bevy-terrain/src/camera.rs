@@ -50,26 +50,26 @@ pub fn get_camera_bundle_for_open_world() -> impl Bundle {
     (
         Camera3d::default(),
         Transform::from_xyz(-2.4, 0.04, 0.0).looking_at(Vec3::Y * 0.1, Vec3::Y),
-        AtmosphereSettings::default(),
+        // AtmosphereSettings::default(),
         Exposure { ev100: 13.0 },
         Tonemapping::AcesFitted,
         Hdr,
         Bloom::NATURAL,
-        AtmosphereEnvironmentMapLight::default(),
-        VolumetricFog::default(),
+        // AtmosphereEnvironmentMapLight::default(),
+        // VolumetricFog::default(),
         Msaa::Off,
         TemporalAntiAliasing::default(),
         ScreenSpaceReflections::default(),
-        DistanceFog {
-            color: Color::srgba(0.35, 0.48, 0.5, 1.0),
-            directional_light_color: Color::NONE,
-            directional_light_exponent: 40.0,
-            falloff: FogFalloff::from_visibility_colors(
-                6e4,
-                Color::srgb(0.35, 0.5, 0.5),
-                Color::srgb(0.8, 0.844, 1.0),
-            ),
-        },
+        // DistanceFog {
+        //     color: Color::srgba(0.35, 0.48, 0.5, 1.0),
+        //     directional_light_color: Color::NONE,
+        //     directional_light_exponent: 40.0,
+        //     falloff: FogFalloff::from_visibility_colors(
+        //         6e4,
+        //         Color::srgb(0.35, 0.5, 0.5),
+        //         Color::srgb(0.8, 0.844, 1.0),
+        //     ),
+        // },
     )
 }
 
