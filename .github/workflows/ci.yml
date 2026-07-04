@@ -86,6 +86,12 @@ jobs:
             target/
           key: ${{ runner.os }}-cargo-udeps-build
 
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          components: rustfmt, clippy
+          override: true
+
       - name: Install cargo-udeps
         uses: actions-rs/cargo@v1
         with:
