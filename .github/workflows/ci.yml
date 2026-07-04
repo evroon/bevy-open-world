@@ -71,3 +71,15 @@ jobs:
 
       - name: Check format
         run: cargo fmt --all -- --check
+
+      - name: Install cargo-udeps
+        uses: actions-rs/cargo@v1
+        with:
+          command: install
+          args: cargo-udeps --locked
+
+      - name: Check unused dependencies
+        uses: actions-rs/cargo@v1
+        with:
+          command: udeps
+          args: --all-targets
