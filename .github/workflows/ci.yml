@@ -22,7 +22,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ runner.os }}-cargo-build-stable
+          key: ${{ runner.os }}-cargo-test
 
       - uses: actions-rs/toolchain@v1
         with:
@@ -51,7 +51,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ runner.os }}-cargo-build-stable
+          key: ${{ runner.os }}-cargo-lint
 
       - uses: actions-rs/toolchain@v1
         with:
@@ -84,7 +84,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ runner.os }}-cargo-build-stable
+          key: ${{ runner.os }}-cargo-udeps-build
 
       - name: Install cargo-udeps
         uses: actions-rs/cargo@v1
