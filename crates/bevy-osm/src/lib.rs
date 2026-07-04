@@ -21,7 +21,10 @@ use crate::{
     cache::ensure_session_is_valid,
     chunk::{get_chunk_for_coord, get_root_chunk_for_location},
     config::OSMConfig,
-    load_data::{handle_vector_tasks, insert_chunks_from_quadtree, load_unloaded_chunks},
+    load_data::{
+        OSMBuilding, OSMLight, OSMStroke, handle_vector_tasks, insert_chunks_from_quadtree,
+        load_unloaded_chunks,
+    },
     material::{MapMaterialHandle, MapMeshHandle},
     performance::{OSMPerformance, update_performance},
     ui::setup_osm_ui,
@@ -54,9 +57,45 @@ impl Plugin for OSMPlugin {
                     handle_vector_tasks.before(update_terrain_quadtree),
                     load_unloaded_chunks.before(update_terrain_quadtree),
                     insert_chunks_from_quadtree.before(update_terrain_quadtree),
+                    update_osm_visibility,
                     update_performance,
                 ),
             );
+    }
+}
+
+pub fn update_osm_visibility(
+    config: Res<OSMConfig>,
+    mut strokes: Query<&mut Visibility, With<OSMStroke>>,
+    mut buildings: Query<&mut Visibility, With<OSMBuilding>>,
+    mut lights: Query<&mut Visibility, With<OSMLight>>,
+) {
+    if !config.is_changed() {
+        return;
+    }
+
+    for mut visibility in &mut strokes {
+        *visibility = if config.strokes_visible {
+            Visibility::Visible
+        } else {
+            Visibility::Hidden
+        };
+    }
+
+    for mut visibility in &mut buildings {
+        *visibility = if config.buildings_visible {
+            Visibility::Visible
+        } else {
+            Visibility::Hidden
+        };
+    }
+
+    for mut visibility in &mut lights {
+        *visibility = if config.lights_visible {
+            Visibility::Visible
+        } else {
+            Visibility::Hidden
+        };
     }
 }
 

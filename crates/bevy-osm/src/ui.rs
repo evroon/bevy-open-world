@@ -130,6 +130,18 @@ fn osm_ui(
         ensure_session_is_valid(&config.raster_tile_source);
     }
 
+    ui.add(Label::new("Lights"));
+    ui.checkbox(&mut config.lights_visible, "Visible");
+    ui.end_row();
+
+    ui.add(Label::new("Buildings"));
+    ui.checkbox(&mut config.buildings_visible, "Visible");
+    ui.end_row();
+
+    ui.add(Label::new("Strokes"));
+    ui.checkbox(&mut config.strokes_visible, "Visible");
+    ui.end_row();
+
     ui.add(Label::new("translation:"));
     ui.add(Label::new(format!(
         "{:.0}, {:.0}, {:.0}",

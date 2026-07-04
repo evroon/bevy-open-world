@@ -102,7 +102,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: install
-          args: cargo-udeps --locked
+          args: cargo-udeps --locked --force
 
       - name: Check unused dependencies
         uses: actions-rs/cargo@v1
