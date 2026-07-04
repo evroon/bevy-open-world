@@ -89,7 +89,6 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly
-          components: rustfmt, clippy
           override: true
 
       - name: Install cargo-udeps
