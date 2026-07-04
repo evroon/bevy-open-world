@@ -26,7 +26,7 @@ pub fn setup_lighting_for_open_world(
     commands.spawn(Atmosphere::earth(
         scattering_mediums.add(ScatteringMedium::default()),
     ));
-    // Sun
+
     commands.spawn((
         DirectionalLight {
             shadow_maps_enabled: true,

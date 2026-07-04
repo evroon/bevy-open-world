@@ -1,10 +1,9 @@
 use bevy::DefaultPlugins;
+use bevy::asset::AssetMetaCheck;
 use bevy::dev_tools::infinite_grid::InfiniteGridPlugin;
 use bevy::pbr::DefaultOpaqueRendererMethod;
 use bevy::prelude::*;
 use bevy_egui::EguiPlugin;
-use bevy_flight_sim::flightdeck::spawn_flightdeck;
-use bevy_flight_sim::runway::spawn_aircraft;
 use bevy_osm::config::OSMConfig;
 use bevy_osm::{OSMPlugin, location::Location};
 use bevy_terrain::camera::{
@@ -23,7 +22,20 @@ fn main() {
             ..Default::default()
         })
         .add_plugins((
-            DefaultPlugins,
+            DefaultPlugins
+                .set(WindowPlugin {
+                    primary_window: Some(Window {
+                        canvas: Some("#bevy".to_owned()),
+                        fit_canvas_to_parent: true,
+                        prevent_default_event_handling: false,
+                        ..default()
+                    }),
+                    ..default()
+                })
+                .set(AssetPlugin {
+                    meta_check: AssetMetaCheck::Never,
+                    ..default()
+                }),
             InfiniteGridPlugin,
             OSMPlugin,
             WhereWasIPlugin::default(),
@@ -35,8 +47,8 @@ fn main() {
             Startup,
             (
                 setup_lighting_for_open_world,
-                spawn_flightdeck,
-                spawn_aircraft,
+                // spawn_flightdeck,
+                // spawn_aircraft,
                 spawn_camera,
             ),
         )

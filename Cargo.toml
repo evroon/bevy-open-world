@@ -9,10 +9,25 @@ authors = ["evroon"]
 license = "GPL-3.0"
 keywords = ["bevy", "serialization", "gamedev", "savegame", "plugin"]
 categories = ["game-development"]
-exclude = [".github/workflows", "assets"]
+exclude = [".github/workflows", "dist", "build", "assets/cache", "assets/saves"]
 
 [workspace]
 members = ["crates/*"]
+
+# Enable max optimizations for dependencies, but not for our code
+[profile.dev.package."*"]
+opt-level = 3
+
+[profile.dev]
+opt-level = 1
+
+# Profile for distribution
+[profile.dist]
+inherits = "release"
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true
 
 [features]
 dev = ["bevy/dynamic_linking", "bevy/file_watcher"]
@@ -27,24 +42,23 @@ bevy = { version = "0.19.0", features = [
     "bevy_mesh",
     "free_camera",
     "pan_camera",
+    "bevy_dev_tools",
+    "https",
+    "web_asset_cache",
+    "webgpu",
 ] }
 bevy_panorbit_camera = "0.35.0"
 bevy_egui = "0.41.0"
 bevy-where-was-i = "0.4.0"
 mvt-reader = { git = "https://github.com/codeart1st/mvt-reader", rev="6de0c79ef81d77a3fdab4ea01eaa6380ac3e8b2e" }
+thiserror = "2.0.18"
 
 [patch.crates-io]
 bevy-where-was-i = { git = "https://github.com/evroon/bevy-where-was-i", rev = "59207671d01a5a2a726b8a287e85cc9d720fe849" }
 bevy-volumetric-clouds = { git = "https://github.com/evroon/bevy-volumetric-clouds", rev = "bdedf534e866e72bc3dfa0b1f62893d621cec0fe" }
 
 [dependencies]
-bevy = { workspace = true, features = [
-    "jpeg",
-    "bevy_mesh",
-    "free_camera",
-    "pan_camera",
-    "bevy_dev_tools",
-] }
+bevy = { workspace = true }
 bevy-volumetric-clouds = { version = "0.2.0", features = ["fly_camera"] }
 bevy-where-was-i = { workspace = true }
 ehttp = "0.6.0"
@@ -54,18 +68,12 @@ rand = "0.10.0"
 lyon = "1.0.1"
 lyon_tessellation = "1.0.15"
 mvt-reader = { workspace = true }
+thiserror = { workspace = true }
 
 [dev-dependencies]
-bevy = { workspace = true, features = [
-    "jpeg",
-    "bevy_mesh",
-    "free_camera",
-    "pan_camera",
-] }
 bevy_panorbit_camera = { workspace = true }
 bevy_egui = { workspace = true }
 turborand = "0.10.1"
-mvt-reader = { git = "https://github.com/codeart1st/mvt-reader", rev="6de0c79ef81d77a3fdab4ea01eaa6380ac3e8b2e" }
 
 bevy-adsb = { path = "crates/bevy-adsb" }
 bevy-earth = { path = "crates/bevy-earth" }

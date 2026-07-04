@@ -23,6 +23,7 @@ bevy_egui = { workspace = true }
 dotenvy = "0.15.7"
 egui_plot = "0.36.0"
 mvt-reader = { workspace = true }
+thiserror = { workspace = true }
 
 [dev-dependencies]
 bevy = { workspace = true }

@@ -9,7 +9,7 @@ use bevy::math::ops::{atan, powf, sinh};
 use bevy::prelude::*;
 use bevy_terrain::quadtree::QuadTreeNode;
 
-use crate::location::Location;
+use crate::{assets::mvt::MVTAsset, location::Location};
 
 // Assume at equator (110 km = 1 degree of longitude)
 pub const LAT_LON_TO_METERS_CONVERSION: Vec2 = Vec2::splat(1.1e5);
@@ -25,6 +25,7 @@ pub struct Chunk {
     pub z: i8,
     pub elevation: Handle<Image>,
     pub raster: Handle<Image>,
+    pub vector: Handle<MVTAsset>,
 }
 impl Chunk {
     pub fn get_lat_lon_area(&self) -> Rect {
@@ -52,6 +53,7 @@ impl Chunk {
             z: self.z - 1,
             elevation: Handle::default(),
             raster: Handle::default(),
+            vector: Handle::default(),
         }
     }
     pub fn get_parent_at_z(&self, z: i8) -> Chunk {
@@ -114,6 +116,7 @@ pub fn get_chunk_for_coord(lat_deg: f64, lon_deg: f64, zoom: i8) -> Chunk {
         z: zoom,
         elevation: Handle::default(),
         raster: Handle::default(),
+        vector: Handle::default(),
     }
 }
 
@@ -168,6 +171,7 @@ mod tests {
                 z: 18,
                 elevation: Handle::default(),
                 raster: Handle::default(),
+                vector: Handle::default(),
             },
             (41.89921, 12.505188),
         )
@@ -208,6 +212,7 @@ mod tests {
                 z: 17,
                 elevation: Handle::default(),
                 raster: Handle::default(),
+                vector: Handle::default(),
             }
         );
         assert!(
@@ -228,6 +233,7 @@ mod tests {
                 z: 13,
                 elevation: Handle::default(),
                 raster: Handle::default(),
+                vector: Handle::default(),
             }
         );
         assert!(

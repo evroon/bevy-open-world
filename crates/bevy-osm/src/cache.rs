@@ -1,106 +1,20 @@
-use std::{env, fs::File, io::Write, path::Path};
+use std::{env, fs::File, path::Path};
 
-use bevy::log::debug;
-use dotenvy::dotenv;
-use ehttp::Response;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    chunk::{Chunk, ensure_cache_dir_exists, get_chunk_for_coord},
+    assets::mvt::MVTAsset,
+    chunk::{ensure_cache_dir_exists, get_chunk_for_coord},
     config::{OSMConfig, RasterTileSource},
 };
 use bevy::prelude::*;
 
 const ELEVATION_BASE_URL: &str = "https://tiles.mapterhorn.com";
-const VECTOR_TILES_VERSION: &str = "20260621_080001_pt";
 const VECTOR_TILES_BASE_URL: &str = "https://tiles.openfreemap.org/planet/20260621_080001_pt";
 
-pub fn get_osm_raster_cache_path(chunk: &Chunk, config: &OSMConfig) -> String {
-    let (z, x, y) = (chunk.z, chunk.x, chunk.y);
-    let name = config.raster_tile_source.get_name();
-    let extension = config.raster_tile_source.get_extension();
-    format!("assets/cache/{name}/{z}/{x}/{y}.{extension}")
-}
-pub fn get_osm_raster_cache_path_bevy(chunk: &Chunk, config: &OSMConfig) -> String {
-    let (z, x, y) = (chunk.z, chunk.x, chunk.y);
-    let name = config.raster_tile_source.get_name();
-    let extension = config.raster_tile_source.get_extension();
-    format!("cache/{name}/{z}/{x}/{y}.{extension}")
-}
-pub fn get_token_cache_path(source: &RasterTileSource) -> String {
+fn get_token_cache_path(source: &RasterTileSource) -> String {
     let name = source.get_name();
     format!("assets/cache/{name}/token.json")
-}
-pub fn get_osm_cache_path(chunk: &Chunk) -> String {
-    let (z, x, y) = (chunk.z, chunk.x, chunk.y);
-    format!("assets/cache/osm/{z}/{x}/{y}.osm")
-}
-pub fn get_elevation_cache_path(chunk: &Chunk) -> String {
-    let (z, x, y) = (chunk.z, chunk.x, chunk.y);
-    format!("assets/cache/elevation/{z}/{x}/{y}.webp")
-}
-pub fn get_elevation_cache_path_bevy(chunk: &Chunk) -> String {
-    let (z, x, y) = (chunk.z, chunk.x, chunk.y);
-    format!("cache/elevation/{z}/{x}/{y}.webp")
-}
-pub fn get_openfreemap_cache_path(chunk: &Chunk) -> String {
-    let (z, x, y) = (chunk.z, chunk.x, chunk.y);
-    format!("assets/cache/openfreemap/{VECTOR_TILES_VERSION}/{z}/{x}/{y}.pbf")
-}
-
-fn cache_tile_for_chunk(
-    path_str: String,
-    url: String,
-    error_handler: impl 'static + Send + FnOnce(String, Result<Response, String>),
-) {
-    let path = Path::new(&path_str);
-    ensure_cache_dir_exists(path);
-
-    if !path.exists() {
-        let request = ehttp::Request::get(url.clone());
-        debug!("Downloading tile for {url}");
-
-        ehttp::fetch(request, move |response| {
-            let path = Path::new(&path_str);
-            if let Ok(success) = &response
-                && success.ok
-            {
-                File::create(path)
-                    .unwrap()
-                    .write_all(&success.bytes)
-                    .expect("Could not write to tile cache");
-            } else {
-                error_handler(path_str, response);
-            }
-        });
-    }
-}
-
-pub fn cache_elevation_for_chunk(chunk: &Chunk) {
-    let (z, x, y) = (chunk.z, chunk.x, chunk.y);
-    let url = format!("{ELEVATION_BASE_URL}/{z}/{x}/{y}.webp");
-
-    let on_error = move |path_str, _| {
-        let path = Path::new(&path_str);
-
-        File::create(path)
-            .unwrap()
-            .write_all(include_bytes!("../../../assets/osm/empty-tile.webp"))
-            .expect("Could not write to tile cache");
-    };
-
-    let path_str = get_elevation_cache_path(chunk);
-    cache_tile_for_chunk(path_str, url, on_error);
-}
-
-pub fn cache_vector_tile_for_chunk(chunk: &Chunk) {
-    let (z, x, y) = (chunk.z, chunk.x, chunk.y);
-    let url = format!("{VECTOR_TILES_BASE_URL}/{z}/{x}/{y}.pbf");
-
-    let on_error = move |s, r| error!("Could not download vector tile for {}: `{:?}`", s, r);
-
-    let path_str = get_openfreemap_cache_path(chunk);
-    cache_tile_for_chunk(path_str, url, on_error);
 }
 
 #[derive(Debug)]
@@ -109,28 +23,32 @@ pub enum DownloadUrlError {
     TokenFileAbsent,
 }
 
-fn get_download_url(chunk: &Chunk, source: &RasterTileSource) -> Result<String, DownloadUrlError> {
-    let (z, x, y) = (chunk.z, chunk.x, chunk.y);
+fn get_raster_download_url(
+    zxy: (u8, i32, i32),
+    source: &RasterTileSource,
+) -> Result<String, DownloadUrlError> {
+    let (z, x, y) = zxy;
 
     match source {
         RasterTileSource::CesiumGoogleSatellite
         | RasterTileSource::CesiumGoogleRoadmaps
         | RasterTileSource::CesiumGoogleContour => {
-            dotenv().expect("Could not read .env");
+            panic!("session token would be in cache");
+            // dotenv().expect("Could not read .env");
 
-            // TODO: don't read file for every tile fetch
-            let file = File::open(get_token_cache_path(source))
-                .or(Err(DownloadUrlError::TokenFileAbsent))?;
-            let secrets: CesiumTokenResponse =
-                serde_json::from_reader(file).or(Err(DownloadUrlError::TokenFileInvalid))?;
+            // // TODO: don't read file for every tile fetch
+            // let file = File::open(get_token_cache_path(source))
+            //     .or(Err(DownloadUrlError::TokenFileAbsent))?;
+            // let secrets: CesiumTokenResponse =
+            //     serde_json::from_reader(file).or(Err(DownloadUrlError::TokenFileInvalid))?;
 
-            let asset_id = source.get_cesium_asset_id();
-            let key = secrets.options.key;
-            let session = secrets.options.session;
+            // let asset_id = source.get_cesium_asset_id();
+            // let key = secrets.options.key;
+            // let session = secrets.options.session;
 
-            Ok(format!(
-                "https://assets.ion.cesium.com/proxy/{asset_id}/v1/2dtiles/{z}/{x}/{y}?session={session}&key={key}"
-            ))
+            // Ok(format!(
+            //     "https://assets.ion.cesium.com/proxy/{asset_id}/v1/2dtiles/{z}/{x}/{y}?session={session}&key={key}"
+            // ))
         }
         RasterTileSource::Transport => Ok(format!(
             "https://tileserver.memomaps.de/tilegen/{z}/{x}/{y}.png"
@@ -141,35 +59,52 @@ fn get_download_url(chunk: &Chunk, source: &RasterTileSource) -> Result<String, 
     }
 }
 
-pub fn cache_raster_tile_for_chunk(chunk: &Chunk, config: &OSMConfig) {
-    let path_str = get_osm_raster_cache_path(chunk, config);
+#[cfg(target_arch = "wasm32")]
+pub fn load_raster_tile_for_chunk(
+    zxy: (u8, i32, i32),
+    config: &OSMConfig,
+    asset_server: &Res<AssetServer>,
+) -> Handle<Image> {
+    asset_server.load("osm/empty-tile.webp")
+}
 
-    let download_url = get_download_url(chunk, &config.raster_tile_source);
-    let error_handler = |_, res: Result<Response, String>| {
-        match res {
-            Ok(res) => {
-                error!(
-                    "Raster tile download error [{:?}]: {:?}",
-                    res.status,
-                    res.text()
-                );
-            }
-            Err(err) => {
-                error!("Raster tile unknown download error: {:?}", err);
-            }
-        };
-    };
+#[cfg(not(target_arch = "wasm32"))]
+pub fn load_raster_tile_for_chunk(
+    zxy: (u8, i32, i32),
+    config: &OSMConfig,
+    asset_server: &Res<AssetServer>,
+) -> Handle<Image> {
+    asset_server.load(
+        get_raster_download_url(zxy, &config.raster_tile_source)
+            .expect("Could not get session after retrying"),
+    )
+}
 
-    if let Ok(download_url) = download_url {
-        cache_tile_for_chunk(path_str, download_url, error_handler);
-    } else {
-        // Try again
-        get_new_session(&config.raster_tile_source);
+#[cfg(target_arch = "wasm32")]
+pub fn load_elevation_for_chunk(
+    zxy: (u8, i32, i32),
+    asset_server: &Res<AssetServer>,
+) -> Handle<Image> {
+    asset_server.load("osm/empty-tile.webp")
+}
 
-        let download_url = get_download_url(chunk, &config.raster_tile_source)
-            .expect("Could not get session after retrying");
-        cache_tile_for_chunk(path_str, download_url, error_handler);
-    }
+#[cfg(not(target_arch = "wasm32"))]
+pub fn load_elevation_for_chunk(
+    zxy: (u8, i32, i32),
+    asset_server: &Res<AssetServer>,
+) -> Handle<Image> {
+    let (z, x, y) = zxy;
+    let url = format!("{ELEVATION_BASE_URL}/{z}/{x}/{y}.webp");
+    asset_server.load(url)
+}
+
+pub fn load_vector_tile_for_chunk(
+    zxy: (u8, i32, i32),
+    asset_server: &Res<AssetServer>,
+) -> Handle<MVTAsset> {
+    let (z, x, y) = zxy;
+    let url = format!("{VECTOR_TILES_BASE_URL}/{z}/{x}/{y}.pbf");
+    asset_server.load(url)
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -202,37 +137,39 @@ pub fn get_new_session(source: &RasterTileSource) {
     let token_url =
         format!("https://api.cesium.com/v1/assets/{asset_id}/endpoint?access_token={access_token}");
 
-    let response = ehttp::fetch_blocking(&ehttp::Request::get(token_url));
+    let token_path = get_token_cache_path(source);
 
-    if let Ok(success) = &response
-        && success.ok
-    {
-        let json = success
-            .json::<CesiumTokenResponse>()
-            .expect("Received invalid JSON when fetching new Cesium session");
-        let file =
-            File::create(get_token_cache_path(source)).expect("Could not open token.json file");
-        serde_json::to_writer_pretty(file, &json).expect("Could not write to token.json file");
+    ehttp::fetch(ehttp::Request::get(token_url), move |response| {
+        if let Ok(success) = &response
+            && success.ok
+        {
+            let json = success
+                .json::<CesiumTokenResponse>()
+                .expect("Received invalid JSON when fetching new Cesium session");
+            let file = File::create(token_path).expect("Could not open token.json file");
+            serde_json::to_writer_pretty(file, &json).expect("Could not write to token.json file");
 
-        info!("saved new token.json");
-    } else {
-        panic!("Could not get new session from Cesium")
-    }
+            info!("saved new token.json");
+        } else {
+            panic!("Could not get new session from Cesium")
+        }
+    });
 }
 
 pub fn ensure_session_is_valid(source: &RasterTileSource) {
     let sampled_chunk = get_chunk_for_coord(0.0, 0.0, 0);
+    let source_2 = source.clone();
 
-    if let Ok(download_url) = get_download_url(&sampled_chunk, source) {
-        let response = ehttp::fetch_blocking(&ehttp::Request::get(download_url));
-
-        if let Ok(success) = &response
-            && success.ok
-        {
-            // Session is still valid
-            return;
-        }
+    if let Ok(download_url) = get_raster_download_url(
+        (sampled_chunk.z as u8, sampled_chunk.x, sampled_chunk.y),
+        &source_2,
+    ) {
+        ehttp::fetch(ehttp::Request::get(download_url), move |response| {
+            if response.is_err() || !response.unwrap().ok {
+                get_new_session(&source_2);
+            }
+        });
+    } else {
+        get_new_session(source);
     }
-
-    get_new_session(source);
 }
