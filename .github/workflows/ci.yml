@@ -22,7 +22,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ runner.os }}-cargo-build-stable
+          key: ${{ runner.os }}-cargo-stable-test
 
       - uses: actions-rs/toolchain@v1
         with:
@@ -51,7 +51,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ runner.os }}-cargo-build-stable
+          key: ${{ runner.os }}-cargo-stable-lint
 
       - uses: actions-rs/toolchain@v1
         with:
@@ -71,3 +71,41 @@ jobs:
 
       - name: Check format
         run: cargo fmt --all -- --check
+
+  cargo-udeps:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-nightly-udeps-build
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          override: true
+
+      - name: Install dev packages
+        run: |
+          sudo apt-get update;
+          sudo apt-get install --no-install-recommends \
+            libasound2-dev libudev-dev libwayland-dev libxkbcommon-dev
+        if: runner.os == 'linux'
+
+      - name: Install cargo-udeps
+        uses: actions-rs/cargo@v1
+        with:
+          command: install
+          args: cargo-udeps --locked
+
+      - name: Check unused dependencies
+        uses: actions-rs/cargo@v1
+        with:
+          command: udeps
+          args: --all-targets
