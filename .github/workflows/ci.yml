@@ -72,8 +72,7 @@ jobs:
       - name: Check format
         run: cargo fmt --all -- --check
 
-
-  lint:
+  cargo-udeps:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -86,7 +85,7 @@ jobs:
             ~/.cargo/git/db/
             target/
           key: ${{ runner.os }}-cargo-build-stable
-          
+
       - name: Install cargo-udeps
         uses: actions-rs/cargo@v1
         with:
