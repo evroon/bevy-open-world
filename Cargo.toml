@@ -84,6 +84,10 @@ bevy-skybox = { path = "crates/bevy-skybox" }
 bevy-svg = { path = "crates/bevy-svg" }
 bevy-terrain = { path = "crates/bevy-terrain" }
 
+[package.metadata.cargo-udeps.ignore]
+normal = ["ehttp"]
+development = ["bevy-skybox", "turborand"]
+
 [lints.clippy]
 doc_markdown = "warn"
 manual_let_else = "warn"
