@@ -22,7 +22,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ runner.os }}-cargo-test
+          key: ${{ runner.os }}-cargo-stable-test
 
       - uses: actions-rs/toolchain@v1
         with:
@@ -51,7 +51,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ runner.os }}-cargo-lint
+          key: ${{ runner.os }}-cargo-stable-lint
 
       - uses: actions-rs/toolchain@v1
         with:
@@ -84,7 +84,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ runner.os }}-cargo-udeps-build
+          key: ${{ runner.os }}-cargo-nightly-udeps-build
 
       - uses: actions-rs/toolchain@v1
         with:
