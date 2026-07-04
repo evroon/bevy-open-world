@@ -59,6 +59,16 @@ fn get_raster_download_url(
     }
 }
 
+#[cfg(target_arch = "wasm32")]
+pub fn load_raster_tile_for_chunk(
+    zxy: (u8, i32, i32),
+    config: &OSMConfig,
+    asset_server: &Res<AssetServer>,
+) -> Handle<Image> {
+    asset_server.load("osm/empty-tile.webp")
+}
+
+#[cfg(not(target_arch = "wasm32"))]
 pub fn load_raster_tile_for_chunk(
     zxy: (u8, i32, i32),
     config: &OSMConfig,
@@ -70,6 +80,15 @@ pub fn load_raster_tile_for_chunk(
     )
 }
 
+#[cfg(target_arch = "wasm32")]
+pub fn load_elevation_for_chunk(
+    zxy: (u8, i32, i32),
+    asset_server: &Res<AssetServer>,
+) -> Handle<Image> {
+    asset_server.load("osm/empty-tile.webp")
+}
+
+#[cfg(not(target_arch = "wasm32"))]
 pub fn load_elevation_for_chunk(
     zxy: (u8, i32, i32),
     asset_server: &Res<AssetServer>,
