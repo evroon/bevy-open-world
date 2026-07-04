@@ -170,6 +170,6 @@ pub fn ensure_session_is_valid(source: &RasterTileSource) {
             }
         });
     } else {
-        get_new_session(&source);
+        get_new_session(source);
     }
 }
