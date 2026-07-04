@@ -48,6 +48,9 @@ pub struct OSMConfig {
     pub location: Location,
     pub ui_visible: bool,
     pub raster_tile_source: RasterTileSource,
+    pub lights_visible: bool,
+    pub buildings_visible: bool,
+    pub strokes_visible: bool,
 }
 
 impl Default for OSMConfig {
@@ -56,6 +59,9 @@ impl Default for OSMConfig {
             location: Location::Monaco,
             ui_visible: true,
             raster_tile_source: RasterTileSource::OSMDefault,
+            lights_visible: true,
+            buildings_visible: true,
+            strokes_visible: true,
         }
     }
 }

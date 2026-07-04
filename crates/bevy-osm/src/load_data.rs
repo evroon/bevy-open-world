@@ -22,6 +22,15 @@ pub struct ComputeTransform(pub Task<CommandQueue>);
 #[derive(Component)]
 pub struct ComputeVectorTile(pub Task<CommandQueue>);
 
+#[derive(Component)]
+pub struct OSMStroke;
+
+#[derive(Component)]
+pub struct OSMBuilding;
+
+#[derive(Component)]
+pub struct OSMLight;
+
 pub fn insert_chunks_from_quadtree(
     mut commands: Commands,
     nodes_to_load: Query<(Entity, &QuadTreeNodeComponent), Without<Chunk>>,
@@ -115,6 +124,9 @@ pub fn load_chunk(
     let building_material = map_materials.unknown_building.clone();
     let light_materials = map_materials.lights.clone();
     let light_mesh = map_meshes.light.clone();
+    let strokes_visible = config.strokes_visible;
+    let buildings_visible = config.buildings_visible;
+    let lights_visible = config.lights_visible;
     let vector_entity = commands.spawn_empty().id();
 
     let vector_task = thread_pool.spawn(async move {
@@ -192,7 +204,13 @@ pub fn load_chunk(
                     .spawn((
                         Mesh3d(handle),
                         MeshMaterial3d(building_material.clone()),
+                        if strokes_visible {
+                            Visibility::Visible
+                        } else {
+                            Visibility::Hidden
+                        },
                         Shape,
+                        OSMStroke,
                     ))
                     .id();
                 world.entity_mut(chunk_entity).add_child(stroke);
@@ -204,6 +222,12 @@ pub fn load_chunk(
                         mesh3d,
                         MeshMaterial3d(building_material.clone()),
                         Transform::IDENTITY,
+                        if buildings_visible {
+                            Visibility::Visible
+                        } else {
+                            Visibility::Hidden
+                        },
+                        OSMBuilding,
                     ))
                     .id();
                 world.entity_mut(chunk_entity).add_child(bm);
@@ -215,6 +239,12 @@ pub fn load_chunk(
                         Mesh3d(light_mesh.clone()),
                         MeshMaterial3d(light_materials[&light.color].clone()),
                         Transform::from_translation(light.trans),
+                        if lights_visible {
+                            Visibility::Visible
+                        } else {
+                            Visibility::Hidden
+                        },
+                        OSMLight,
                     ))
                     .id();
 
