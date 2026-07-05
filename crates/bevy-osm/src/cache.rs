@@ -1,5 +1,6 @@
 use std::{env, fs::File, path::Path};
 
+use dotenvy::dotenv;
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -33,22 +34,22 @@ fn get_raster_download_url(
         RasterTileSource::CesiumGoogleSatellite
         | RasterTileSource::CesiumGoogleRoadmaps
         | RasterTileSource::CesiumGoogleContour => {
-            panic!("session token would be in cache");
-            // dotenv().expect("Could not read .env");
+            // panic!("session token would be in cache");
+            dotenv().expect("Could not read .env");
 
-            // // TODO: don't read file for every tile fetch
-            // let file = File::open(get_token_cache_path(source))
-            //     .or(Err(DownloadUrlError::TokenFileAbsent))?;
-            // let secrets: CesiumTokenResponse =
-            //     serde_json::from_reader(file).or(Err(DownloadUrlError::TokenFileInvalid))?;
+            // TODO: don't read file for every tile fetch
+            let file = File::open(get_token_cache_path(source))
+                .or(Err(DownloadUrlError::TokenFileAbsent))?;
+            let secrets: CesiumTokenResponse =
+                serde_json::from_reader(file).or(Err(DownloadUrlError::TokenFileInvalid))?;
 
-            // let asset_id = source.get_cesium_asset_id();
-            // let key = secrets.options.key;
-            // let session = secrets.options.session;
+            let asset_id = source.get_cesium_asset_id();
+            let key = secrets.options.key;
+            let session = secrets.options.session;
 
-            // Ok(format!(
-            //     "https://assets.ion.cesium.com/proxy/{asset_id}/v1/2dtiles/{z}/{x}/{y}?session={session}&key={key}"
-            // ))
+            Ok(format!(
+                "https://assets.ion.cesium.com/proxy/{asset_id}/v1/2dtiles/{z}/{x}/{y}?session={session}&key={key}"
+            ))
         }
         RasterTileSource::Transport => Ok(format!(
             "https://tileserver.memomaps.de/tilegen/{z}/{x}/{y}.png"
@@ -74,10 +75,18 @@ pub fn load_raster_tile_for_chunk(
     config: &OSMConfig,
     asset_server: &Res<AssetServer>,
 ) -> Handle<Image> {
-    asset_server.load(
-        get_raster_download_url(zxy, &config.raster_tile_source)
-            .expect("Could not get session after retrying"),
-    )
+    use bevy::image::ImageFormatSetting;
+    use bevy::image::ImageLoaderSettings;
+
+    asset_server
+        .load_builder()
+        .with_settings(|settings: &mut ImageLoaderSettings| {
+            settings.format = ImageFormatSetting::Format(ImageFormat::Jpeg)
+        })
+        .load(
+            get_raster_download_url(zxy, &config.raster_tile_source)
+                .expect("Could not get session after retrying"),
+        )
 }
 
 #[cfg(target_arch = "wasm32")]

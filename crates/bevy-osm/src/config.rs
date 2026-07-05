@@ -48,20 +48,26 @@ pub struct OSMConfig {
     pub location: Location,
     pub ui_visible: bool,
     pub raster_tile_source: RasterTileSource,
+    pub fog_enabled: bool,
     pub lights_visible: bool,
     pub buildings_visible: bool,
     pub strokes_visible: bool,
+    pub fill_visible: bool,
+    pub root_lod: u8,
 }
 
 impl Default for OSMConfig {
     fn default() -> Self {
         Self {
-            location: Location::Monaco,
+            location: Location::NewYork,
             ui_visible: true,
-            raster_tile_source: RasterTileSource::OSMDefault,
+            raster_tile_source: RasterTileSource::CesiumGoogleSatellite,
+            fog_enabled: true,
             lights_visible: true,
             buildings_visible: true,
-            strokes_visible: true,
+            strokes_visible: false,
+            fill_visible: false,
+            root_lod: 9,
         }
     }
 }
