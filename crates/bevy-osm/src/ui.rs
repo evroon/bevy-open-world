@@ -100,7 +100,7 @@ fn osm_ui(
 
         for (entity, mut quadtree) in quadtrees.iter_mut() {
             quadtree.root.destruct(&entity, commands);
-            quadtree.root = get_root_chunk_for_location(&config.location);
+            quadtree.root = get_root_chunk_for_location(&config.location, config.root_lod);
         }
         ensure_session_is_valid(&config.raster_tile_source);
     }
@@ -140,6 +140,10 @@ fn osm_ui(
 
     ui.add(Label::new("Strokes"));
     ui.checkbox(&mut config.strokes_visible, "Visible");
+    ui.end_row();
+
+    ui.add(Label::new("Fill areas"));
+    ui.checkbox(&mut config.fill_visible, "Visible");
     ui.end_row();
 
     ui.add(Label::new("translation:"));

@@ -40,6 +40,9 @@ fn main() {
             OSMPlugin,
             WhereWasIPlugin::default(),
             FlyCameraPlugin,
+            // WebAssetPlugin {
+            //     silence_startup_warning: true,
+            // },
             EguiPlugin::default(),
             // WaterPlugin,
         ))

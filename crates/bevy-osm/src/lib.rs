@@ -67,8 +67,8 @@ impl Plugin for OSMPlugin {
 pub fn update_osm_visibility(
     config: Res<OSMConfig>,
     mut strokes: Query<&mut Visibility, With<OSMStroke>>,
-    mut buildings: Query<&mut Visibility, With<OSMBuilding>>,
-    mut lights: Query<&mut Visibility, With<OSMLight>>,
+    mut buildings: Query<&mut Visibility, (With<OSMBuilding>, Without<OSMStroke>)>,
+    mut lights: Query<&mut Visibility, (With<OSMLight>, Without<OSMStroke>, Without<OSMBuilding>)>,
 ) {
     if !config.is_changed() {
         return;
@@ -106,7 +106,7 @@ pub fn build_terrain_tile(mut commands: Commands, osm_config: Res<OSMConfig>) {
         k: 1.1,
         min_lod: 0,
         max_lod: 13,
-        size: get_chunk_for_coord(origin.x as f64, origin.y as f64, 9)
+        size: get_chunk_for_coord(origin.x as f64, origin.y as f64, osm_config.root_lod as i8)
             .get_size_in_meters()
             .x,
     };
@@ -116,7 +116,7 @@ pub fn build_terrain_tile(mut commands: Commands, osm_config: Res<OSMConfig>) {
     commands.spawn((
         Transform::IDENTITY,
         QuadTree {
-            root: get_root_chunk_for_location(&osm_config.location),
+            root: get_root_chunk_for_location(&osm_config.location, osm_config.root_lod),
         },
         config.clone(),
         Visibility::Inherited,

@@ -5,7 +5,10 @@ use std::{
     path::Path,
 };
 
-use bevy::math::ops::{atan, powf, sinh};
+use bevy::math::{
+    Affine2,
+    ops::{atan, powf, sinh},
+};
 use bevy::prelude::*;
 use bevy_terrain::quadtree::QuadTreeNode;
 
@@ -57,8 +60,8 @@ impl Chunk {
         }
     }
     pub fn get_parent_at_z(&self, z: i8) -> Chunk {
-        if self.z < z {
-            panic!("Current z is already less than requested z");
+        if self.z <= z {
+            panic!("Current z is already less than or equal to requested z");
         }
 
         let mut current = self.clone();
@@ -78,9 +81,9 @@ impl Chunk {
             (self.y + 1) as f32,
         )
     }
-    pub fn get_rect_inside_parent(&self, parent: Chunk) -> Rect {
-        if self.z <= parent.z {
-            panic!("Current z is less than or equal to parent z");
+    pub fn get_rect_inside_parent(&self, parent: &Chunk) -> Rect {
+        if self.z < parent.z {
+            panic!("Current z is less than parent z");
         }
 
         let scale_factor = powf(2.0, (self.z - parent.z) as f32);
@@ -91,13 +94,50 @@ impl Chunk {
             parent_rect.max * scale_factor,
         );
 
-        self.get_rect().normalize(parent_rect_rescaled)
+        self.get_rect()
+            .normalize(parent_rect_rescaled)
+            // Map from 0..1 to -0.5..0.5
+            .translate(Vec2::ONE * -0.5)
+    }
+    pub fn get_affine_from_child_to_parent(&self, parent: &Chunk) -> (Vec3, Vec3) {
+        let rect = self.get_rect_inside_parent(parent);
+
+        // Translation is applied first, then scale
+        (
+            Vec3 {
+                x: 1.0 / rect.size().x,
+                y: 1.0,
+                z: 1.0 / rect.size().y,
+            },
+            Vec3 {
+                x: -rect.center().x,
+                y: 0.0,
+                z: -rect.center().y,
+            },
+        )
+
+        // child.get_rect_inside_parent(&self);
+        // if child.z < self.z {
+        //     panic!("Child z is less than self/parent z");
+        // }
+
+        // let scale_factor = powf(2.0, (child.z - self.z) as f32);
+        // let parent_center_rescaled = self.get_rect().center() * scale_factor;
+
+        // (
+        //     Vec3::ONE * scale_factor,
+        //     Vec3 {
+        //         x: (child.x as f32 - parent_center_rescaled.x) / powf(2.0, child.z as f32),
+        //         y: 0.0,
+        //         z: (child.y as f32 - parent_center_rescaled.y) / powf(2.0, child.z as f32),
+        //     },
+        // )
     }
 }
 
-pub fn get_root_chunk_for_location(location: &Location) -> QuadTreeNode {
+pub fn get_root_chunk_for_location(location: &Location, root_lod: u8) -> QuadTreeNode {
     let origin = location.get_world_center();
-    let chunk = get_chunk_for_coord(origin.x as f64, origin.y as f64, 9);
+    let chunk = get_chunk_for_coord(origin.x as f64, origin.y as f64, root_lod as i8);
     let area_meters = chunk.get_area_in_meters(location.get_world_center());
     QuadTreeNode::new(Vec2::ZERO, area_meters.size(), chunk.x, chunk.y)
 }
@@ -247,8 +287,18 @@ mod tests {
     fn test_get_rect_inside_parent() {
         let chunk = get_chunk_with_coordinates().0;
 
-        let rect_inside_parent = chunk.get_rect_inside_parent(chunk.get_parent());
+        let rect_inside_parent = chunk.get_rect_inside_parent(&chunk.get_parent());
 
-        assert_eq!(rect_inside_parent, Rect::new(0.0, 0.5, 0.5, 1.0));
+        assert_eq!(rect_inside_parent.center(), Vec2::new(-0.5, 0.5));
+        assert_eq!(rect_inside_parent.size(), Vec2::new(0.5, 0.5));
+    }
+
+    #[test]
+    fn test_get_rect_inside_parent_equal_z() {
+        let chunk = get_chunk_with_coordinates().0;
+
+        let rect_inside_parent = chunk.clone().get_rect_inside_parent(&chunk);
+
+        assert_eq!(rect_inside_parent, Rect::new(0.0, 0.0, 1.0, 1.0));
     }
 }
