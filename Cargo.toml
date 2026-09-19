@@ -48,7 +48,7 @@ bevy = { version = "0.19.0", features = [
     "webgpu",
 ] }
 bevy_panorbit_camera = "0.35.0"
-bevy_egui = "0.41.0"
+bevy_egui = "0.42.0"
 bevy-where-was-i = "0.4.0"
 mvt-reader = { git = "https://github.com/codeart1st/mvt-reader", rev="6de0c79ef81d77a3fdab4ea01eaa6380ac3e8b2e" }
 thiserror = "2.0.18"
