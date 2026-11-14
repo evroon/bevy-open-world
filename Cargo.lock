@@ -987,9 +987,9 @@ dependencies = [
 
 [[package]]
 name = "bevy_egui"
-version = "0.41.0"
+version = "0.41.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "903546b33a4c3ff4c8d3a6221280fa4566ee38e55dec9eecaa52de745c204c36"
+checksum = "6d901fff1b483b169f045679cbd50bb5353f9da468b2219b9ee050504464d980"
 dependencies = [
  "arboard",
  "bevy_app",
@@ -5758,7 +5758,7 @@ dependencies = [
  "security-framework",
  "security-framework-sys",
  "webpki-root-certs",
- "windows-sys 0.52.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
